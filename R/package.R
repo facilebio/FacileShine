@@ -3,4 +3,5 @@
 #' @import checkmate
 #' @import FacileData
 #' @import FacileViz
+#' @import dplyr
 NULL
