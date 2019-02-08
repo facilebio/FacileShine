@@ -50,3 +50,13 @@ Active samples and active covariates can be manipulated externally, ie. from
 a user interacting with another module, using the \code{update_reactive_samples()}
 and \code{update_reactive_covariates()} functions.
 }
+\section{Reactive Covariates}{
+
+
+Updates the temporal covariates during an analysis.
+
+In addition to the sample covariates in the FacileDataStore, covariates
+can be added to the samples by different modules via user interaction and
+brushing during an analysis session.
+}
+

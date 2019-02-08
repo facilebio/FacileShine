@@ -1,63 +1,73 @@
+#' A composable module to filter to a subset of samples from a FacileDataStore.
+#'
+#' This module will eventually be composed / replicated by adding more or less
+#' filters to restrict (or expand) the sample space to be anlayzed.
+#'
+#' I think this means that the set of samples this filter can operate on are
+#' fixed, but covariates can change given interactivity from the user during
+#' an analysis session.
+#'
 #' @export
 #' @rdname facileSampleFilter
 #' @importFrom shiny updateSelectInput
 facileSampleFilter <- function(input, output, session, rfds, ...) {
   assert_class(rfds, "ReactiveFacileDataStore")
 
-  categorical <- reactive({
-    .samples <- req(rfds$active_samples())
-    rfds$fds %>%
-      fetch_sample_covariates(.samples, custom_key = rfds$user) %>%
+  sample.universe <- active_samples(rfds[["fds"]])
+
+  static.covariates <- reactive({
+    req(isolate(rfds[["active_covariates"]]()))
+  })
+
+  sample.covariates <- reactive({
+    # req(rfds[["active_covariates"]]()) %>%
+    #   semi_join(sample.universe, by = c("dataset", "sample_id")) %>%
+    #   # One day we will be able to filter against real-valued covariates.
+    #   # For now, we restrict to filtering on categorical covariates
+    #   filter(class == "categorical")
+    req(static.covariates()) %>%
       filter(class == "categorical")
   })
 
-  cov.values <- reactive({
-    ac <- req(categorical())
-    count(ac, variable, value)
-  })
-
   can.filter <- reactive({
-    cv <- req(cov.values())
-    cv %>%
-      filter(n > 1) %>%
+    req(sample.covariates()) %>%
+      # filter(n > 1) %>%
+      arrange(variable) %>%
       distinct(variable) %>%
       pull(variable)
   })
-
-  current.covariate <- reactive(input$covariate)
-  current.values <- reactive(input$values)
 
   observe({
     updateSelectInput(session, "covariate", choices = can.filter())
   })
 
   observe({
-    .covariate <- req(current.covariate())
-    cv <- req(cov.values())
-    .choices <- cv %>%
-      filter(variable == .covariate) %>%
+    covariate <- req(input$covariate)
+    choices <- req(sample.covariates()) %>%
+      filter(variable == covariate) %>%
       pull(value)
-    updateSelectizeInput(session, "values", choices = .choices,
+    updateSelectizeInput(session, "values", choices = choices,
                          server = TRUE, selected = NULL)
   })
 
-
   observe({
-    covariate <- req(current.covariate())
-    lvls <- req(current.values())
-
-    .samples <- req(rfds$active_samples()) %>% collect(n = Inf)
-
+    lvls <- input$values
+    covariate <- req(isolate(input$covariate))
+    covariates <- req(sample.covariates())
     if (length(lvls)) {
-      ac <- categorical()
-      keep <- ac[["variable"]] == covariate & ac[["value"]] %in% lvls
-      .samples <- distinct(ac[keep,], dataset, sample_id)
+      selected.vars <- covariates %>%
+        filter(variable == !!covariate, value %in% !!lvls)
+      selected.samples <- sample.universe %>%
+        semi_join(selected.vars, by = c("dataset", "sample_id"))
+    } else {
+      selected.samples <- sample.universe
     }
-
-    update_reactive_samples(rfds, .samples)
+    update_reactive_samples(rfds, selected.samples)
   })
 
-  vals <- list(covariate = current.covariate, values = current.values)
+  vals <- list(
+    covariate = reactive(input$covariate),
+    values = reactive(input$values))
 }
 
 #' @export
