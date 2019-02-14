@@ -3,20 +3,13 @@ sampleCovariateSelectUI <- function(id, ...)  {
 
 }
 
-sampleCovariateSelect <- function(input, output, session, rfds, ...) {
+sampleCovariateSelect <- function(input, output, session, rfds, ...,
+                                  .reactive = TRUE) {
 
 }
 
 # Categorical Sample Covariates ================================================
-
-categoricalSampleCovariateSelectUI <- function(id, ...) {
-
-}
-
-categoricalSampleCovariateSelect <- function(input, output, session, rfds,
-                                             ...) {
-
-}
+# see categoricalSampleCovariate-modules.R
 
 # Real Valued Sample Covariates ================================================
 

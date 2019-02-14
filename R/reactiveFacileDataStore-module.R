@@ -78,13 +78,20 @@ reactiveFacileDataStore <- function(input, output, session, dataset,
       collect(n = Inf)
   })
 
+  active.assays <- reactive({
+    assay_info_over_samples(vals[["fds"]], active.samples())
+  })
+
   # The covariates in this tibble consist of only those that are pulled from
   # the FacileDataStore itself.
   fds.sample.covariates <- reactive({
     cov.trigger$depend()
     .samples <- req(active.samples())
     fds.cov <- vals[["fds"]] %>%
-      fetch_sample_covariates(.samples, custom_key = user)
+      fetch_sample_covariates(.samples, custom_key = user) %>%
+      arrange(variable) %>%
+      mutate(source = "serialized")
+    fds.cov
   })
 
   # Combines the serialized covariates w/ the active/temporal ones
@@ -109,6 +116,7 @@ reactiveFacileDataStore <- function(input, output, session, dataset,
 
   vals[["active_samples"]] <- active.samples
   vals[["active_covariates"]] <- active.covariates
+  vals[["active_assays"]] <- active.assays
   vals
 }
 
@@ -191,9 +199,20 @@ update_reactive_covariates <- function(rfds, covariates, namespace, ...) {
   assert_sample_covariates(covariates)
 
   # Update the covariates correctly
-
   rfds[["trigger"]]$covariates()
-  invisible(covariates)
+
+  out <- tibble(
+    dataset = character(),
+    sample_id = character(),
+    variable = character(),
+    value = character(),
+    class = character(), # "categorical",
+    type = "interactive",
+    date_entered = integer()) # as.integer(Sys.time())
+
+  out %>%
+    mutate(source = "interactive") %>%
+    invisible()
 }
 
 save_reactive_covariates <- function(rfds, namespace, ...) {
