@@ -14,23 +14,26 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
   assert_class(rfds, "ReactiveFacileDataStore")
 
   covariate <- callModule(categoricalSampleCovariateSelect, "covariate",
-                          rfds, .with_none = TRUE)
+                          rfds, .with_none = TRUE, .reactive = FALSE)
   values <- callModule(categoricalSampleCovariateLevels, "values",
-                       rfds, covariate)
+                       rfds, covariate, .reactive = FALSE)
 
   these.samples <- reactive({
     req(isolate(rfds[["active_samples"]]()))
   })
 
+  these.covariates <- reactive({
+    req(isolate(rfds[["active_covariates"]]()))
+  })
+
   observe({
-    all.covs <- rfds[["active_covariates"]]()
+    all.covs <- these.covariates()
     cov.name <- covariate$covariate()
     cov.vals <- values$values()
     suniverse <- these.samples()
     # Is the user trying to restrict the sample space
     restrict.samples <- length(cov.vals) > 0L &&
       !cov.vals[1L] %in% c("---", "__initializing__")
-    # browser()
     if (restrict.samples) {
       selected.vars <- all.covs %>%
         filter(variable == !!cov.name, value %in% !!cov.vals)

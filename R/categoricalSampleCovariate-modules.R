@@ -67,7 +67,14 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     if (.with_none) {
       choices <- c("---", choices)
     }
-    updateSelectInput(session, "covariate", choices = choices)
+
+    if (state$covariate %in% choices) {
+      selected <- state$covariate
+    } else {
+      selected <- choices[1L]
+    }
+    updateSelectInput(session, "covariate", choices = choices,
+                      selected = selected)
   })
 
   covariate <- reactive({
