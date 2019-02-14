@@ -23,11 +23,11 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
                                              .with_none = TRUE,
                                              .exclude = NULL,
                                              .reactive = TRUE) {
+  assert_class(rfds, "ReactiveFacileDataStore")
   state <- reactiveValues(
     covariate = "__initializing__",
     levels = "__initializing__")
 
-  assert_class(rfds, "ReactiveFacileDataStore")
   if (!is.null(.exclude) && !.reactive) {
     assert_tibble(.exclude)
     assert_subset(names(.exclude), c("variable", "value"))
@@ -49,24 +49,25 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
   sample.covariate.info <- reactive({
     .covs <- req(sample.covariates()) %>%
-      group_by(covariate) %>%
+      group_by(variable) %>%
       mutate(n_samples = n(), n_levels = length(unique(value))) %>%
-      group_by(covariate, value) %>%
+      group_by(variable, value) %>%
       mutate(n_in_level = n()) %>%
       ungroup()
+    .covs
   })
 
   observe({
     choices <- req(sample.covariate.info()) %>%
-      distinct(covariate) %>%
-      pull(covariate)
+      distinct(variable) %>%
+      pull(variable)
     # TODO: Check if this is a factor and convert it with assigned level order
     #       for a "proper" sort.
     choices <- sort(choices)
     if (.with_none) {
       choices <- c("---", choices)
     }
-    updateSelectInput(session, "covariate", choices = choices, server = TRUE)
+    updateSelectInput(session, "covariate", choices = choices)
   })
 
   covariate <- reactive({
@@ -78,9 +79,12 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   })
 
   cov.levels <- reactive({
+    cov <- req(covariate())
     lvls <- req(sample.covariate.info()) %>%
-      filter(variable == covariate()) %>%
-      pull(value)
+      filter(variable == cov) %>%
+      pull(value) %>%
+      unique() %>%
+      sort()
     if (!setequal(state$levels, lvls)) {
       state$levels <- lvls
     }
@@ -120,15 +124,16 @@ categoricalSampleCovariateSelectUI <- function(id, label = "Covariate",
 #'
 #' @export
 #' @param covaraite the `categoricalSampleCovariateSelect` module.
-categoricalSampleCovariateLevels <- function(input, output, session,
+categoricalSampleCovariateLevels <- function(input, output, session, rfds,
                                              covariate, ...,
                                              .exclude = NULL, .reactive = TRUE) {
-
+  assert_class(rfds, "ReactiveFacileDataStore")
   state <- reactiveValues(
     values = "__initializing__")
 
   observe({
-    updateSelectizeInput(session, "values", covaraite$levels(), sever = TRUE)
+    cov.levels <- covariate$levels()
+    updateSelectizeInput(session, "values", choices = cov.levels, server = TRUE)
   })
 
   values <- reactive({
@@ -136,7 +141,7 @@ categoricalSampleCovariateLevels <- function(input, output, session,
     if (!setequal(vals, state$values)) {
       state$values <- vals
     }
-    state$vals
+    state$values
   })
 
   vals <- list(
@@ -145,11 +150,12 @@ categoricalSampleCovariateLevels <- function(input, output, session,
   return(vals)
 }
 
-categoricalSampleCovariateLevels <- function(id, ..., options = NULL,
-                                             width = NULL) {
+categoricalSampleCovariateLevelsUI <- function(id, ..., choices = NULL,
+                                               options = NULL, width = NULL) {
   ns <- NS(id)
 
   tagList(
-    selectizeInput(ns("values"), ..., options = options, width = width))
+    selectizeInput(ns("values"), ..., choices = choices,
+                   options = options, width = width))
 }
 
