@@ -1,6 +1,10 @@
 library(FacileShine)
 
-shiny::shinyApp(
+# The following to apps should produce the same output. We'll use the
+# `filteredReactiveFacileDataStore` going forward in our proof of concept
+# modules to encapsulate everythign that will be there.
+
+manual <- shiny::shinyApp(
   ui = shiny::fluidPage(
     reactiveFacileDataStoreUI("rfds"),
     facileSampleFilterUI("rfdsFilter")),
@@ -13,16 +17,14 @@ shiny::shinyApp(
   }
 )
 
-if (FALSE) {
-  library(FacileData)
-  library(esquisse)
-  fds <- exampleFacileDataSet()
+composed <- shiny::shinyApp(
+  ui = shiny::fluidPage(
+    filteredReactiveFacileDataStoreUI("rfds")),
 
-  samples <- samples(fds)
-  features <- filter_features(fds, name %in% c("GZMA", "PRF1"))
-  fdat <- samples %>%
-    with_assay_data(features, assay_name = "rnaseq", normalized = TRUE) %>%
-    with_sample_covariates()
-
-  esquisser(fdat)
-}
+  server = function(input, output) {
+    fds <- FacileData::exampleFacileDataSet()
+    user <- Sys.getenv("USER")
+    rfds <- callModule(filteredReactiveFacileDataStore, "rfds", fds,
+                       user = user)
+  }
+)

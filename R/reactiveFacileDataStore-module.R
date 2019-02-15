@@ -32,7 +32,6 @@
 reactiveFacileDataStore <- function(input, output, session, dataset,
                                     active_samples = NULL,
                                     user = Sys.getenv("USER"), ...) {
-  ns <- session$ns
   assert_class(dataset, "FacileDataStore")
 
   # If the user has passed in a subset of active samples, narrow down the
@@ -120,24 +119,6 @@ reactiveFacileDataStore <- function(input, output, session, dataset,
   vals
 }
 
-.empty_sample_annotation_tbl <- function() {
-  tibble(
-    dataset = character(),
-    sample_id = character(),
-    variable = character(),
-    class = character(),
-    type = character(),
-    date_entered = integer())
-}
-
-.empty_feature_annotation_tbl <- function() {
-  tibble(
-    collection = character(),
-    name = character(),
-    feature_id = character(),
-    feature_type = character())
-}
-
 #' @export
 #' @rdname reactiveFacileDataStore
 #' @importFrom shiny NS tagList textOutput
@@ -152,6 +133,23 @@ reactiveFacileDataStoreUI <- function(id, ...) {
   tagList(
     textOutput(ns("sample_trigger")),
     textOutput(ns("covariate_trigger")))
+}
+
+#' @export
+#' @rdname reactiveFacileDataStore
+fds.ReactiveFacileDataStore <- function(x, ...) {
+  x[["fds"]]
+}
+
+#' @export
+#' @rdname reactiveFacileDataStore
+#' @importFrom shiny getDefaultReactiveDomain
+active_samples.ReactiveFacileDataStore <- function(x, ...) {
+  # Note that this needs to be run in a reactive context
+  if (is.null(getDefaultReactiveDomain())) {
+    stop("needs to be invoked in a reactive context")
+  }
+  x[["active_samples"]]()
 }
 
 # setters and getters ==========================================================
@@ -239,3 +237,22 @@ update_reactive_datastore <- function(rfds, dataset, active_samples = NULL,
   rfds
 }
 
+# Inner helpers ================================================================
+
+.empty_sample_annotation_tbl <- function() {
+  tibble(
+    dataset = character(),
+    sample_id = character(),
+    variable = character(),
+    class = character(),
+    type = character(),
+    date_entered = integer())
+}
+
+.empty_feature_annotation_tbl <- function() {
+  tibble(
+    collection = character(),
+    name = character(),
+    feature_id = character(),
+    feature_type = character())
+}

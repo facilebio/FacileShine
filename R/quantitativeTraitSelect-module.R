@@ -15,6 +15,9 @@
 quantitativeTraitSelect <- function(input, output, session, rfds, ...,
                                     .exclude = NULL, .reactive = TRUE) {
 
+  assert_class(rfds, "ReactiveFacileDataStore")
+  isolate. <- if (.reactive) base::identity else shiny::isolate
+
   # We keep track of state so that we don't refetch data when we don't have to.
   # Reactivitiy that is internal to this module should "react" to the state$xxx
   # variables. Facile modules that use this module should respond to the
@@ -44,13 +47,11 @@ quantitativeTraitSelect <- function(input, output, session, rfds, ...,
     # the first column of `data`
     value = "__initializing__")
 
-  assert_class(rfds, "ReactiveFacileDataStore")
   if (!is.null(exclude) && !.reactive) {
     assert_tibble(exclude)
     assert_subset(names(exclude), c("variable", "value"))
   }
 
-  isolate. <- if (.reactive) base::identity else shiny::isolate
 
   active.samples <- reactive({
     req(isolate.(rfds[["active_samples"]]()))
@@ -117,6 +118,10 @@ quantitativeTraitSelect <- function(input, output, session, rfds, ...,
     type
   })
 
+  is.assay <- reactive({
+    !type() %in% c("covariate", "__initializing__")
+  })
+
   covariate <- reactive({
     cov <- req(input$covariate)
     if (is.null(state$covariate) || cov != state$covariate) {
@@ -125,10 +130,12 @@ quantitativeTraitSelect <- function(input, output, session, rfds, ...,
     cov
   })
 
-  features <- reactive({
+  features.all <- reactive({
     .type <- state$covariate
     if (!is.null(.type) && .type == "assay") {
-
+      f <- rfds[["fds"]] %>%
+        feature_info_tbl() %>%
+        filter(feature_)
     }
   })
 

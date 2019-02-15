@@ -3,6 +3,8 @@
 \name{reactiveFacileDataStore}
 \alias{reactiveFacileDataStore}
 \alias{reactiveFacileDataStoreUI}
+\alias{fds.ReactiveFacileDataStore}
+\alias{active_samples.ReactiveFacileDataStore}
 \alias{update_reactive_samples}
 \alias{update_reactive_covariates}
 \alias{update_reactive_datastore}
@@ -13,9 +15,13 @@ reactiveFacileDataStore(input, output, session, dataset,
 
 reactiveFacileDataStoreUI(id, ...)
 
+\method{fds}{ReactiveFacileDataStore}(x, ...)
+
+\method{active_samples}{ReactiveFacileDataStore}(x, ...)
+
 update_reactive_samples(rfds, active_samples, criterion = NULL, ...)
 
-update_reactive_covariates(rfds, covariates, namespace = NULL, ...)
+update_reactive_covariates(rfds, covariates, namespace, ...)
 
 update_reactive_datastore(rfds, dataset, active_samples = NULL, ...)
 }
@@ -50,6 +56,15 @@ Active samples and active covariates can be manipulated externally, ie. from
 a user interacting with another module, using the \code{update_reactive_samples()}
 and \code{update_reactive_covariates()} functions.
 }
+\section{Reactive Samples}{
+
+
+A facile analysis session is perfomed on some subset of the samples
+provided by a \code{FacileDataStore}. The samples under scrutiny can change as
+the user dips into and out of different analyses. These are defined
+interactively by the user via the use of the \code{facileSampleFilter} module(s)
+}
+
 \section{Reactive Covariates}{
 
 
