@@ -29,7 +29,7 @@ assayFeatureSelect <- function(input, output, session, rfds, assay = NULL,
   }
 
   assays <- reactive({
-    isolate.(rfds[["active_assays"]]())
+    isolate.(active_assays(rfds))
   })
 
   # Update the UI assay select box with the assays available from the current

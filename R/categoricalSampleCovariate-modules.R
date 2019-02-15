@@ -17,7 +17,7 @@
 #'   tibble if you want to be able to update the things one can't select for.
 #' @param .reactive If `TRUE` (default), the module will constantly update the
 #'   covariates made available based on changes to the
-#'   `rfds[["active_covariates]]()` tibble. Otherwise, the covariates made
+#'   `active_covariates(rfds)` tibble. Otherwise, the covariates made
 #'   availabe (or .excluded) are fixed on module creation.
 categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
                                              .with_none = TRUE,
@@ -36,7 +36,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
   sample.covariates <- reactive({
-    covs <- req(isolate.(rfds[["active_covariates"]]()))
+    covs <- req(isolate.(active_covariates(rfds)))
     out <- filter(covs, class == "categorical")
 
     if (!is.null(.exclude)) {

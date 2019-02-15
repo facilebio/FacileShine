@@ -4,7 +4,9 @@
 \alias{reactiveFacileDataStore}
 \alias{reactiveFacileDataStoreUI}
 \alias{fds.ReactiveFacileDataStore}
-\alias{active_samples.ReactiveFacileDataStore}
+\alias{active_covariates}
+\alias{active_assays}
+\alias{active_assays.ReactiveFacileDataStore}
 \alias{update_reactive_samples}
 \alias{update_reactive_covariates}
 \alias{update_reactive_datastore}
@@ -17,7 +19,11 @@ reactiveFacileDataStoreUI(id, ...)
 
 \method{fds}{ReactiveFacileDataStore}(x, ...)
 
-\method{active_samples}{ReactiveFacileDataStore}(x, ...)
+active_covariates(x, ...)
+
+active_assays(x, ...)
+
+\method{active_assays}{ReactiveFacileDataStore}(x, ...)
 
 update_reactive_samples(rfds, active_samples, criterion = NULL, ...)
 

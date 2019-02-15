@@ -63,7 +63,7 @@ quantitativeTraitSelect <- function(input, output, session, rfds, ...,
 
   # Deal with quantitative sample-level covariates =============================
   sample.covariates <- reactive({
-    covs <- req(isolate.(rfds[["active_covariates"]]()))
+    covs <- req(isolate.(active_covariates(rfds)))
     out <- filter(covs, class == "real")
 
     if (!is.null(exclude)) {
@@ -86,7 +86,7 @@ quantitativeTraitSelect <- function(input, output, session, rfds, ...,
   # Update the assays available to select from over the samples
   observe({
     assays <- req(assays())
-    selected <- intersect(default_assay(rfds[["rfds"]]), assays$assay)
+    selected <- intersect(default_assay(fds(rfds)), assays$assay)
     if (length(selected) == 0L) selected <- assays$assay[1L]
     updateSelectInput(session, "assay", choices = assays$assay,
                       selected = selected)
@@ -133,7 +133,7 @@ quantitativeTraitSelect <- function(input, output, session, rfds, ...,
   features.all <- reactive({
     .type <- state$covariate
     if (!is.null(.type) && .type == "assay") {
-      f <- rfds[["fds"]] %>%
+      f <- fds(rfds) %>%
         feature_info_tbl() %>%
         filter(feature_)
     }

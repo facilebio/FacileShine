@@ -16,7 +16,7 @@ tibble if you want to be able to update the things one can't select for.}
 
 \item{.reactive}{If \code{TRUE} (default), the module will constantly update the
 covariates made available based on changes to the
-\code{rfds[["active_covariates]]()} tibble. Otherwise, the covariates made
+\code{active_covariates(rfds)} tibble. Otherwise, the covariates made
 availabe (or .excluded) are fixed on module creation.}
 }
 \description{

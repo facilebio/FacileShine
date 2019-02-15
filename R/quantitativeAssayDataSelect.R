@@ -6,6 +6,16 @@
 #'
 #' @export
 #' @rdname quantitativeAssayDataSelect
+#'
+#' @return a list with the following elements:
+#'   * `assay_info`: one row assay,assay_type,feature_type tibble
+#'   * `features`: n-row feature_info_tbl() like tbl enumerating the assay
+#'     features selected in this module
+#'   * `features_all`: a tibble of all of the fdatures of this `feature_type`
+#'     (we can possible axe this, but ...)
+#'  * `label`: a "human readable" summary of the features selected within this
+#'     module
+#'  * `name`: a "computerfriendly" version of `label`
 quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
                                         .exclude = NULL, .reactive = TRUE) {
   assert_class(rfds, "ReactiveFacileDataStore")
@@ -22,16 +32,17 @@ quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
       assay_type = "__initializing__",
       feature_type = "__initializing__"),
     features = .no.features,
-    data = "__initializing__",
-    value = "__initializing__",
-    features_all = .no.features)
+    features_all = .no.features,
+    label = "__initializing__",
+    name = "__initializing__")
 
   if (!is.null(.exclude)) {
     # TODO: Are we excluding assays altogether, features from assays, or both?
   }
 
   assays <- reactive({
-    req(isolate.(rfds[["active_assays"]]()))
+    # req(isolate.(rfds[["active_assays"]]()))
+    req(isolate.(active_assays(rfds)))
   })
 
   # Update the assay choice dropdown with the active assays over the current
@@ -76,12 +87,6 @@ quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
     state$features_all
   })
 
-  # observe({
-  #   choices <- with(state$features_all, setNames(name, feature_id))
-  #   updateSelectizeInput(session, "features", choices = choices, server = TRUE,
-  #                        selected = NULL)
-  # })
-
   features <- reactive({
     fid <- req(input$features)
     current <- isolate(state$features)
@@ -95,7 +100,7 @@ quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
   vals <- list(
     assay_info = assay_info,
     features = features)
-
+  class(vals) <- c("QuantitativeAssayDataSelect", "AssayFeatureSelect")
   vals
 }
 

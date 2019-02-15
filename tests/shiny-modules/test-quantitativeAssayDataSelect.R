@@ -51,7 +51,7 @@ shiny::shinyApp(
       ylab <- req(ylabel())
       xf <- xaxis$features()
       yf <- yaxis$features()
-      xs <- rfds[["active_samples"]]()
+      xs <- active_samples(rfds)
 
       out <- xs %>%
         with_assay_data(xf, aggregate.by = "ewm") %>%
