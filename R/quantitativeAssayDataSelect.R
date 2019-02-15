@@ -33,8 +33,10 @@ quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
       feature_type = "__initializing__"),
     features = .no.features,
     features_all = .no.features,
-    label = "__initializing__",
-    name = "__initializing__")
+    # "labeled" API
+    name = "__initializing__",
+    label = "__initializing__")
+
 
   if (!is.null(.exclude)) {
     # TODO: Are we excluding assays altogether, features from assays, or both?
@@ -97,10 +99,34 @@ quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
     state$features
   })
 
+  .name <- reactive({
+    xf <- features()
+    if (nrow(xf) == 0) {
+      "nothing"
+    } else if (nrow(xf) == 1) {
+      xf$name
+    } else {
+      "score"
+    }
+  })
+
+  .label <- reactive({
+    xf <- features()
+    if (nrow(xf) == 0) {
+      "nothing"
+    } else if (nrow(xf) == 1) {
+      xf$name
+    } else {
+      paste(xf$name, collapse = ",")
+    }
+  })
+
   vals <- list(
     assay_info = assay_info,
-    features = features)
-  class(vals) <- c("QuantitativeAssayDataSelect", "AssayFeatureSelect")
+    features = features,
+    name = .name,
+    label = .label)
+  class(vals) <- c("QuantitativeAssayDataSelect", "Labeled")
   vals
 }
 

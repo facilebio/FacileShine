@@ -22,7 +22,6 @@ filteredReactiveFacileDataStore <- function(input, output, session, dataset,
 #' @rdname filteredReactiveFacileDataStore
 filteredReactiveFacileDataStoreUI <- function(id, ...) {
   ns <- NS(id)
-
   tagList(
     reactiveFacileDataStoreUI(ns("rfds")),
     facileSampleFilterUI(ns("rfdsFilter")))

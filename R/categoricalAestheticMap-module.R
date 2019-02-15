@@ -1,55 +1,68 @@
+#' Provides re-usable a widget bar to map data to aesthetics.
+#'
+#' @export
+#' @rdname categoricalAestheticMap
 categoricalAestheticMap <- function(input, output, session, rfds,
                                     color = TRUE, shape = TRUE, group = FALSE,
                                     facet = TRUE, ..., .with_none = TRUE,
                                     .exclude = NULL, .reactive = TRUE) {
-  if (color) {
-    color_select <- callModule(categoricalSampleCovariateSelect,
-                               "color", rfds, ..., .with_none = .with_none,
-                               .exclude = .exclude, .reactive = .reactive)
-  } else {
-    color_select <- NULL
-  }
+  assert_class(rfds, "ReactiveFacileDataStore")
+  isolate. <- if (.reactive) base::identity else shiny::isolate
 
-  if (shape) {
-    shape_select <- callModule(categoricalSampleCovariateSelect,
-                               "shape", rfds, ..., .with_none = .with_none,
-                               .exclude = .exclude, .reactive = .reactive)
-  } else {
-    shape_select <- NULL
-  }
+  mod.include <- .module_list(color, shape, group, facet)
 
-  if (group) {
-    group_select <- callModule(categoricalSampleCovariateSelect,
-                               "group", rfds, ..., .with_none = .with_none,
-                               .exclude = .exclude, .reactive = .reactive)
-  } else {
-    group_select <- NULL
-  }
+  modules <- sapply(names(mod.include), function(name) {
+    callModule(categoricalSampleCovariateSelect, name, rfds, ...,
+               .with_none = .with_none, .exclude = .exclude,
+               .reactive = .reactive)
+  }, simplify = FALSE)
 
-  if (facet) {
-    facet_select <- callModule(categoricalSampleCovariateSelect,
-                               "facet", rfds, ..., .with_none = .with_none,
-                               .exclude = .exclude, .reactive = .reactive)
-  } else {
-    facet_select <- NULL
-  }
+  covariates <- reactive({
+    out <- lapply(modules, function(mod) mod$covariate())
+    out[out != "---"]
+  })
 
   vals <- list(
-    color = color_select,
-    shape = shape_select,
-    group = group_select,
-    facet = facet_select)
+    color = modules$color,
+    shape = modules$shape,
+    group = modules$group,
+    facet = modules$facet,
+    covariates = covariates)
 
   return(vals)
 }
 
+#' @export
+#' @importFrom tools toTitleCase
+#' @importFrom shiny NS column fluidRow
+#' @rdname categoricalAestheticMap
 categoricalAestheticMapUI <- function(id, color = TRUE, shape = TRUE,
-                                      group = FALSE,  facet = TRUE, ...) {
+                                      group = FALSE,  facet = TRUE,
+                                      horizontal = TRUE, ...) {
   ns <- NS(id)
-  .selectUI <- categoricalSampleCovariateSelectUI
-  tagList(
-    if (color) .selectUI(ns("color"), "Color") else NULL,
-    if (shape) .selectUI(ns("color"), "Shape") else NULL,
-    if (group) .selectUI(ns("group"), "Group") else NULL,
-    if (facet) .selectUI(ns("facet"), "Facet") else NULL)
+
+  mod.include <- .module_list(color, shape, group, facet)
+  ncol <- floor(12 / length(mod.include))
+
+  aes.tags <- sapply(names(mod.include), function(aname) {
+    label <- toTitleCase(aname)
+    ui <- categoricalSampleCovariateSelectUI(ns(aname), label = label)
+    if (horizontal) ui <- column(ncol, ui)
+    ui
+  }, simplify = FALSE)
+
+  if (horizontal) {
+    aes.tags <- fluidRow(aes.tags)
+  }
+
+  aes.tags
+}
+
+# Helper Functions =============================================================
+.module_list <- function(color = TRUE, shape = TRUE, group = TRUE,
+                         facet = TRUE) {
+  mod.include <- list(
+    color = color, shape = shape,
+    group = group, facet = facet)
+  mod.include[unlist(mod.include)]
 }

@@ -24,46 +24,23 @@ shiny::shinyApp(
     xaxis <- callModule(quantitativeAssayDataSelect, "xaxis", rfds)
     yaxis <- callModule(quantitativeAssayDataSelect, "yaxis", rfds)
 
-    xlabel <- reactive({
-      xf <- xaxis$features()
-      if (nrow(xf) == 0) {
-        "nothing"
-      } else if (nrow(xf) == 1) {
-        xf$name
-      } else {
-        "xscore"
-      }
-    })
-
-    ylabel <- reactive({
-      yf <- yaxis$features()
-      if (nrow(yf) == 0) {
-        "nothing"
-      } else if (nrow(yf) == 1) {
-        yf$name
-      } else {
-        "yscore"
-      }
-    })
-
     rdat <- reactive({
-      xlab <- req(xlabel())
-      ylab <- req(ylabel())
-      xf <- xaxis$features()
-      yf <- yaxis$features()
+      xf <- req(xaxis$features())
+      yf <- req(yaxis$features())
       xs <- active_samples(rfds)
 
       out <- xs %>%
         with_assay_data(xf, aggregate.by = "ewm") %>%
         with_assay_data(yf, aggregate.by = "ewm") %>%
         collect(n = Inf)
-      colnames(out)[3:4] <- c(xlab, ylab)
+      colnames(out)[3:4] <- c(name(xaxis), name(yaxis))
       out
     })
 
     fscatter <- reactive({
       dat <- req(rdat())
-      fscatterplot(dat, c(xlabel(), ylabel()))
+      axes <- c(name(xaxis), name(yaxis))
+      fscatterplot(dat, axes)
     })
 
     output$scatter <- renderPlotly({
