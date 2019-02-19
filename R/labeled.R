@@ -21,8 +21,11 @@ label <- function(x, ...) {
   UseMethod("label")
 }
 
+label.NULL <- function(x, ...) NULL
+
 label.Labeled <- function(x, ...) {
   assert_reacting()
   out <- x[["label"]]
   if (!is(out, "reactive")) "unlabeled" else out()
 }
+

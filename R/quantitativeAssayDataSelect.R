@@ -91,11 +91,25 @@ quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
   })
 
   features <- reactive({
-    fid <- req(input$features)
+    # fid <- req(input$features)
+    # current <- isolate(state$features)
+    # if (!setequal(fid, current$feature_id)) {
+    #   state$features <- isolate(state$features_all) %>%
+    #     filter(feature_id %in% fid)
+    # }
+    # state$features
+    fid <- input$features
+    is.empty <- is.null(fid)
+    if (is.empty) fid <- character()
+
     current <- isolate(state$features)
     if (!setequal(fid, current$feature_id)) {
-      state$features <- isolate(state$features_all) %>%
-        filter(feature_id %in% fid)
+      if (is.empty) {
+        state$features <- .no.features
+      } else {
+        state$features <- isolate(state$features_all) %>%
+          filter(feature_id %in% fid)
+      }
     }
     state$features
   })

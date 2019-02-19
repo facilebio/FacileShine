@@ -17,6 +17,7 @@ shiny::shinyApp(
     user <- Sys.getenv("USER")
     rfds <- callModule(filteredReactiveFacileDataStore, "rfds", fds,
                        user = user)
-    scatter <- callModule(facileScatterPlot, "scatter", rfds)
+    scatter <- callModule(facileScatterPlot, "scatter", rfds, ndim = 3)
   }
 )
+
