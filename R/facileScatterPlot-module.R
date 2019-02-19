@@ -4,18 +4,23 @@
 #' @importFrom plotly renderPlotly
 #' @rdname facileScatterPlot
 facileScatterPlot <- function(input, output, session, rfds, ...,
+                              event_source = session$ns("selection"),
                               .reactive = TRUE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
-  aesthetx <- callModule(categoricalAestheticMap, "aesthetx", rfds,
-                         group = FALSE, ..., .reactive = .reactive)
+  aes <- callModule(categoricalAestheticMap, "aes", rfds,
+                    group = FALSE, ..., .reactive = .reactive)
 
   xaxis <- callModule(quantitativeAssayDataSelect, "xaxis", rfds)
   yaxis <- callModule(quantitativeAssayDataSelect, "yaxis", rfds)
 
   aes.covs <- reactive({
-    aesthetx$covariates()
+    aes$covariates()
+  })
+
+  qcolnames <- reactive({
+    c(name(xaxis), name(yaxis))
   })
 
   rdat <- reactive({
@@ -28,18 +33,24 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
       with_assay_data(xf, aggregate.by = "ewm") %>%
       with_assay_data(yf, aggregate.by = "ewm") %>%
       collect(n = Inf)
+    colnames(out)[3:4] <- qcolnames()
+
     if (length(covs)) {
       out <- with_sample_covariates(out, covs, .fds = fds(rfds))
     }
+
     out
   })
 
   fscatter <- reactive({
     dat <- req(rdat())
-    axes <- c(name(xaxis), name(yaxis))
+    axes <- qcolnames()
     .aes <- aes.covs()
+
     fscatterplot(dat, axes, color_aes = .aes$color, shape_aes = .aes$shape,
-                 facet_aes = .aes$facet)
+                 facet_aes = .aes$facet,
+                 xlabel = label(xaxis), ylabel = label(yaxis),
+                 source = event_source)
   })
 
   output$scatter <- renderPlotly({
@@ -71,7 +82,7 @@ facileScatterPlotUI <- function(id, ...) {
     fluidRow(
       column(
         12,
-        wellPanel(categoricalAestheticMapUI(ns("aesthetx"), group = FALSE)))),
+        wellPanel(categoricalAestheticMapUI(ns("aes"), group = FALSE)))),
     fluidRow(
       column(12, plotlyOutput(ns("scatter")))))
 }

@@ -20,6 +20,7 @@ quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
                                         .exclude = NULL, .reactive = TRUE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   isolate. <- if (.reactive) base::identity else shiny::isolate
+  ns <- session$ns(NULL)
 
   .no.features <- tibble(
     assay = character(),
@@ -101,13 +102,14 @@ quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
 
   .name <- reactive({
     xf <- features()
-    if (nrow(xf) == 0) {
+    out <- if (nrow(xf) == 0) {
       "nothing"
     } else if (nrow(xf) == 1) {
       xf$name
     } else {
       "score"
     }
+    paste0(make.names(ns), ".", out)
   })
 
   .label <- reactive({
@@ -126,7 +128,7 @@ quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
     features = features,
     name = .name,
     label = .label)
-  class(vals) <- c("QuantitativeAssayDataSelect", "Labeled")
+  class(vals) <- c("QuantitativeAssayDataSelect", "FacileDataAPI", "Labeled")
   vals
 }
 
