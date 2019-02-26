@@ -61,3 +61,15 @@ facileSampleFilterUI <- function(id, ...) {
     categoricalSampleCovariateLevelsUI(ns("values"), label = "Value(s)",
                                        multiple = TRUE))
 }
+
+# Accessor / Update Functions ==================================================
+
+#' Returns a representaiton of the filters used to specify the active dataset
+filters <- function(x, ...) {
+  # TODO: Implemenet filters accessor for facileSampleFilter
+}
+
+#' Updates the filters used to set the active dataset
+update_filters <- function(x, filters, ...) {
+  # TODOO: Implement update_filters for facileSampleFilter
+}

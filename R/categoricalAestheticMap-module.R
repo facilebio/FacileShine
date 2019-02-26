@@ -28,7 +28,7 @@ categoricalAestheticMap <- function(input, output, session, rfds,
     group = modules$group,
     facet = modules$facet,
     covariates = covariates)
-
+  class(vals) <- c("CategoricalAesMap")
   return(vals)
 }
 
@@ -56,6 +56,14 @@ categoricalAestheticMapUI <- function(id, color = TRUE, shape = TRUE,
   }
 
   aes.tags
+}
+
+available_aes <- function(x, ...) {
+  assert_class(x, "CategoricalAesMap")
+  aes.all <- sapply(x, )
+}
+update_aes <- function(x, aesthethic, covariate, ...) {
+  # TODO: enable callback/update of aesthetic map
 }
 
 # Helper Functions =============================================================

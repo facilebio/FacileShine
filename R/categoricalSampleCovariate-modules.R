@@ -101,7 +101,12 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   vals <- list(
     covariate = covariate,
     levels = cov.levels,
-    covariates.all = sample.covariate.info)
+    covariates.all = sample.covariate.info,
+    .state = state)
+  class(vals) <- c("CategoricalCovariateSelect",
+                   "CovariateSelect",
+                   "FacileDataAPI",
+                   "Labeled")
   return(vals)
 }
 
@@ -125,6 +130,20 @@ categoricalSampleCovariateSelectUI <- function(id, label = "Covariate",
                 width = width, size = size))
 }
 
+update_selected <- function(x, covariate, ...) {
+  # TODO: enable callback/update of the selected categorical covariate
+}
+
+name.CategoricalCovariateSelect <- function(x, ...) {
+  x[["covariate"]]
+}
+
+label.CategoricalCovariateSelect <- function(x, ...) {
+  warning("TODO: Need to provide labels for categorical covariates")
+  x[["covariate"]]
+}
+
+
 # Covariate Levels Selector ====================================================
 
 #' Use this with categoricalSampleCovariateSelect to enumerate its levels.
@@ -133,7 +152,8 @@ categoricalSampleCovariateSelectUI <- function(id, label = "Covariate",
 #' @param covaraite the `categoricalSampleCovariateSelect` module.
 categoricalSampleCovariateLevels <- function(input, output, session, rfds,
                                              covariate, ...,
-                                             .exclude = NULL, .reactive = TRUE) {
+                                             .exclude = NULL,
+                                             .reactive = TRUE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   state <- reactiveValues(
     values = "__initializing__")

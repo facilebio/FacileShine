@@ -13,6 +13,10 @@
 #' @importFrom shiny column wellPanel
 #' @importFrom plotly renderPlotly
 #' @rdname facileScatterPlot
+#'
+#' @param ndim Defaults to 3. When any two dimensions are provided, a plot will
+#'   be drawn, so provides both 2d and 3d functionality. If set to 2, then only
+#'   2d functionality would be enabled.
 facileScatterPlot <- function(input, output, session, rfds, ...,
                               ndim = 3, x = NULL, y = NULL, z = NULL,
                               event_source = session$ns("selection"),
@@ -20,9 +24,6 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
   assert_class(rfds, "ReactiveFacileDataStore")
   assert_int(ndim, lower = 2L, upper = 3L)
   ns <- session$ns
-
-  state <- reactiveValues(
-    ndim = ndim)
 
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
@@ -123,6 +124,7 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     xaxis = axes$x,
     yaxis = axes$y,
     zaxis = axes$z,
+    aes = aes,
     viz = fscatter)
 
   class(vals) <- c("FacileScatterPlot", "ReactiveFacileViz")
@@ -135,11 +137,8 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
 #' @rdname facileScatterPlot
 facileScatterPlotUI <- function(id, ...) {
   ns <- NS(id)
-
   tagList(
     fluidRow(
-      # column(6, wellPanel(quantitativeAssayDataSelectUI(ns("xaxis")))),
-      # column(6, wellPanel(quantitativeAssayDataSelectUI(ns("yaxis"))))),
       uiOutput(ns("axes"))),
     fluidRow(
       column(
@@ -149,3 +148,6 @@ facileScatterPlotUI <- function(id, ...) {
       column(12, plotlyOutput(ns("scatter")))))
 }
 
+update_aes <- function(x, aesthethic, covariate, ...) {
+  # TODO: enable callback/update of aesthetic map
+}
