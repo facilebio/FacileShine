@@ -22,7 +22,7 @@
 #'   expressions across your app.
 makeReactiveTrigger <- function() {
   rv <- reactiveValues(a = 0L)
-  list(
+  out <- list(
     depend = function() {
       rv$a
       invisible()
@@ -32,4 +32,6 @@ makeReactiveTrigger <- function() {
       rv$a <- isolate(rv$a + 1L)
     }
   )
+  class(out) <- "ReactiveTrigger"
+  out
 }

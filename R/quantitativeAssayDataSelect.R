@@ -57,29 +57,29 @@ quantitativeAssayDataSelect <- function(input, output, session, rfds, ...,
       selected <- .ai$assay
     } else {
       selected <- choices[1L]
-      state$assay_info <- FacileData::assay_info(fds(rfds), selected)
+      state$assay_info <- FacileData::assay_info(rfds, selected)
     }
     updateSelectInput(session, "assay", choices = choices, selected = selected)
   })
 
   observe({
     .ai <- state$assay_info
-    state$features_all <- fds(rfds) %>%
+    state$features_all <- rfds %>%
       assay_feature_info(.ai$assay) %>%
       arrange(name)
     choices <- with(
       # filter(state$features_all, !grepl("^\\d", name)),
       filter(state$features_all, nchar(name) > 0),
       setNames(feature_id, name))
-    updateSelectizeInput(session, "features", choices = choices, server = TRUE,
-                         selected = NULL)
+    updateSelectizeInput(session, "features", choices = choices,
+                         server = TRUE, selected = NULL)
   })
 
   assay_info <- reactive({
     .assay <- req(input$assay)
     .ai <- state$assay_info
     if (.ai$assay != .assay) {
-      state$assay_info <- FacileData::assay_info(fds(rfds), .assay)
+      state$assay_info <- FacileData::assay_info(rfds, .assay)
     }
     state$assay_info
   })

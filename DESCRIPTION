@@ -1,23 +1,19 @@
 Package: FacileShine
 Type: Package
-Title: Shiny modules for FacileData
+Title: Shiny primitives to interact with FacileData and FacileViz objects.
 Version: 0.1.0
 Authors@R: c(
     person("Steve", "Lianoglou", , "lianoglou@dnli.com", c("aut", "cre")),
-    person("Denali Therapeutics", role = c("cph", "fnd"))
-    )
-Description: Provides shiny modules and gadgets for FacileData and 
-    FacileAnalysisResult objects. Defines the "shine" S3 generic to invoke
-    a shiny gadget for various facile objects, which will return a
-    FacileGadgetResult. Calling "vizualize" on FacileGadgetResult object
-    will render the main result from the gadget as an interactive htmlwidget.
+    person("Denali Therapeutics", role = c("cph", "fnd")))
+Description: Provides shiny "primitives" to enable GUI driven interaction over
+    FacileData and FacileViz objects. These are provided in the form of shiny
+    modules and gadgets.
 Depends:
     R (>= 3.5)
 Imports:
     checkmate,
     dplyr,
     FacileData,
-    FacileAnalysis,
     FacileViz,
     broom,
     RColorBrewer,

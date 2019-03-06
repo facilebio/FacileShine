@@ -3,12 +3,27 @@
 \name{facileScatterPlot}
 \alias{facileScatterPlot}
 \alias{facileScatterPlotUI}
-\title{An interactive scatterplot module}
+\title{An interactive scatterplot module (2-3 dimensions).}
 \usage{
-facileScatterPlot(input, output, session, rfds, ..., .reactive = TRUE)
+facileScatterPlot(input, output, session, rfds, ..., ndim = 3,
+  x = NULL, y = NULL, z = NULL,
+  event_source = session$ns("selection"), .reactive = TRUE)
 
 facileScatterPlotUI(id, ...)
 }
+\arguments{
+\item{ndim}{Defaults to 3. When any two dimensions are provided, a plot will
+be drawn, so provides both 2d and 3d functionality. If set to 2, then only
+2d functionality would be enabled.}
+}
 \description{
-An interactive scatterplot module
+This module presents all three dimensions for plotting. If the user only
+specifies two dimensions in a weird way (x and z, only), then z will be
+collapsed to y.
+}
+\details{
+We can make this more user-proof by incrementally activating "the next"
+dimension by ensuring the previous dimension is selected.
+
+A 1d scatter plot might just default to a density plot.
 }

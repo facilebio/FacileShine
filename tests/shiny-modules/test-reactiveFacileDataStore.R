@@ -7,7 +7,8 @@ library(FacileShine)
 manual <- shiny::shinyApp(
   ui = shiny::fluidPage(
     reactiveFacileDataStoreUI("rfds"),
-    facileSampleFilterUI("rfdsFilter")),
+    facileSampleFilterUI("rfdsFilter"),
+    NULL),
 
   server = function(input, output) {
     fds <- FacileData::exampleFacileDataSet()

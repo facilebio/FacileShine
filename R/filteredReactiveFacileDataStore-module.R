@@ -12,7 +12,7 @@ filteredReactiveFacileDataStore <- function(input, output, session, dataset,
   assert_class(dataset, "FacileDataStore")
   rfds <- callModule(reactiveFacileDataStore, "rfds", dataset, user = user, ...)
   rfilter <- callModule(facileSampleFilter, "rfdsFilter", rfds)
-  rfds[["filter"]] <- rfilter
+  rfds[["reactive"]][["filter"]] <- rfilter
 
   class(rfds) <- c("FilteredReactiveFacileDataStore", class(rfds))
   rfds
@@ -25,12 +25,6 @@ filteredReactiveFacileDataStoreUI <- function(id, ...) {
   tagList(
     reactiveFacileDataStoreUI(ns("rfds")),
     facileSampleFilterUI(ns("rfdsFilter")))
-}
-
-#' @export
-#' @rdname filteredReactiveFacileDataStore
-fds.FilteredReactiveFacileDataStore <- function(x, ...) {
-  x[["fds"]]
 }
 
 #' Returns a representaiton of the filters used to specify the active dataset

@@ -60,3 +60,23 @@ label.Labeled <- function(x, ...) {
   out <- x[["label"]]
   if (!is(out, "reactive")) "unlabeled" else out()
 }
+
+# Defined primarily for ReactiveFacileDataStore ================================
+
+#' @rdname reactiveFacileDataStore
+#' @export
+active_assays <- function(x, ...) {
+  UseMethod("active_assays", x)
+}
+
+#' @rdname reactiveFacileDataStore
+#' @export
+active_covariates <- function(x, ...) {
+  UseMethod("active_covariates", x)
+}
+
+#' @noRd
+#' @export
+user <- function(x, ...) {
+  UseMethod("user", x)
+}

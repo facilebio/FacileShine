@@ -26,6 +26,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   assert_class(rfds, "ReactiveFacileDataStore")
   state <- reactiveValues(
     covariate = "__initializing__",
+    summary = .empty_covariate_summary(rfds),
     levels = "__initializing__")
 
   if (!is.null(.exclude) && !.reactive) {
@@ -35,34 +36,23 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
-  sample.covariates <- reactive({
-    covs <- req(isolate.(active_covariates(rfds)))
-    out <- filter(covs, class == "categorical")
-
-    if (!is.null(.exclude)) {
-      ex <- if (is(.exclude, "reactive")) isolate.(.exclude()) else .exclude
-      out <- anti_join(out, ex, by = c("variable", "value"))
-    }
-
-    out
+  active.covariates <- reactive({
+    all.covs <- isolate.(active_covariates(rfds))
+    filter(all.covs, class == "categorical")
   })
 
-  sample.covariate.info <- reactive({
-    .covs <- req(sample.covariates()) %>%
-      group_by(variable) %>%
-      mutate(n_samples = n(), n_levels = length(unique(value))) %>%
-      group_by(variable, value) %>%
-      mutate(n_in_level = n()) %>%
-      ungroup()
-    .covs
+  active.samples <- reactive({
+    isolate.(active_samples(rfds))
   })
 
+  # Updates the covariate selectInput object. This is a bit more complicated
+  # than you might think it needs to be because the active.covariates() my
+  # fire, but we don't want to change the currently selected covariate if it
+  # is available in the update covariates.
   observe({
-    choices <- req(sample.covariate.info()) %>%
-      distinct(variable) %>%
+    choices <- req(active.covariates()) %>%
       pull(variable)
-    # TODO: Check if this is a factor and convert it with assigned level order
-    #       for a "proper" sort.
+
     choices <- sort(choices)
     if (.with_none) {
       choices <- c("---", choices)
@@ -73,6 +63,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     } else {
       selected <- choices[1L]
     }
+
     updateSelectInput(session, "covariate", choices = choices,
                       selected = selected)
   })
@@ -85,13 +76,20 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     state$covariate
   })
 
+  covariate.summary <- reactive({
+    covariate. <- state$covariate
+    if (covariate. %in% c("---", "__initializing__")) {
+      out <- .empty_covariate_summary(rfds)
+    } else {
+      scovs <- fetch_sample_covariates(rfds, active.samples(), covariate.)
+      out <- summary(scovs, expanded = TRUE)
+    }
+    out
+  })
+
   cov.levels <- reactive({
-    cov <- req(covariate())
-    lvls <- req(sample.covariate.info()) %>%
-      filter(variable == cov) %>%
-      pull(value) %>%
-      unique() %>%
-      sort()
+    ci <- req(covariate.summary())
+    lvls <- ci[["level"]]
     if (!setequal(state$levels, lvls)) {
       state$levels <- lvls
     }
@@ -100,8 +98,8 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
   vals <- list(
     covariate = covariate,
+    summary = covariate.summary,
     levels = cov.levels,
-    covariates.all = sample.covariate.info,
     .state = state)
   class(vals) <- c("CategoricalCovariateSelect",
                    "CovariateSelect",
@@ -186,3 +184,17 @@ categoricalSampleCovariateLevelsUI <- function(id, ..., choices = NULL,
                    options = options, width = width))
 }
 
+# Internal Helper Functions ====================================================
+.empty_covariate_summary <- function(.fds = NULL) {
+  out <- tibble(
+    variable = character(),
+    class = character(),
+    nsamples = integer(),
+    level = character(),
+    ninlevel = integer())
+  if (!is.null(.fds)) {
+    assert_facile_data_store(.fds)
+    out <- as_facile_frame(out, .fds, .valid_sample_check = FALSE)
+  }
+  out
+}

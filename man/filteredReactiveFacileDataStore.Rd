@@ -3,15 +3,12 @@
 \name{filteredReactiveFacileDataStore}
 \alias{filteredReactiveFacileDataStore}
 \alias{filteredReactiveFacileDataStoreUI}
-\alias{fds.FilteredReactiveFacileDataStore}
 \title{Composition of modules to provide a filtering schema over a FaclieDataStore.}
 \usage{
 filteredReactiveFacileDataStore(input, output, session, dataset,
   active_samples = NULL, user = Sys.getenv("USER"), ...)
 
 filteredReactiveFacileDataStoreUI(id, ...)
-
-\method{fds}{FilteredReactiveFacileDataStore}(x, ...)
 }
 \description{
 We compose the \code{\link[=reactiveFacileDataStore]{reactiveFacileDataStore()}} and \code{\link[=facileSampleFilter]{facileSampleFilter()}} modules

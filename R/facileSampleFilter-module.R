@@ -14,7 +14,7 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
   assert_class(rfds, "ReactiveFacileDataStore")
 
   covariate <- callModule(categoricalSampleCovariateSelect, "covariate",
-                          rfds, .with_none = TRUE, .reactive = FALSE)
+                          rfds, .with_none = FALSE, .reactive = FALSE)
   values <- callModule(categoricalSampleCovariateLevels, "values",
                        rfds, covariate, .reactive = FALSE)
 
@@ -27,21 +27,22 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
   })
 
   observe({
-    all.covs <- these.covariates()
     cov.name <- covariate$covariate()
     cov.vals <- values$values()
     suniverse <- these.samples()
+
     # Is the user trying to restrict the sample space
     restrict.samples <- length(cov.vals) > 0L &&
       !cov.vals[1L] %in% c("---", "__initializing__")
+
     if (restrict.samples) {
-      selected.vars <- all.covs %>%
-        filter(variable == !!cov.name, value %in% !!cov.vals)
-      selected.samples <- suniverse %>%
-        semi_join(selected.vars, by = c("dataset", "sample_id"))
+      selected.samples <- rfds %>%
+        fetch_sample_covariates(suniverse, cov.name) %>%
+        filter(value %in% !!cov.vals)
     } else {
       selected.samples <- suniverse
     }
+
     update_reactive_samples(rfds, selected.samples)
   })
 
