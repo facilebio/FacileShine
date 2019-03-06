@@ -161,5 +161,5 @@ quantitativeAssayDataSelectUI <- function(id, multiple = TRUE, ...) {
     fluidRow(
       column(12,
              selectInput(ns("fset"), label = NULL,
-                         choices = "Feature(Gene)Sets for assay (todo)"))))
+                         choices = "GeneSetDb for assay"))))
 }

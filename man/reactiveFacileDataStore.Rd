@@ -29,36 +29,94 @@ update_reactive_samples(rfds, active_samples, criterion = NULL, ...)
 update_reactive_covariates(rfds, covariates, namespace, ...)
 }
 \arguments{
-\item{dataset}{A (list of) FacileDataStore(s)}
+\item{dataset}{The FacileDataStore to make reactive}
 
-\item{user}{a key to use for custom covariates}
+\item{active_samples}{A predefined set of samples to subset the dataset to.}
+
+\item{user}{the custom_key to use for ephemeral sample and feature
+annotations that are saved back to the \code{dataset}.}
 }
 \description{
-In order to fully work, facile shiny modules simply require a FacileDataStore
-and a sample descriptor that defines the "active" sampels under scrutiny.
+This module returns a \code{ReactiveFacileDataStore} object, which is a functional
+subclass of a \code{FacileDataStore}. This object is meant to be used in a
+shiny / reactive context. Importantly, it supports ephemeral sample and
+feature annotations which are meant to enable users to add custom sample
+and feature annotations that are uncovered during the course of an analysis.
 }
 \details{
-This module will return a list (\code{rfds}) that includes:
-\enumerate{
-\item A non-reactive \code{FacileDataStore} (\code{rfds$fds})
-\item A \code{$user} key for use when fetching "personal" covariates over samples,
-using the \code{custom_key} parameter.
-\item A reactive \code{active_samples} tibble (\code{rfds$active_samples}). This will
-correspond to the same tibble returned from
-\code{FacileData::active_samples(rfds$fds)}.
-\item A reactive \code{active_covariates()} (long) tibble. This is a tibble
-(or lazy query) that corresponds to a (perhaps superset) of covariates
-that are defined over the \code{$active_samples()}.
-\item A list of \code{$trigger$something()} functions that external modules can tickle to
-update the state of the dataset. The \code{rfds$trigger$covariates()} function
-may be pulled when a user provides custom covariates over the
-active_samples via interacting with a plot.
+\strong{Note:} The behavior of this object is undefined (untested) when used in a
+non-reactive context.
+}
+\section{Custom Sample Annotations}{
+
+Analysts may uncover interesting subsets of samples (outliers, subtypes)
+within a dataset during the course of an exploratory analysis. This object
+supports downstream modules to add sample annoations via the use of the
+\code{\link[=update_reactive_covaraites]{update_reactive_covaraites()}} function.
+
+These annotations are stored in an eav table that looks a lot like the
+eav_covariates table returned from \code{\link[FacileData:fetch_sample_covaraites]{FacileData::fetch_sample_covaraites()}}.
+The columns are:
+\itemize{
+\item \code{dataset}; \code{sample_id}: the primary key of the sample
+\item \code{variable}: the name of the variable -- users create this during brushin
+\item \code{value}: the value of the variable
+\item \code{class}: categorical or real (just categorical is supported for now)
+\item \code{source}: the name (namespace) of the module that is adding the covariate
+}
+}
+
+\section{Custom Feature Annotations}{
+
+This will largely look like a GeneSetDb, with the following columns:
+\itemize{
+\item \code{collection}: the feature-annotation-module namespace
+\item \code{name}: is the name of the featureset (provided by the uesr)
+\item \code{feature_id}: the feature_id of the thing
+\item \code{feature_type}: the "feature space" these features (entrez, ensgid, etc.),
+these values need to be one of the elements returned from calling
+\code{\link[FacileData:feature_types]{FacileData::feature_types()}} on the internal \code{datastore}.
+}
+}
+
+\section{An augmented FacileDataStore}{
+
+The \code{ReactiveFacileDataStore} is a FacileDataStore with the following list
+of values stored in its \code{"reactive"} slot (or list-store), depending on
+whether the underyling FacileDataStore is implemented as an S3 or S4 object.
+
+A list (named \code{"reactive"}) is added to the \code{FacileDataStore}, which holds
+the reactive elements listed below:
+\itemize{
+\item \code{user}: non-reactive, the user id of the person using this datastore. This
+is used in conjunction with the \code{custom_key} parameter in the faciledata
+API to retrieve user-specific annotations.
+\item \code{annotations$samples}: The tibble that stores ephemeral sample annotations
+added from arbitrary modules.
+\item \code{annotations$features}: A tibble to store ephemeral feature annotations
+(aka genesets)
+\item \code{trigger$samples}; \code{trigger$covariates}: These are reactive triggers
+(see \code{\link[=makeReactiveTrigger]{makeReactiveTrigger()}}), that can be tickled in order to update
+the current samples (and their annotations) under analysis.
+\item \code{active_samples}: A tibble of the currently active samples in the
+datastore. This is analagous to the \code{\link[FacileData:active_samples]{FacileData::active_samples()}}
+tibble, but is reactive so consumers can listen to changes in state.
+\item \code{active_covaraites}: A (reactive) summary table of the current covariates
+defined on the samples. This looks like the output from the
+\code{FacileData::summary.eav_covariates} function, and enables modules to
+respond to new covariates defined during analyses that have not been saved
+yet.
+\item \code{active_assays}: A reactive version of the output from the
+\code{\link[FacileData:assay_info_over_samples]{FacileData::assay_info_over_samples()}} function. This enables modules
+to query what assays are "in play" for analysis over the current samples.
 }
 
 Active samples and active covariates can be manipulated externally, ie. from
 a user interacting with another module, using the \code{update_reactive_samples()}
-and \code{update_reactive_covariates()} functions.
+and \code{update_reactive_covariates()} defined over the \code{ReactiveFacileDataStore}
+object.
 }
+
 \section{Triggers}{
 
 We use reactive triggers to tickle the state of the ReactiveFacileDataStore
@@ -83,10 +141,22 @@ interactively by the user via the use of the \code{facileSampleFilter} module(s)
 \section{Reactive Covariates}{
 
 
-Updates the temporal covariates during an analysis.
+Updates the ephemeral covariates during an analysis.
 
 In addition to the sample covariates in the FacileDataStore, covariates
 can be added to the samples by different modules via user interaction and
 brushing during an analysis session.
 }
 
+\examples{
+fds <- FacileData::exampleFacileDataSet()
+covs <- samples(fds) \%>\%
+  collect() \%>\%
+  sample_n(20) \%>\%
+  mutate(variable = "test_anno",
+         value = sample(c("a", "b"), 20, replace = TRUE),
+         class = "categorical",
+         type = "ephemeral",
+         date_entered = as.integer(Sys.time()))
+ufds <- update_reactive_covariates(fds, covs, "some_module")
+}

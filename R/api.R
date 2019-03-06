@@ -75,6 +75,12 @@ active_covariates <- function(x, ...) {
   UseMethod("active_covariates", x)
 }
 
+#' @rdname reactiveFacileDataStore
+#' @export
+active_samples <- function(x, ...) {
+  UseMethod("active_samples", x)
+}
+
 #' @noRd
 #' @export
 user <- function(x, ...) {

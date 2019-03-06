@@ -12,7 +12,11 @@ filteredReactiveFacileDataStore <- function(input, output, session, dataset,
   assert_class(dataset, "FacileDataStore")
   rfds <- callModule(reactiveFacileDataStore, "rfds", dataset, user = user, ...)
   rfilter <- callModule(facileSampleFilter, "rfdsFilter", rfds)
-  rfds[["reactive"]][["filter"]] <- rfilter
+
+  if (isS4(rfds)) {
+    stop("adding sample filters not supported for S4 ReactiveFacileDataStores")
+  }
+  rfds[[".reactive."]][["filter"]] <- rfilter
 
   class(rfds) <- c("FilteredReactiveFacileDataStore", class(rfds))
   rfds

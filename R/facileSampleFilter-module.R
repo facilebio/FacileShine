@@ -42,7 +42,7 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
     } else {
       selected.samples <- suniverse
     }
-
+# browser()
     update_reactive_samples(rfds, selected.samples)
   })
 
