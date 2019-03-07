@@ -2,10 +2,13 @@
 % Please edit documentation in R/quantitativeTraitSelect-module.R
 \name{quantitativeTraitSelect}
 \alias{quantitativeTraitSelect}
+\alias{quantitativeTraitSelectUI}
 \title{Provides a widget to select quantitative traits from samples}
 \usage{
 quantitativeTraitSelect(input, output, session, rfds, ...,
   .exclude = NULL, .reactive = TRUE)
+
+quantitativeTraitSelectUI(id, ...)
 }
 \description{
 This module enables the user to pull quantitative traits of all flavors
@@ -18,7 +21,7 @@ the values for the \code{FacileDataStore}.
 We assume that there are two sources of quanitative traits:
 \enumerate{
 \item From assays (usually, dense matrix types of things (rnaseq)). These data
-are accessed within this module using the \code{\link[=quantitativeAssayDataSelect]{quantitativeAssayDataSelect()}}
+are accessed within this module using the \code{\link[=assayFeatureSelect]{assayFeatureSelect()}}
 module; or
 \item A quantitative sample covariate (RIN score, for instance). These data are
 accessed within using the \code{\link[=quantitativeSampleCovariateSelect]{quantitativeSampleCovariateSelect()}} module.

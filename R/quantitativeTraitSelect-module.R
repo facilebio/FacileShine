@@ -9,7 +9,7 @@
 #' We assume that there are two sources of quanitative traits:
 #'
 #' 1. From assays (usually, dense matrix types of things (rnaseq)). These data
-#'    are accessed within this module using the [quantitativeAssayDataSelect()]
+#'    are accessed within this module using the [assayFeatureSelect()]
 #'    module; or
 #'
 #' 2. A quantitative sample covariate (RIN score, for instance). These data are
@@ -30,7 +30,7 @@ quantitativeTraitSelect <- function(input, output, session, rfds, ...,
   state <- reactiveValues(
     # This will be either "covariate", or "assay", depending on whether the user
     # is selecting quantitative data from the
-    # `quantitativeSampleCovariateSelect` or the `quantitativeAssayDataSelect`
+    # `quantitativeSampleCovariateSelect` or the `assayFeatureSelect`
     # modules, respectively.
     source = "__initializing__",
 
@@ -39,7 +39,7 @@ quantitativeTraitSelect <- function(input, output, session, rfds, ...,
     label = "__initializing__")
 
 
-  qassay <- callModule(quantitativeAssayDataSelect, "qassay", rfds, ...,
+  qassay <- callModule(assayFeatureSelect, "qassay", rfds, ...,
                        .exclude = .exclude, .reactive = .reactive)
   qcovariate <- callModule(quantitativeSampleCovariateSelect, "qassay", rfds,
                            ..., .exclude = .exclude, .reactive = .reactive)
@@ -52,11 +52,14 @@ quantitativeTraitSelect <- function(input, output, session, rfds, ...,
   vals <- list(
     source = source,
     qassay = qassay,
-    qcovariate = qcovariate)
+    qcovariate = qcovariate,
+    .ns = session$ns)
   class(vals) <- c("QuantitativeTraitSelect", "Labeled")
   return(vals)
 }
 
+#' @export
+#' @rdname quantitativeTraitSelect
 quantitativeTraitSelectUI <- function(id, ...) {
   ns <- NS(id)
 
@@ -68,7 +71,7 @@ quantitativeTraitSelectUI <- function(id, ...) {
     conditionalPanel(
       condition = "input.type == 'assay'",
       fluidRow(
-        column(12, quantitativeAssayDataSelectUI(ns("qassay"))))),
+        column(12, assayFeatureSelectUI(ns("qassay"))))),
     conditionalPanel(
       condition = "input.type == 'covariate'",
       fluidRow(

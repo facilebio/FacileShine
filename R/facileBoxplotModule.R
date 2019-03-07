@@ -1,3 +1,6 @@
+#' A shiny fboxplot module
+#'
+#' Should this go into FacileViz?
 #' @export
 #' @rdname facileBoxplot
 facileBoxplot <- function(input, output, session, rfds, ...) {

@@ -16,8 +16,9 @@ filteredReactiveFacileDataStore <- function(input, output, session, dataset,
   if (isS4(rfds)) {
     stop("adding sample filters not supported for S4 ReactiveFacileDataStores")
   }
-  rfds[[".reactive."]][["filter"]] <- rfilter
 
+  rfds[[".reactive."]][["filter"]] <- rfilter
+  rfds[[".reactive."]][[".ns"]] <- session$ns
   class(rfds) <- c("FilteredReactiveFacileDataStore", class(rfds))
   rfds
 }

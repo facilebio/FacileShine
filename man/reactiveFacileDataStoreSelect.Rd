@@ -2,9 +2,12 @@
 % Please edit documentation in R/reactiveFacileDatastoreSelect-module.R
 \name{reactiveFacileDataStoreSelect}
 \alias{reactiveFacileDataStoreSelect}
+\alias{reactiveFacileDataStoreSelectUI}
 \title{Provides a selection widget to pick from a collection of FacileDataStores}
 \usage{
 reactiveFacileDataStoreSelect(input, output, session, fdslist, ...)
+
+reactiveFacileDataStoreSelectUI(id, ...)
 }
 \arguments{
 \item{fdslist}{a named list of FacileDataStore objects}

@@ -3,6 +3,8 @@
 #' TODO: Final selection should be upload(?)
 #'
 #' @param fdslist a named list of FacileDataStore objects
+#' @export
+#' @rdname reactiveFacileDataStoreSelect
 reactiveFacileDataStoreSelect <- function(input, output, session,
                                           fdslist, ...) {
   ns <- session$ns
@@ -17,6 +19,8 @@ reactiveFacileDataStoreSelect <- function(input, output, session,
 
 }
 
+#' @export
+#' @rdname reactiveFacileDataStoreSelect
 reactiveFacileDataStoreSelectUI <- function(id, ...) {
   ns <- NS(id)
   tagList(

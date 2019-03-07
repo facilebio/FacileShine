@@ -1,10 +1,10 @@
 # library(FacileShine)
 # library(dplyr)
 # library(plotly)
-devtools::load_all(".")
+
 library(FacileData)
-library(FacileViz)
 library(shiny)
+devtools::load_all(".")
 
 shiny::shinyApp(
   ui = shiny::fluidPage(

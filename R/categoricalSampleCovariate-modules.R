@@ -7,10 +7,14 @@
 #' Why am I using all of these seriously tortured names?
 #'
 #' @export
-#' @importFrom shiny isolate reactive observe reactiveValues
-#'
+#' @importFrom shiny
+#'   isolate
+#'   observe
+#'   reactive
+#'   reactiveValues
+#'   req
+#'   updateSelectInput
 #' @rdname categoricalSampleCovariateSelect
-#'
 #' @param rfds A `ReactiveFacileDataStore`
 #' @param .exclude a covariate tibble that incluees covariate,value pairs that
 #'   should not be used in this covariate selector. This can be a reactive
@@ -58,10 +62,11 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
       choices <- c("---", choices)
     }
 
-    if (state$covariate %in% choices) {
-      selected <- state$covariate
+    overlap <- intersect(state$covariate, choices)
+    if (length(overlap)) {
+      selected <- overlap
     } else {
-      selected <- choices[1L]
+      selected <- NULL
     }
 
     updateSelectInput(session, "covariate", choices = choices,
@@ -69,8 +74,9 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   })
 
   covariate <- reactive({
-    cov <- req(input$covariate)
-    if (cov != state$covariate) {
+    cov <- input$covariate
+    if (unselected(cov)) cov <- ""
+    if (!setequal(cov, state$covariate)) {
       state$covariate <- cov
     }
     state$covariate
@@ -78,7 +84,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
   covariate.summary <- reactive({
     covariate. <- state$covariate
-    if (covariate. %in% c("---", "__initializing__")) {
+    if (covariate. %in% c("---", "__initializing__", "")) {
       out <- .empty_covariate_summary(rfds)
     } else {
       scovs <- fetch_sample_covariates(rfds, active.samples(), covariate.)
@@ -88,7 +94,8 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   })
 
   cov.levels <- reactive({
-    ci <- req(covariate.summary())
+    # ci <- req(covariate.summary())
+    ci <- covariate.summary()
     lvls <- ci[["level"]]
     if (!setequal(state$levels, lvls)) {
       state$levels <- lvls
@@ -100,7 +107,8 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     covariate = covariate,
     summary = covariate.summary,
     levels = cov.levels,
-    .state = state)
+    .state = state,
+    .ns = session$ns)
   class(vals) <- c("CategoricalCovariateSelect",
                    "CovariateSelect",
                    "FacileDataAPI",
@@ -109,6 +117,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 }
 
 #' @noRd
+#' @export
 #' @rdname categoricalSampleCovariateSelect
 #' @importFrom shiny NS selectizeInput
 categoricalSampleCovariateSelectUI <- function(id, label = "Covariate",
@@ -132,13 +141,17 @@ update_selected <- function(x, covariate, ...) {
   # TODO: enable callback/update of the selected categorical covariate
 }
 
+#' @noRd
+#' @export
 name.CategoricalCovariateSelect <- function(x, ...) {
-  x[["covariate"]]
+  x[["covariate"]]()
 }
 
+#' @noRd
+#' @export
 label.CategoricalCovariateSelect <- function(x, ...) {
   warning("TODO: Need to provide labels for categorical covariates")
-  x[["covariate"]]
+  x[["covariate"]]()
 }
 
 
@@ -147,6 +160,7 @@ label.CategoricalCovariateSelect <- function(x, ...) {
 #' Use this with categoricalSampleCovariateSelect to enumerate its levels.
 #'
 #' @export
+#' @rdname categoricalSampleCovariateLevels
 #' @param covaraite the `categoricalSampleCovariateSelect` module.
 categoricalSampleCovariateLevels <- function(input, output, session, rfds,
                                              covariate, ...,
@@ -175,6 +189,9 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
   return(vals)
 }
 
+#' @noRd
+#' @export
+#' @rdname categoricalSampleCovariateLevels
 categoricalSampleCovariateLevelsUI <- function(id, ..., choices = NULL,
                                                options = NULL, width = NULL) {
   ns <- NS(id)
@@ -185,6 +202,8 @@ categoricalSampleCovariateLevelsUI <- function(id, ..., choices = NULL,
 }
 
 # Internal Helper Functions ====================================================
+
+#' @noRd
 .empty_covariate_summary <- function(.fds = NULL) {
   out <- tibble(
     variable = character(),

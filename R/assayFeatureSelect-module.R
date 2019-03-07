@@ -1,84 +1,127 @@
-
-
-#' A select input for the user to pick features from an assay.
+#' Retrieves features from a given assay type.
 #'
-#' If the user passes in the name of the assay as a reactive in the `assay`
-#' parameter (for the module, or as the character string in the UI function),
-#' then this module doesn't provide an "assay" dropdown, and only provides
-#' the features for that assay.
+#' @export
+#' @rdname assayFeatureSelect
 #'
-#' @param .exclude tibble of feauture_type,feature_id pairs that should not be
-#'   included in this selector
-assayFeatureSelect <- function(input, output, session, rfds, assay = NULL,
-                               ..., .exclude = NULL, .reactive = TRUE) {
-  state <- reactiveValues(
-    assay = "__initializing__",
-    feature_type = "__initializing__",
-    features = "__initializing__")
-
+#' @return a list with the following elements:
+#'   * `assay_info`: one row assay,assay_type,feature_type tibble
+#'   * `features`: n-row feature_info_tbl() like tbl enumerating the assay
+#'     features selected in this module
+#'   * `features_all`: a tibble of all of the fdatures of this `feature_type`
+#'     (we can possible axe this, but ...)
+#'  * `label`: a "human readable" summary of the features selected within this
+#'     module
+#'  * `name`: a "computerfriendly" version of `label`
+assayFeatureSelect <- function(input, output, session, rfds, ...,
+                               .exclude = NULL, .reactive = TRUE) {
+  assert_class(rfds, "ReactiveFacileDataStore")
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
-  # If external.assay == TRUE, then an external caller is dictating the assay to
-  # select features from
-  external.assay <- !is.null(assay)
-  if (external.assay) {
-    with.assay.select <- FALSE
-    stopifnot(is(assay, "reactive"))
-  } else {
-    with.assay.select <- TRUE
+  state <- reactiveValues(
+    features = .no_features(),
+    # "labeled" API
+    name = "__initializing__",
+    label = "__initializing__")
+
+
+  if (!is.null(.exclude)) {
+    # TODO: Are we excluding assays altogether, features from assays, or both?
   }
 
-  assays <- reactive({
-    isolate.(active_assays(rfds))
-  })
+  assay <- callModule(assaySelect, "assay", rfds, .reactive = .reactive)
 
-  # Update the UI assay select box with the assays available from the current
-  # state of the `rfds`.
+  # Update the features available for selection based on the value of the
+  # currently selected assay
   observe({
-    .assays <- assays()
-    selected <- state$assay
-    if (!selected %in% .assays$assay) {
-      selected <- intersect(default_assay(rfds[["fds"]]), assays$assay)
-      if (length(selected) == 0L) selected <- .assays$assay[1L]
-      state$assay <- selected
-    }
-    updateSelectInput(session, "assay", .assays$assay, selected = selected)
+    features. <- req(assay_feature_info(assay))
+    choices <- with(
+      filter(features., nchar(name) > 0),
+      setNames(feature_id, name))
+    updateSelectizeInput(session, "features", choices = choices,
+                         server = TRUE, selected = NULL)
   })
 
-  all.features <- reactive({
-    .assay <- state$assay
-    if (.assay == "__initializing__") return(NULL)
-    out <- feature_info_tbl(rfds[["fds"]], assay_name = .assay)
-    if (!is.null(.exclude)) {
-      ex <- if (is(.exclude, "reactive")) isolate.(.exclude()) else .exclude
-      out <- anti_join(out, ex, by = c("feature_type", "feature_id"))
-    }
-    out
-  })
+  features <- reactive({
+    fid <- input$features
+    is.empty <- unselected(fid)
+    if (is.empty) fid <- character()
 
-  assays <- NULL
-  if (external.assay) {
-    observe({
-      .assay <- req(assay())
-      if (.assay != state$assay) {
-        state$assay <- .assay
+    current <- isolate(state$features)
+    if (!setequal(fid, current$feature_id)) {
+      if (is.empty) {
+        state$features <- .no_features()
+      } else {
+        f.all <- isolate(assay_feature_info(assay))
+        state$features <- filter(f.all, feature_id %in% fid)
       }
-    })
-  } else {
-    # This module presents the user with an assay select.
+    }
 
-    assays <- reactive()
-  }
+    state$features
+  })
 
+  vals <- list(
+    features = features,
+    assay_info = assay$result,
+    .state = state,
+    .ns = session$ns)
+  class(vals) <- c("AssayFeatureSelect", "FacileDataAPI", "Labeled")
+
+  vals
 }
 
-assayFeatureSelectUI <- function(id, assay = NULL, multiple = TRUE, ...,
-                                 options = NULL, width = NULL) {
+#' @export
+#' @rdname assayFeatureSelect
+#' @param multiple,... passed into the `"features"` `selectizeInput`
+assayFeatureSelectUI <- function(id, multiple = TRUE, ...) {
   ns <- NS(id)
-  with.assay.select <- !testString(assay)
 
   tagList(
-    if (with.assay.select) selectInput(ns("assay"), choices = NULL) else NULL,
-    selectizeInput(ns("features"), multiple = multiple, ...,
-                   options = options, width = width))
+    fluidRow(
+      column(9, selectizeInput(ns("features"), label = NULL, choices = NULL,
+                               multiple = multiple, ...)),
+      # column(3, selectInput(ns("assay"), label = NULL, choices = NULL))),
+      column(3, assaySelectUI(ns("assay"), label = NULL, choices = NULL))),
+    fluidRow(
+      column(12,
+             selectInput(ns("fset"), label = NULL,
+                         choices = "GeneSetDb for assay"))))
+}
+
+# Labeled API ==================================================================
+
+#' @noRd
+#' @export
+name.AssayFeatureSelect <- function(x, ...) {
+  assert_reacting()
+  xf <- x[["features"]]()
+  out <- if (nrow(xf) == 0) {
+    "nothing"
+  } else if (nrow(xf) == 1) {
+    xf$name
+  } else {
+    "score"
+  }
+  make.names(x[[".ns"]](out))
+}
+
+#' @noRd
+#' @export
+label.AssayFeatureSelect <- function(x, ...) {
+  assert_reacting()
+  xf <- x[["features"]]()
+  if (nrow(xf) == 0) {
+    "nothing"
+  } else if (nrow(xf) == 1) {
+    xf$name
+  } else {
+    paste(xf$name, collapse = ",")
+  }
+}
+
+# Random =======================================================================
+.no_features <- function() {
+  tibble(
+    assay = character(),
+    feature_id = character(),
+    name = character())
 }

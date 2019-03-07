@@ -1,18 +1,5 @@
-#' Workhorse function to invoke shiny gadgets for FacileData
+#' Retrieves selection information from a module
 #'
-#' Provides `selection`, and other getter functions that will enable
-#' reproducibility of the results explored and "finalized" within the shiny
-#' gadget to be recovered within the R workspace.
-#'
-#' @export
-#' @param x A "facile" object, like a `FacileAnalysisResult`.
-#' @return An `FacileGadgetResult` object that encapsulates the "end product" of
-#'   the exploration and interaction over `x` from within the gadget.
-shine <- function(x, ...) {
-  UseMethod("shine", x)
-}
-
-#' Retrieves selection information from a "shined"
 #' @export
 selection <- function(x, ...) {
   UseMethod("selection", x)
@@ -29,32 +16,65 @@ update_selected <- function(x, ...) {
   UseMethod("update_selected", x)
 }
 
+#' Resets the state of a module
+#'
+#' I'm imagining we will want this when some catastrophic error gets thrown
+#' during interaction with a shiny module, and we want to reset its original
+#' state of zen.
+#'
+#' One time this might happen is within an interactive analysis where the
+#' [active_samples()] change from under a module's feet, and some samples
+#' or covariates that once existed are now gone, then: boom.
+#'
+#' TODO: Ubiquitously implement `reset()` functionality.
+#'
+#' @export
+#' @param x The facile module to reset
+reset <- function(x, ...) {
+  UseMethod("reset", x)
+}
+
 # Labeled ======================================================================
 
-# Labeled acts as something of an interface to reactive modules.
-#
-# Modules that implement this interface must return `label` and `name` reactive
-# elemengs within them.
-#
-# We use these when something (like a `quantitativeAssayDataSelect`) needs
-# a "computer friendly" name for itself (`name()`), or a more human readable
-# name (`label()`)
+#' Labeled acts like interface to reactive modules.
+#'
+#' Modules that implement this interface must return `label` and `name` reactive
+#' elements within them.
+#'
+#' We use these when something (like a `assayFeatureSelect`) needs
+#' a "computer friendly" name for itself (`name()`), or a more human readable
+#' name (`label()`)
+#'
+#' @export
+#' @rdname labeled
 name <- function(x, ...) {
   UseMethod("name", x)
 }
 
+#' @noRd
+#' @export
+#' @rdname labeled
 name.Labeled <- function(x, ...) {
   assert_reacting()
   out <- x[["name"]]
   if (!is(out, "reactive")) "unnamed" else out()
 }
 
+#' @noRd
+#' @export
+#' @rdname labeled
 label <- function(x, ...) {
   UseMethod("label")
 }
 
+#' @noRd
+#' @export
+#' @rdname labeled
 label.NULL <- function(x, ...) NULL
 
+#' @noRd
+#' @export
+#' @rdname labeled
 label.Labeled <- function(x, ...) {
   assert_reacting()
   out <- x[["label"]]

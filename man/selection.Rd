@@ -2,10 +2,10 @@
 % Please edit documentation in R/api.R
 \name{selection}
 \alias{selection}
-\title{Retrieves selection information from a "shined"}
+\title{Retrieves selection information from a module}
 \usage{
 selection(x, ...)
 }
 \description{
-Retrieves selection information from a "shined"
+Retrieves selection information from a module
 }

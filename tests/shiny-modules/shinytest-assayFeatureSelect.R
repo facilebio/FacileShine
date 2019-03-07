@@ -1,18 +1,19 @@
 # library(FacileShine)
-devtools::load_all(".")
 library(FacileData)
 library(FacileViz)
 library(dplyr)
 library(plotly)
 library(shiny)
 
+devtools::load_all(".")
+
 shiny::shinyApp(
   ui = shiny::fluidPage(
     filteredReactiveFacileDataStoreUI("rfds"),
     shiny::tags$hr(),
     fluidRow(
-      column(6, shiny::wellPanel(quantitativeAssayDataSelectUI("xaxis"))),
-      column(6, shiny::wellPanel(quantitativeAssayDataSelectUI("yaxis")))),
+      column(6, shiny::wellPanel(assayFeatureSelectUI("xaxis"))),
+      column(6, shiny::wellPanel(assayFeatureSelectUI("yaxis")))),
     shiny::tags$hr(),
     plotlyOutput("scatter")),
 
@@ -21,12 +22,14 @@ shiny::shinyApp(
     user <- Sys.getenv("USER")
     rfds <- callModule(filteredReactiveFacileDataStore, "rfds", fds,
                        user = user)
-    xaxis <- callModule(quantitativeAssayDataSelect, "xaxis", rfds)
-    yaxis <- callModule(quantitativeAssayDataSelect, "yaxis", rfds)
+    xaxis <- callModule(assayFeatureSelect, "xaxis", rfds)
+    yaxis <- callModule(assayFeatureSelect, "yaxis", rfds)
 
     rdat <- reactive({
-      xf <- req(xaxis$features())
-      yf <- req(yaxis$features())
+      xf <- xaxis$features()
+      yf <- yaxis$features()
+      req(nrow(xf) > 0, nrow(yf) > 0)
+
       xs <- active_samples(rfds)
 
       out <- xs %>%
@@ -40,7 +43,7 @@ shiny::shinyApp(
     fscatter <- reactive({
       dat <- req(rdat())
       axes <- c(name(xaxis), name(yaxis))
-      fscatterplot(dat, axes)
+      fscatterplot(dat, axes, xlabel = label(xaxis), ylabel = label(yaxis))
     })
 
     output$scatter <- renderPlotly({

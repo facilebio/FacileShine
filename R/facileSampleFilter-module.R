@@ -42,13 +42,16 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
     } else {
       selected.samples <- suniverse
     }
-# browser()
+
     update_reactive_samples(rfds, selected.samples)
   })
 
   vals <- list(
     covariate = reactive(input$covariate),
-    values = reactive(input$values))
+    values = reactive(input$values),
+    .ns = session$ns)
+  class(vals) <- "FacileSampleFilter"
+  vals
 }
 
 #' @export

@@ -97,7 +97,7 @@ reactiveFacileDataStore <- function(input, output, session, dataset,
   })
 
   active.assays <- reactive({
-    assay_info_over_samples(dataset, active.samples())
+    collect(assay_info_over_samples(dataset, active.samples()), n = Inf)
   })
 
   active.covariates <- reactive({
@@ -121,7 +121,8 @@ reactiveFacileDataStore <- function(input, output, session, dataset,
       samples = makeReactiveTrigger(),
       covariates = makeReactiveTrigger()),
     .restrict_samples = restrict_samples,
-    .state = state)
+    .state = state,
+    .ns = session$ns)
 
   # Debug Outputs ==============================================================
   output$sample_count <- shiny::renderText({

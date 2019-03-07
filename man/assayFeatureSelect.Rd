@@ -2,18 +2,30 @@
 % Please edit documentation in R/assayFeatureSelect-module.R
 \name{assayFeatureSelect}
 \alias{assayFeatureSelect}
-\title{A select input for the user to pick features from an assay.}
+\alias{assayFeatureSelectUI}
+\title{Retrieves features from a given assay type.}
 \usage{
-assayFeatureSelect(input, output, session, rfds, assay = NULL, ...,
-  .exclude = NULL, .reactive = TRUE)
+assayFeatureSelect(input, output, session, rfds, ..., .exclude = NULL,
+  .reactive = TRUE)
+
+assayFeatureSelectUI(id, multiple = TRUE, ...)
 }
 \arguments{
-\item{.exclude}{tibble of feauture_type,feature_id pairs that should not be
-included in this selector}
+\item{multiple, ...}{passed into the \code{"features"} \code{selectizeInput}}
+}
+\value{
+a list with the following elements:
+\itemize{
+\item \code{assay_info}: one row assay,assay_type,feature_type tibble
+\item \code{features}: n-row feature_info_tbl() like tbl enumerating the assay
+features selected in this module
+\item \code{features_all}: a tibble of all of the fdatures of this \code{feature_type}
+(we can possible axe this, but ...)
+\item \code{label}: a "human readable" summary of the features selected within this
+module
+\item \code{name}: a "computerfriendly" version of \code{label}
+}
 }
 \description{
-If the user passes in the name of the assay as a reactive in the \code{assay}
-parameter (for the module, or as the character string in the UI function),
-then this module doesn't provide an "assay" dropdown, and only provides
-the features for that assay.
+Retrieves features from a given assay type.
 }

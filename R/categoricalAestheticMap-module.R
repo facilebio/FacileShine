@@ -19,7 +19,7 @@ categoricalAestheticMap <- function(input, output, session, rfds,
 
   covariates <- reactive({
     out <- lapply(modules, function(mod) mod$covariate())
-    out[out != "---"]
+    out[!out %in% c("---", "")]
   })
 
   vals <- list(
@@ -27,7 +27,8 @@ categoricalAestheticMap <- function(input, output, session, rfds,
     shape = modules$shape,
     group = modules$group,
     facet = modules$facet,
-    covariates = covariates)
+    covariates = covariates,
+    .ns = session$ns)
   class(vals) <- c("CategoricalAesMap")
   return(vals)
 }

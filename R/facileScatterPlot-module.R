@@ -36,12 +36,12 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
   output$axes <- renderUI({
     ncol <- floor(12 / ndim)
     out <- sapply(axnames, function(axis) {
-      column(ncol, wellPanel(quantitativeAssayDataSelectUI(ns(axis))))
+      column(ncol, wellPanel(assayFeatureSelectUI(ns(axis))))
     }, simplify = FALSE)
   })
 
   axes <- sapply(axnames, function(axis) {
-    callModule(quantitativeAssayDataSelect, axis, rfds)
+    callModule(assayFeatureSelect, axis, rfds)
   }, simplify = FALSE)
 
   features <- reactive({
@@ -104,7 +104,6 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     .axes <- qcolnames()
     .aes <- aes.covs()
     .labels <- qlabels()
-
     fscatterplot(dat, .axes, color_aes = .aes$color, shape_aes = .aes$shape,
                  facet_aes = .aes$facet,
                  xlabel = .labels[1], # label(axes$x),
@@ -125,7 +124,8 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     yaxis = axes$y,
     zaxis = axes$z,
     aes = aes,
-    viz = fscatter)
+    viz = fscatter,
+    .ns = session$ns)
 
   class(vals) <- c("FacileScatterPlot", "ReactiveFacileViz")
   vals

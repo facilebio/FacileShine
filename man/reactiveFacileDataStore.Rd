@@ -3,6 +3,7 @@
 \name{active_assays}
 \alias{active_assays}
 \alias{active_covariates}
+\alias{active_samples}
 \alias{reactiveFacileDataStore}
 \alias{reactiveFacileDataStoreUI}
 \alias{depend}
@@ -15,8 +16,10 @@ active_assays(x, ...)
 
 active_covariates(x, ...)
 
+active_samples(x, ...)
+
 reactiveFacileDataStore(input, output, session, dataset,
-  active_samples = NULL, user = Sys.getenv("USER"), ...)
+  restrict_samples = NULL, user = Sys.getenv("USER"), ...)
 
 reactiveFacileDataStoreUI(id, ...)
 
@@ -31,7 +34,7 @@ update_reactive_covariates(rfds, covariates, namespace, ...)
 \arguments{
 \item{dataset}{The FacileDataStore to make reactive}
 
-\item{active_samples}{A predefined set of samples to subset the dataset to.}
+\item{restrict_samples}{A predefined set of samples to subset the dataset to.}
 
 \item{user}{the custom_key to use for ephemeral sample and feature
 annotations that are saved back to the \code{dataset}.}
