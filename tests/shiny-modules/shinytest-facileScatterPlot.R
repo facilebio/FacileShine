@@ -1,22 +1,19 @@
-# library(FacileShine)
-# library(dplyr)
-# library(plotly)
-
 library(FacileData)
 library(shiny)
+
+fds <- FacileData::exampleFacileDataSet()
+user <- Sys.getenv("USER")
+
 devtools::load_all(".")
 
 shiny::shinyApp(
   ui = shiny::fluidPage(
-    filteredReactiveFacileDataStoreUI("rfds"),
-    shiny::tags$hr(),
+    shiny::wellPanel(filteredReactiveFacileDataStoreUI("ds")),
+    tags$h2("facileScatterPlot"),
     facileScatterPlotUI("scatter")),
 
   server = function(input, output) {
-    fds <- FacileData::exampleFacileDataSet()
-    user <- Sys.getenv("USER")
-    rfds <- callModule(filteredReactiveFacileDataStore, "rfds", fds,
-                       user = user)
+    rfds <- callModule(filteredReactiveFacileDataStore, "ds", fds, user = user)
     scatter <- callModule(facileScatterPlot, "scatter", rfds, ndim = 3)
   }
 )

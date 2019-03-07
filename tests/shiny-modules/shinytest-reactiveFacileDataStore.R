@@ -1,4 +1,9 @@
-library(FacileShine)
+library(FacileData)
+
+fds <- FacileData::exampleFacileDataSet()
+user <- Sys.getenv("USER")
+
+devtools::load_all(".")
 
 # The following to apps should produce the same output. We'll use the
 # `filteredReactiveFacileDataStore` going forward in our proof of concept
@@ -6,26 +11,19 @@ library(FacileShine)
 
 manual <- shiny::shinyApp(
   ui = shiny::fluidPage(
-    reactiveFacileDataStoreUI("rfds"),
+    reactiveFacileDataStoreUI("ds"),
     facileSampleFilterUI("rfdsFilter"),
     NULL),
 
   server = function(input, output) {
-    fds <- FacileData::exampleFacileDataSet()
-    user <- Sys.getenv("USER")
-    rfds <- callModule(reactiveFacileDataStore, "rfds", fds, user = user)
+    rfds <- callModule(reactiveFacileDataStore, "ds", fds, user = user)
     rfilter <- callModule(facileSampleFilter, "rfdsFilter", rfds)
   }
 )
 
 composed <- shiny::shinyApp(
-  ui = shiny::fluidPage(
-    filteredReactiveFacileDataStoreUI("rfds")),
-
+  ui = shiny::fluidPage(filteredReactiveFacileDataStoreUI("ds")),
   server = function(input, output) {
-    fds <- FacileData::exampleFacileDataSet()
-    user <- Sys.getenv("USER")
-    rfds <- callModule(filteredReactiveFacileDataStore, "rfds", fds,
-                       user = user)
+    rfds <- callModule(filteredReactiveFacileDataStore, "ds", fds, user = user)
   }
 )

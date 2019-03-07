@@ -1,27 +1,25 @@
 # library(FacileShine)
 library(FacileData)
 library(FacileViz)
-library(dplyr)
-library(plotly)
 library(shiny)
+
+fds <- FacileData::exampleFacileDataSet()
+user <- Sys.getenv("USER")
 
 devtools::load_all(".")
 
 shiny::shinyApp(
   ui = shiny::fluidPage(
-    filteredReactiveFacileDataStoreUI("rfds"),
-    shiny::tags$hr(),
+    shiny::wellPanel(filteredReactiveFacileDataStoreUI("ds")),
+    shiny::tags$h2("assayFeatureSelect"),
     fluidRow(
       column(6, shiny::wellPanel(assayFeatureSelectUI("xaxis"))),
       column(6, shiny::wellPanel(assayFeatureSelectUI("yaxis")))),
-    shiny::tags$hr(),
+    shiny::tags$h2("Scatter Plot"),
     plotlyOutput("scatter")),
 
   server = function(input, output) {
-    fds <- FacileData::exampleFacileDataSet()
-    user <- Sys.getenv("USER")
-    rfds <- callModule(filteredReactiveFacileDataStore, "rfds", fds,
-                       user = user)
+    rfds <- callModule(filteredReactiveFacileDataStore, "ds", fds, user = user)
     xaxis <- callModule(assayFeatureSelect, "xaxis", rfds)
     yaxis <- callModule(assayFeatureSelect, "yaxis", rfds)
 
