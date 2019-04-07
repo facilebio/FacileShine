@@ -1,4 +1,4 @@
-#' Retrieves features from a given assay type.
+#' Retrieves assay features from a FacileDataStore for a given assay type.
 #'
 #' @export
 #' @rdname assayFeatureSelect

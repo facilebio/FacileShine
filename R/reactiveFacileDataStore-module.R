@@ -108,6 +108,8 @@ reactiveFacileDataStore <- function(input, output, session, dataset,
   # The `reactives` list provides the shiny magic for the FacileDataStore.
   # On "the way out", this list will be stored in a class-specific place
   # within the returned ReactiveFacileDataStore.
+  # NOTE: The `reactiveFacileDataStore[["reactives"]]` list might need to be
+  #       an environment to make writing to it work across modules.
   # Check the `reactives()` function for more details.
   reactives <- list(
     active_samples = active.samples,
@@ -315,7 +317,7 @@ update_reactive_covariates <- function(rfds, covariates, namespace, ...) {
 
   # Update the covariates correctly
   all_anno <- reactives(x, "annotations")
-  untouched <- anti_join(all_anno$samples, covariates,
+  untouched <- anti_join(all_anno[["samples"]], covariates,
                          by = c("dataset", "sample_id", "variable"))
   new_anno <- bind_rows(all_anno, covariates)
   new_anno <- arrange(new_anno, variable, dataset, sample_id)
