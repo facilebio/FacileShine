@@ -9,17 +9,17 @@ devtools::load_all(".")
 # `filteredReactiveFacileDataStore` going forward in our proof of concept
 # modules to encapsulate everythign that will be there.
 
-manual <- shiny::shinyApp(
-  ui = shiny::fluidPage(
-    reactiveFacileDataStoreUI("ds"),
-    facileSampleFilterUI("rfdsFilter"),
-    NULL),
-
-  server = function(input, output) {
-    rfds <- callModule(reactiveFacileDataStore, "ds", fds, user = user)
-    rfilter <- callModule(facileSampleFilter, "rfdsFilter", rfds)
-  }
-)
+# manual <- shiny::shinyApp(
+#   ui = shiny::fluidPage(
+#     reactiveFacileDataStoreUI("ds"),
+#     facileSampleFilterUI("rfdsFilter"),
+#     NULL),
+#
+#   server = function(input, output) {
+#     rfds <- callModule(reactiveFacileDataStore, "ds", fds, user = user)
+#     rfilter <- callModule(facileSampleFilter, "rfdsFilter", rfds)
+#   }
+# )
 
 composed <- shiny::shinyApp(
   ui = shiny::fluidPage(filteredReactiveFacileDataStoreUI("ds")),

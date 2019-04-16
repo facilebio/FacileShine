@@ -32,8 +32,7 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
     suniverse <- these.samples()
 
     # Is the user trying to restrict the sample space
-    restrict.samples <- length(cov.vals) > 0L &&
-      !cov.vals[1L] %in% c("---", "__initializing__")
+    restrict.samples <- !unselected(cov.vals)
 
     if (restrict.samples) {
       selected.samples <- rfds %>%

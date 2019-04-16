@@ -120,6 +120,7 @@ reactiveFacileDataStore <- function(input, output, session, dataset,
       samples = .empty_sample_annotation_tbl(),
       features = .empty_feature_annotation_tbl()),
     trigger = list(
+      dataset = makeReactiveTrigger(),
       samples = makeReactiveTrigger(),
       covariates = makeReactiveTrigger()),
     .restrict_samples = restrict_samples,

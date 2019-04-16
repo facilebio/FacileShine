@@ -5,7 +5,7 @@
 #'
 #' @export
 #' @param value The (character) object returned from a `selectInput`
-unselected <- function(value, ignore = c("---", "__initializing__")) {
+unselected <- function(value, ignore = c("---", "__initializing__", "")) {
   if (is.null(value)) return(TRUE)
   # Otherwise this is a character
   length(value) == 0L || nchar(value) == 0L || all(value %in% ignore)

@@ -3,7 +3,7 @@
 \name{assayFeatureSelect}
 \alias{assayFeatureSelect}
 \alias{assayFeatureSelectUI}
-\title{Retrieves features from a given assay type.}
+\title{Retrieves assay features from a FacileDataStore for a given assay type.}
 \usage{
 assayFeatureSelect(input, output, session, rfds, ..., .exclude = NULL,
   .reactive = TRUE)
@@ -27,5 +27,5 @@ module
 }
 }
 \description{
-Retrieves features from a given assay type.
+Retrieves assay features from a FacileDataStore for a given assay type.
 }

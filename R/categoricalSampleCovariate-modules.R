@@ -42,7 +42,8 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
   active.covariates <- reactive({
     all.covs <- isolate.(active_covariates(rfds))
-    filter(all.covs, class == "categorical")
+    cat.covs <- filter(all.covs, class == "categorical")
+    cat.covs
   })
 
   active.samples <- reactive({
@@ -55,6 +56,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   # is available in the update covariates.
   observe({
     choices <- req(active.covariates()) %>%
+      filter(nlevels > 1) %>%
       pull(variable)
 
     choices <- sort(choices)
@@ -67,6 +69,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
       selected <- overlap
     } else {
       selected <- NULL
+      state$covariate <- ""
     }
 
     updateSelectInput(session, "covariate", choices = choices,
@@ -84,7 +87,10 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
   covariate.summary <- reactive({
     covariate. <- state$covariate
-    if (covariate. %in% c("---", "__initializing__", "")) {
+    allcovs. <- active.covariates()
+    notselected <- unselected(covariate.) ||
+      !covariate. %in% allcovs.[["variable"]]
+    if (notselected) {
       out <- .empty_covariate_summary(rfds)
     } else {
       scovs <- fetch_sample_covariates(rfds, active.samples(), covariate.)
@@ -94,8 +100,8 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   })
 
   cov.levels <- reactive({
-    # ci <- req(covariate.summary())
-    ci <- covariate.summary()
+    # browser()
+    ci <- req(covariate.summary())
     lvls <- ci[["level"]]
     if (!setequal(state$levels, lvls)) {
       state$levels <- lvls
