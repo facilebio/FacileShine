@@ -46,10 +46,6 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     cat.covs
   })
 
-  active.samples <- reactive({
-    isolate.(active_samples(rfds))
-  })
-
   # Updates the covariate selectInput object. This is a bit more complicated
   # than you might think it needs to be because the active.covariates() my
   # fire, but we don't want to change the currently selected covariate if it
@@ -64,8 +60,11 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
       choices <- c("---", choices)
     }
 
-    overlap <- intersect(state$covariate, choices)
+    # overlap <- intersect(state$covariate, choices)
+    selected <- input$covariate
+    overlap <- intersect(selected, choices)
     if (length(overlap)) {
+      if (!setequal(state$covariate, overlap)) state$covariate <- overlap
       selected <- overlap
     } else {
       selected <- NULL
@@ -76,6 +75,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
                       selected = selected)
   })
 
+  # A reactive for the currently selected covariate in the selectInput
   covariate <- reactive({
     cov <- input$covariate
     if (unselected(cov)) cov <- ""
@@ -84,6 +84,11 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     }
     state$covariate
   })
+
+  active.samples <- reactive({
+    isolate.(active_samples(rfds))
+  })
+
 
   covariate.summary <- reactive({
     covariate. <- state$covariate

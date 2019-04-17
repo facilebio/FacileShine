@@ -100,6 +100,7 @@ reactiveFacileDataStore <- function(input, output, session, dataset,
     collect(assay_info_over_samples(dataset, active.samples()), n = Inf)
   })
 
+  # Provides a summary table of the covariates in play (1 row per covariate)
   active.covariates <- reactive({
     covs <- fetch_sample_covariates(dataset, samples = active.samples())
     summary(covs)
