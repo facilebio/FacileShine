@@ -105,7 +105,6 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   })
 
   cov.levels <- reactive({
-    # browser()
     ci <- req(covariate.summary())
     lvls <- ci[["level"]]
     if (!setequal(state$levels, lvls)) {

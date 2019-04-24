@@ -5,12 +5,12 @@
 #' provided as "top-level" elements of the list returned by this module.
 #'
 #' @export
-#' @rdname filteredReactiveFacileDataStore
-filteredReactiveFacileDataStore <- function(input, output, session, dataset,
-                                            active_samples = NULL,
-                                            user = Sys.getenv("USER"), ...) {
+#' @rdname filteredReactiveFacileDataStore_v1
+filteredReactiveFacileDataStore_v1 <- function(input, output, session, dataset,
+                                               active_samples = NULL,
+                                               user = Sys.getenv("USER"), ...) {
   assert_class(dataset, "FacileDataStore")
-  rfds <- callModule(reactiveFacileDataStore, "rfds", dataset, user = user, ...)
+  rfds <- callModule(reactiveFacileDataStore_v1, "rfds", dataset, user = user, ...)
   rfilter <- callModule(facileSampleFilter, "rfdsFilter", rfds)
 
   rfds[[".reactive."]][["filter"]] <- rfilter
@@ -20,8 +20,8 @@ filteredReactiveFacileDataStore <- function(input, output, session, dataset,
 }
 
 #' @export
-#' @rdname filteredReactiveFacileDataStore
-filteredReactiveFacileDataStoreUI <- function(id, ...) {
+#' @rdname filteredReactiveFacileDataStore_v1
+filteredReactiveFacileDataStore_v1UI <- function(id, ...) {
   ns <- NS(id)
   tagList(
     reactiveFacileDataStoreUI(ns("rfds")),

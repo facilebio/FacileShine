@@ -4,7 +4,7 @@
 \alias{unselected}
 \title{Checks if the return value from a selectInput looks like it's unselected}
 \usage{
-unselected(value, ignore = c("---", "__initializing__"))
+unselected(value, ignore = c("---", "__initializing__", ""))
 }
 \arguments{
 \item{value}{The (character) object returned from a \code{selectInput}}

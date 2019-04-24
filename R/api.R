@@ -1,3 +1,12 @@
+#' Tests if a module is initialized
+#'
+#' @export
+#' @param a module
+#' @return logical TRUE/FALSE
+initialized <- function(x, ...) {
+  UseMethod("initialized", x)
+}
+
 #' Retrieves selection information from a module
 #'
 #' @export
@@ -33,23 +42,7 @@ update_selected <- function(x, ...) {
 reset <- function(x, ...) {
   UseMethod("reset", x)
 }
-
-# Labeled ======================================================================
-
-#' Labeled acts like interface to reactive modules.
-#'
-#' Modules that implement this interface must return `label` and `name` reactive
-#' elements within them.
-#'
-#' We use these when something (like a `assayFeatureSelect`) needs
-#' a "computer friendly" name for itself (`name()`), or a more human readable
-#' name (`label()`)
-#'
-#' @export
-#' @rdname labeled
-name <- function(x, ...) {
-  UseMethod("name", x)
-}
+# Labeled API ==================================================================
 
 #' @noRd
 #' @export
@@ -59,18 +52,6 @@ name.Labeled <- function(x, ...) {
   out <- x[["name"]]
   if (!is(out, "reactive")) "unnamed" else out()
 }
-
-#' @noRd
-#' @export
-#' @rdname labeled
-label <- function(x, ...) {
-  UseMethod("label")
-}
-
-#' @noRd
-#' @export
-#' @rdname labeled
-label.NULL <- function(x, ...) NULL
 
 #' @noRd
 #' @export

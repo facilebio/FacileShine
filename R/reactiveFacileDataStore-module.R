@@ -1,416 +1,460 @@
-#' Represents an active FacileDataStore used in the shiny context
+#' Creates a (swappable) ReactiveFacileDataSet
 #'
-#' This module returns a `ReactiveFacileDataStore` object, which is a functional
-#' subclass of a `FacileDataStore`. This object is meant to be used in a
-#' shiny / reactive context. Importantly, it supports ephemeral sample and
-#' feature annotations which are meant to enable users to add custom sample
-#' and feature annotations that are uncovered during the course of an analysis.
+#' This module creates a reactive container for a FacileDataStore, by providing
+#' a (reactive) `path` parameter that points to an accessible FacileDataStore.
+#' The reactivity of this input parameter allows the datastore to be swapped out
+#' "live".
 #'
-#' **Note:** The behavior of this object is undefined (untested) when used in a
-#' non-reactive context.
+#' @details
+#' To restrict the set of samples "in play" for the datastore, for instance when
+#' invoking an interactive gadget over these samples, the analyst (or gadget)
+#' can do, you can pass in a sample descriptor into the `restrict_samples.`
+#' parameter. This parameter isn't reactive and isn't really meant to be
+#' used outside of the simple context of pulling up a subset of a
+#' FacileDataStore for interrogation via a gadget.
 #'
-#' @section Custom Sample Annotations:
-#' Analysts may uncover interesting subsets of samples (outliers, subtypes)
-#' within a dataset during the course of an exploratory analysis. This object
-#' supports downstream modules to add sample annoations via the use of the
-#' [update_reactive_covaraites()] function.
-#'
-#' These annotations are stored in an eav table that looks a lot like the
-#' eav_covariates table returned from [FacileData::fetch_sample_covaraites()].
-#' The columns are:
-#' * `dataset`; `sample_id`: the primary key of the sample
-#' * `variable`: the name of the variable -- users create this during brushin
-#' * `value`: the value of the variable
-#' * `class`: categorical or real (just categorical is supported for now)
-#' * `source`: the name (namespace) of the module that is adding the covariate
-#'
-#' @section Custom Feature Annotations:
-#' This will largely look like a GeneSetDb, with the following columns:
-#' * `collection`: the feature-annotation-module namespace
-#' * `name`: is the name of the featureset (provided by the uesr)
-#' * `feature_id`: the feature_id of the thing
-#' * `feature_type`: the "feature space" these features (entrez, ensgid, etc.),
-#'    these values need to be one of the elements returned from calling
-#'    [FacileData::feature_types()] on the internal `datastore`.
-#'
-#' @section An augmented FacileDataStore:
-#' The `ReactiveFacileDataStore` is a FacileDataStore with the following list
-#' of values stored in its `"reactive"` slot (or list-store), depending on
-#' whether the underyling FacileDataStore is implemented as an S3 or S4 object.
-#'
-#' A list (named `"reactive"`) is added to the `FacileDataStore`, which holds
-#' the reactive elements listed below:
-#'
-#' * `user`: non-reactive, the user id of the person using this datastore. This
-#'   is used in conjunction with the `custom_key` parameter in the faciledata
-#'   API to retrieve user-specific annotations.
-#' * `annotations$samples`: The tibble that stores ephemeral sample annotations
-#'   added from arbitrary modules.
-#' * `annotations$features`: A tibble to store ephemeral feature annotations
-#'   (aka genesets)
-#' * `trigger$samples`; `trigger$covariates`: These are reactive triggers
-#'   (see [makeReactiveTrigger()]), that can be tickled in order to update
-#'   the current samples (and their annotations) under analysis.
-#' * `active_samples`: A tibble of the currently active samples in the
-#'   datastore. This is analagous to the [FacileData::active_samples()]
-#'   tibble, but is reactive so consumers can listen to changes in state.
-#' * `active_covaraites`: A (reactive) summary table of the current covariates
-#'   defined on the samples. This looks like the output from the
-#'   `FacileData::summary.eav_covariates` function, and enables modules to
-#'   respond to new covariates defined during analyses that have not been saved
-#'   yet.
-#' * `active_assays`: A reactive version of the output from the
-#'   [FacileData::assay_info_over_samples()] function. This enables modules
-#'   to query what assays are "in play" for analysis over the current samples.
-#'
-#' Active samples and active covariates can be manipulated externally, ie. from
-#' a user interacting with another module, using the `update_reactive_samples()`
-#' and `update_reactive_covariates()` defined over the `ReactiveFacileDataStore`
-#' object.
+#' To allow interactive expansion and collapse of samples in play while
+#' interactively working with a FacileDataStore with shiny, you should use
+#' the [filteredReactiveDataStore()] module.
 #'
 #' @export
-#' @rdname reactiveFacileDataStore
-#'
-#' @importFrom shiny selectInput renderUI uiOutput
-#' @param dataset The FacileDataStore to make reactive
-#' @param restrict_samples A predefined set of samples to subset the dataset to.
-#' @param user the custom_key to use for ephemeral sample and feature
-#'   annotations that are saved back to the `dataset`.
-reactiveFacileDataStore <- function(input, output, session, dataset,
-                                    restrict_samples = NULL,
-                                    user = Sys.getenv("USER"), ...) {
-  assert_class(dataset, "FacileDataStore")
-
-  if (!is.null(restrict_samples)) {
-    restrict_samples <- collect(assert_sample_subset(restrict_samples), n = Inf)
-    restrict_samples <- as_facile_frame(restrict_samples, dataset)
-  } else {
-    restrict_samples <- collect(samples(dataset), n = Inf)
-  }
+#' @importFrom shiny observeEvent reactiveValues
+#' @param path A "reactive string" that points to the url/directory to
+#'   instantiate the ReactiveFacileDataStore from.
+reactiveFacileDataStore <- function(intput, output, session, path,
+                                    user = Sys.getenv("USER"), ...,
+                                    restrict_samples. = NULL) {
 
   state <- reactiveValues(
-    active_samples = restrict_samples)
+    fds = "__initializing__",
+    name = "__initializing__",
+    active_samples = tibble(
+      dataset = character(), sample_id = character()),
+    active_assays = tibble(
+      assay = character(), ndatasets = integer(), nsamples = integer()),
+    # a summary()-table of the stored and ephemeral eav_sample_covariates
+    active_covariates = tibble(
+      assay = character(), ndatasets = integer(), nsamples = integer()),
+    # ephemeral annotations provided by user during interactive exploration
+    esample_annotation = .empty_sample_annotation_tbl(),
+    efeature_annotation = .empty_feature_annotation_tbl(),
+    efacets = .empty_facet_tbl())
 
-  active.samples <- reactive({
-    # depend(dataset, "samples")
-    state$active_samples
+  observeEvent(path(), {
+    path. <- req(path())
+    assert_string(path.)
+    assert_directory_exists(path., "r")
+
+    fds. <- FacileDataSet(path.)
+    # Wrapping this as "BoxedFacileDataStore" so we can intercept some facile
+    # API calls and allow them to accept ephemeral annotations.
+    class(fds.) <- c("BoxedFacileDataStore", class(fds.))
+    # Reset the ephemeral stuff
+    state[["fds"]] <- fds.
+    state[["name"]] <- name(fds.)
+    # state[["filters"]] <- list()
+
+    # restrict_samples. is here for convenience to enable launching an
+    # gadget over a restricted set of samples.
+    asamples <- collect(samples(fds.), n = Inf)
+    if (!is.null(restrict_samples.)) {
+      assert_sample_subset(restrict_samples.)
+      asamples <- semi_join(asamples, restrict_samples.,
+                            by = c("dataset", "sample_id"))
+    }
+    state[["active_samples"]] <- asamples
+    state[["esample_annotation"]] <- .empty_sample_annotation_tbl()
+    state[["efeature_annotation"]] <- .empty_feature_annotation_tbl()
+    state[["efacets"]] <- .empty_facet_tbl()
   })
 
-  active.assays <- reactive({
-    collect(assay_info_over_samples(dataset, active.samples()), n = Inf)
+  observeEvent(state$active_samples, {
+    fds. <- state[["fds"]]
+    req(is(fds., "BoxedFacileDataStore"))
+    samples. <- state[["active_samples"]]
+    ecovs <- state[["esample_annotation"]]
+
+    # Update active covariates
+    acovs <- fetch_sample_covariates(fds., samples = samples.,
+                                     custom_key = user, with_source = TRUE,
+                                     extra_covariates = ecovs)
+    state$active_covariates <- summary(acovs)
+
+    # Update assay info over samples
+    state$active_assays <- fds. %>%
+      assay_info_over_samples(samples.) %>%
+      collect(n = Inf)
   })
 
-  # Provides a summary table of the covariates in play (1 row per covariate)
-  active.covariates <- reactive({
-    covs <- fetch_sample_covariates(dataset, samples = active.samples())
-    summary(covs)
+  output$fdsname <- shiny::renderText({
+    state$name
   })
 
-  # The `reactives` list provides the shiny magic for the FacileDataStore.
-  # On "the way out", this list will be stored in a class-specific place
-  # within the returned ReactiveFacileDataStore.
-  # NOTE: The `reactiveFacileDataStore[["reactives"]]` list might need to be
-  #       an environment to make writing to it work across modules.
-  # Check the `reactives()` function for more details.
-  reactives <- list(
-    active_samples = active.samples,
-    active_covariates = active.covariates,
-    active_assays = active.assays,
+  output$active_covariates <- DT::renderDT(state$active_covariates)
+  output$nsamples <- shiny::renderText({
+    nrow(state$active_samples)
+  })
+
+  vals <- list(
     user = user,
-    annotations = reactiveValues(
-      samples = .empty_sample_annotation_tbl(),
-      features = .empty_feature_annotation_tbl()),
     trigger = list(
       dataset = makeReactiveTrigger(),
       samples = makeReactiveTrigger(),
       covariates = makeReactiveTrigger()),
-    .restrict_samples = restrict_samples,
     .state = state,
     .ns = session$ns)
 
-  # Debug Outputs ==============================================================
-  output$sample_count <- shiny::renderText({
-    .samples <- req(active.samples())
-    sprintf("Number of active samples: %d", nrow(.samples))
-  })
-
-  output$covariate_trigger <- shiny::renderText({
-    .covs <- req(active.covariates())
-    sprintf("Covariate Trigger: %d, ncovs: %d",
-            triggered(dataset, "covariates"),
-            nrow(.covs))
-  })
-  # ============================================================================
-
-  if (!isS4(dataset)) {
-    dataset[[".reactive."]] <- reactives
-    class(dataset) <- c("ReactiveFacileDataStore", class(dataset))
-  } else {
-    stop("ReactiveFacileDataStore not yet implemented over S4 objects")
+  classes <- c("ReactiveFacileDataStore", "FacileDataStore")
+  if (!is.null(restrict_samples.)) {
+    classes <- c("RestrictedReactiveFacileDataStore", classes)
   }
+  class(vals) <- classes
 
-  dataset
+  return(vals)
 }
 
+#' @noRd
 #' @export
-#' @rdname reactiveFacileDataStore
-#' @importFrom shiny NS tagList textOutput
+#' @importFrom shiny NS tags textOutput
+#' @importFrom DT DTOutput
 reactiveFacileDataStoreUI <- function(id, ...) {
   ns <- NS(id)
 
-  # There really is no UI, right?
-  # tagList(
-  #   uiOutput(ns("fdsSelectContainer")),
-  #   filterFacileSamplesUI(ns("sampleSelector")),
-  #   textOutput(ns("debug_nsamples")))
   tagList(
-    textOutput(ns("sample_count")),
-    textOutput(ns("covariate_trigger")))
+    tags$h3("ReactiveFacileDataStore"),
+    textOutput(ns("fdsname")),
+    tags$p("Number of active samples:", textOutput(ns("nsamples"))),
+    DT::DTOutput(ns("active_covariates")))
 }
 
-# New methods over a ReactiveFacileDataStore ===================================
-
-#' Extracts the "reactive" list from a FacileDataStore
-#'
-#' An S3 ReactiveFacileDataStore (`rfds`) stores the reactives list in
-#' `rfds[[".reactive."]]`. An S4 ReactiveFacileDataStore (ie. a FacileDataStore
-#' over a `SingleCellExperiment`) will store this somehwere else.
-#'
+#' @noRd
 #' @export
-reactives <- function(x, name = NULL, ...) {
-  assert_class(x, "ReactiveFacileDataStore")
-  if (isS4(x)) {
-    stop("ReactiveFacileDataStore not yet implemented over S4 assay containers")
+#' @importFrom shiny getDefaultReactiveDomain
+ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
+                                    samples = NULL, ...) {
+  pf <- parent.frame()
+  assert_string(id)
+
+  if (is.character(x)) {
+    path <- reactive(x[1L])
+  } else if (is(x, "FacileDataSet")) {
+    path <- reactive(x[["parent.dir"]])
+  } else if (is(x, "facile_frame")) {
+    path <- reactive(fds(x)[["parent.dir"]])
+  } else if (is(x, "reactiveExpr")) {
+    path <- x
   } else {
-    out <- x[[".reactive."]]
+    stop("You are passing an illegal type of argument")
   }
-  if (!is.null(name)) {
-    assert_choice(name, names(out))
-    out <- out[[name]]
-  }
+
+  # path <- reactive(path)
+  out <- eval({
+    callModule(reactiveFacileDataStore, id, path, user = user, ...,
+               restrict_samples. = samples)
+  }, envir = pf)
 
   out
 }
 
-#' @rdname reactiveFacileDataStore
-#' @section Triggers:
-#' We use reactive triggers to tickle the state of the ReactiveFacileDataStore
-#' when responding to user interactivity.
+# ReactiveFacile API ===========================================================
+# (defined in FacileShine)
+
+#' @noRd
+#' @export
+initialized.ReactiveFacileDataStore <- function(x, ...) {
+  # is(fds(x), "FacileDataStore") && !unselected(name(x))
+  # Not using fds() because fds() itself calls req(initialized(x))
+  is(x[[".state"]][["fds"]], "FacileDataStore") && !unselected(name(x))
+}
+
+#' @noRd
+#' @export
+initialized.BoxedFacileDataStore <- function(x, ...) {
+  TRUE
+}
+
+#' This will enable trigger & depend, as defined in
+#' FacileShine::reactiveFacileDataStore_v1-module.R to work
 #'
-#' This is done via the `depend(rfds)` and `trigger(rfds)` functions, ie. to
-#' ensure a function is run when the active covariate state changes, the
-#' `fetch_sample_covariates.ReactiveFacileDataStore` function embeds a
-#' `depend(x, "covariates")` call. To have a function trigger that, you would
-#' have it call `trigger(x, "covariates")`
-depend <- function(x, name = "covariates", ...) {
+#' @noRd
+#' @export
+reactives.ReactiveFacileDataStore <- function(x, name = NULL, ...) {
+  assert_choice(name, names(x), null.ok = FALSE)
+  x[[name]]
+}
+
+#' @noRd
+#' @export
+active_assays.ReactiveFacileDataStore <- function(x, ...) {
   assert_reacting()
-  trigger(x, name, trigger. = FALSE)$depend()
+  x[[".state"]][["active_assays"]]
 }
 
 #' @noRd
 #' @export
-trigger <- function(x, name = "covariates", trigger. = TRUE, ...) {
-  trgr <- assert_class(reactives(x, "trigger")[[name]], "ReactiveTrigger")
-  if (trigger.) {
-    assert_reacting()
-    trgr$trigger()
-  }
-  invisible(trgr)
+active_covariates.ReactiveFacileDataStore <- function(x, active_only = TRUE,
+                                                      ...) {
+  assert_reacting()
+  req(initialized(x))
+  as_facile_frame(x[[".state"]][["active_covariates"]], x,
+                  .valid_sample_check = FALSE)
 }
 
 #' @noRd
 #' @export
-#' @return returns the number of times the trigger has been pulled
-triggered <- function(x, name = "covariates", ...) {
-  trigger(x, name, trigger. = FALSE)$counter()
+active_samples.ReactiveFacileDataStore <- function(x, ...) {
+  assert_reacting()
+  req(initialized(x))
+  as_facile_frame(x[[".state"]][["active_samples"]], x,
+                  .valid_sample_check = FALSE)
 }
 
 #' @noRd
 #' @export
 user.ReactiveFacileDataStore <- function(x, ...) {
-  reactives(x, "user")
+  assert_reacting()
+  req(initialized(x))
+  x[["user"]]
 }
 
-#' @rdname reactiveFacileDataStore
+# Facile API ===================================================================
+
+# This is partially an exercise to ensure that we have a well defined facile
+# api. We could have all FacileShine modules just extract the fds from the
+# ReactiveFDS first then move on with life, but ... this is correct.
+
+#' @noRd
 #' @export
-active_assays.ReactiveFacileDataStore <- function(x, ...) {
+assay_feature_info.ReactiveFacileDataStore <- function(x, assay_name,
+                                                       feature_ids = NULL,
+                                                       ...) {
   assert_reacting()
-  reactives(x, "active_assays")()
+  req(initialized(x))
+  assay_feature_info(fds(x), assay_name, feature_ids, ...)
 }
 
 #' @noRd
 #' @export
-active_covariates.ReactiveFacileDataStore <- function(x, ...) {
+#' @importFrom shiny req
+assay_info.ReactiveFacileDataStore <- function(x, assay_name = NULL, ...) {
   assert_reacting()
-  reactives(x, "active_covariates")()
+  req(initialized(x))
+  req(initialized(x))
+  assay_info(fds(x), assay_name = assay_name, ...)
 }
 
 #' @noRd
 #' @export
-#' @rdname reactiveFacileDataStore
-active_samples.ReactiveFacileDataStore <- function(x, ...) {
+#' @importFrom shiny req
+assay_names.ReactiveFacileDataStore <- function(x, default_first = TRUE, ...) {
   assert_reacting()
-  reactives(x, "active_samples")()
+  req(initialized(x))
+  assay_names(fds(x), default_first = default_first, ...)
 }
 
-#' @rdname reactiveFacileDataStore
-#' @section Reactive Samples:
-#'
-#' A facile analysis session is perfomed on some subset of the samples
-#' provided by a `FacileDataStore`. The samples under scrutiny can change as
-#' the user dips into and out of different analyses. These are defined
-#' interactively by the user via the use of the `facileSampleFilter` module(s)
-update_reactive_samples <- function(rfds, active_samples, criterion = NULL,
-                                    ...) {
+#' @noRd
+#' @export
+covariate_definitions.ReactiveFacileDataStore <- function(x, as.list = TRUE,
+                                                          ...) {
+  covariate_definitions(fds(x), ...)
+}
+
+#' @noRd
+#' @export
+fds.ReactiveFacileDataStore <- function(x) {
   assert_reacting()
-  assert_class(rfds, "ReactiveFacileDataStore")
+  req(initialized(x))
+  x[[".state"]][["fds"]]
+}
 
-  restrict_samples <- reactives(rfds, ".restrict_samples")
+#' @noRd
+#' @export
+default_assay.ReactiveFacileDataStore <- function(x, ...) {
+  assert_reacting()
+  req(initialized(x))
+  default_assay(fds(x))
+}
 
+#' @noRd
+#' @export
+facet_frame.ReactiveFacileDataStore <- function(x, name = "default", ...) {
+  assert_reacting()
+  req(initialized(x))
+  as_facile_frame(bind_rows(x[["efacets"]], facet_frame(fds(x))), x,
+                  .valid_sample_check = FALSE)
+}
+
+#' @noRd
+#' @export
+fetch_assay_data.ReactiveFacileDataStore <- function(x, features, samples=NULL,
+                                                     assay_name=default_assay(x),
+                                                     normalized=FALSE,
+                                                     as.matrix=FALSE, ...,
+                                                     aggregate.by=NULL) {
+  assert_reacting()
+  req(initialized(x))
+  fetch_assay_data(fds(x), features = features, samples = samples,
+                   assay_name = assay_name, normalized = normalized,
+                   as.matrix = as.matrix, aggregate.by = aggregate.by, ...)
+}
+
+#' @noRd
+#' @export
+fetch_sample_covariates.BoxedFacileDataStore <- function(
+    x, samples = NULL, covariates = NULL, custom_key = user(x),
+    with_source = TRUE, ..., extra_covariates = NULL) {
+  assert_reacting()
+  req(initialized(x))
+
+  if (!is.null(extra_covariates)) {
+    extra_covariates <- collect(extra_covariates, n = Inf)
+    assert_sample_covariates(extra_covariates)
+    if (!is.null(covariates)) {
+      assert_character(covariates)
+      extra_covariates <- filter(extra_covariates, variable %in% covariates)
+    }
+    if (!is.null(samples)) {
+      assert_sample_subset(samples)
+      extra_covariates <- semi_join(extra_covariates, collect(samples, n = Inf),
+                                    by = c("dataset", "sample_id"))
+    }
+    if (with_source && nrow(extra_covariates)) {
+      extra_covariates <- mutate(extra_covariates, source = "ephemeral")
+    }
+  }
+
+  stored_covs <- NextMethod(samples = samples, covariates = covariates,
+                            custom_key = custom_key, with_source = with_source)
+  stored_covs <- collect(stored_covs, n = Inf)
+
+  out <- bind_rows(extra_covariates, stored_covs)
+  out <- set_fds(out, x)
+  out <- distinct(out, dataset, sample_id, variable, .keep_all = TRUE)
+  as_facile_frame(out, x, "eav_covariates", .valid_sample_check = FALSE)
+}
+
+#' @noRd
+#' @export
+fetch_sample_covariates.ReactiveFacileDataStore <- function(
+    x, samples = active_samples(x), covariates = NULL, custom_key = user(x),
+    with_source = TRUE, ...) {
+  assert_reacting()
+  req(initialized(x))
+
+  extra_covs <- x[["state."]][["esample_annotation"]]
+  out <- fetch_sample_covariates(fds(x), samples = samples,
+                                 covariates = covariates,
+                                 custom_key = custom_key,
+                                 with_source = with_source,
+                                 extra_covariates = extra_covs)
+  as_facile_frame(out, x, .valid_sample_check = FALSE)
+}
+
+#' @noRd
+#' @export
+fetch_custom_sample_covariates.ReactiveFacileDataStore <- function(
+    x, samples = NULL, covariates = NULL, custom_key = user(x),
+    with_source = FALSE, file.prefix = "facile", ...) {
+  assert_reacting()
+  req(initialized(x))
+
+  # Get this to delegate to the *.FacileDataSet version
+  fetch_custom_sample_covariates(fds(x), samples = samples,
+                                 covariates = covariates,
+                                 custom_key = custom_key,
+                                 with_source = with_source,
+                                 file.prefix = file.prefix, ...)
+}
+
+#' @noRd
+#' @export
+filter_samples.ReactiveFacileDataStore <- function(x, ...,
+                                                   with_covariates = FALSE) {
+  assert_reacting()
+  req(initialized(x))
+  stop("TODO: filter_samples.ReactiveFacileDataStore")
+}
+
+#' @noRd
+#' @export
+name.ReactiveFacileDataStore <- function(x, ...) {
+  name. <- assert_string(x[[".state"]][["name"]])
+  name.
+}
+
+#' @noRd
+#' @export
+samples.ReactiveFacileDataStore <- function(x, ...) {
+  req(initialized(x))
+  as_facile_frame(active_samples(x), x, .valid_sample_check = FALSE)
+}
+
+# with_assay_data.ReactiveFacileDataStore <- function(x, ...) {
+#
+# }
+#
+# with_sample_covariates.ReactiveFacileDataStore <- function(x, ...) {
+#
+# }
+
+# External Manipulation ========================================================
+
+#' @noRd
+#' @export
+update_rfds <- function(x, dataset, ...) {
+  assert_reacting()
+  assert_class(x, "ReactiveFacileDataStore")
+  assert_class(dataset, "FacileDataStore")
+
+  class(dataset) <- c("BoxedFacileDataStore", class(dataset))
+
+  # Reset the ephemeral stuff
+  x[[".state"]][["fds"]] <- dataset
+  x[[".state"]][["name"]] <- name(dataset)
+  # x[[".state"]][["filters"]] <- list()
+  x[[".state"]][["active_samples"]] <- collect(samples(dataset), n = Inf)
+  x[[".state"]][["esample_annotation"]] <- .empty_sample_annotation_tbl()
+  x[[".state"]][["efeature_annotation"]] <- .empty_feature_annotation_tbl()
+  x[[".state"]][["efacets"]] <- .empty_facet_tbl()
+
+  invisible(x)
+}
+
+#' @noRd
+#' @export
+update_reactive_samples.ReactiveFacileDataStore <- function(x, active_samples,
+                                                            criterion = NULL,
+                                                            ...) {
+  assert_reacting()
+  req(initialized(x))
   .as <- active_samples %>%
     assert_sample_subset() %>%
     distinct(dataset, sample_id) %>%
-    collect(n = Inf) %>%
-    semi_join(restrict_samples, by = c("dataset", "sample_id")) %>%
-    as_facile_frame(rfds)
-
-  current <- active_samples(rfds) %>%
     collect(n = Inf)
+
+  current <- collect(active_samples(x), n = Inf)
 
   is.same <- setequal(
     with(current, paste(dataset, sample_id)),
     with(.as, paste(dataset, sample_id)))
 
   if (!is.same) {
-    .state <- reactives(rfds, ".state")
-    .state$active_samples <- .as
+    x[[".state"]][["active_samples"]] <- active_samples
   }
 
-  invisible(rfds)
-}
-
-#' @rdname reactiveFacileDataStore
-#' @export
-#'
-#' @section Reactive Covariates:
-#'
-#' Updates the ephemeral covariates during an analysis.
-#'
-#' In addition to the sample covariates in the FacileDataStore, covariates
-#' can be added to the samples by different modules via user interaction and
-#' brushing during an analysis session.
-#'
-#' @examples
-#' fds <- FacileData::exampleFacileDataSet()
-#' covs <- samples(fds) %>%
-#'   collect() %>%
-#'   sample_n(20) %>%
-#'   mutate(variable = "test_anno",
-#'          value = sample(c("a", "b"), 20, replace = TRUE),
-#'          class = "categorical",
-#'          type = "ephemeral",
-#'          date_entered = as.integer(Sys.time()))
-#' ufds <- update_reactive_covariates(fds, covs, "some_module")
-update_reactive_covariates <- function(rfds, covariates, namespace, ...) {
-  stop("update_reactive_covariates(rfds) is not yet implemented")
-  assert_reacting()
-  assert_class(rfds, "ReactiveFacileDataStore")
-  assert_sample_covariates(covariates)
-
-  # Update the covariates correctly
-  all_anno <- reactives(x, "annotations")
-  untouched <- anti_join(all_anno[["samples"]], covariates,
-                         by = c("dataset", "sample_id", "variable"))
-  new_anno <- bind_rows(all_anno, covariates)
-  new_anno <- arrange(new_anno, variable, dataset, sample_id)
-  all_anno$samples <- new_anno
   invisible(x)
 }
 
-save_reactive_covariates <- function(rfds, namespace, ...) {
-  stop("save_reactive_covariates is not yet implemented")
-  # 1. saves the temporal sample coviarates for the "namespace" module to the
-  #    FacileDataStore.
-  # 2. Reloads the active.covariates()
-  # 3. Initializes the covariates for the namespace module to NULL
-
-}
-
-# FacileData API ===============================================================
-
-# Most facile functions shouldn't need to be modified to work correctly
-# over a ReactiveFacileDataStore, except the following:
-#
-# * fetch_sample_covariates: Because a ReactiveFacileDataStore can support
-#   new / ephemeral sample covaraites that are brushed on by the user, we need
-#   to support the retrieval of these covariates via overriding this function.
-#   If this is done corectly, this should take care of many other facile
-#   functions.
-
-#' Transparently supports retrieval of both stored and ephemeral covariates
-#'
 #' @noRd
 #' @export
-fetch_sample_covariates.ReactiveFacileDataStore <- function(
-    x, samples = NULL, covariates = NULL, custom_key = user(x),
-    with_source = TRUE, ...) {
+update_reactive_covariates.ReactiveFacileDataStore <- function(x, covariates,
+                                                               namespace, ...) {
   assert_reacting()
-  if (!is.null(samples)) assert_sample_subset(samples)
-
-  # First retrieve covarites from the current/temporal brushing annotations,
-  # then query the datastore for the rest.
-  # If the two-step results in multiple dataset,sample_id,covariate values for
-  # the same samples, we keep the first.
-  depend(x, "covariates")
-  if (!is.null(covariates)) assert_character(covariates)
-
-  active.covs <- reactives(x, "annotations")[["samples"]]
-  if (!is.null(covariates)) {
-    active.covs <- filter(active.covs, variable %in% covariates)
-  }
-  if (!is.null(samples)) {
-    active.covs <- semi_join(active.covs, samples,
-                             by = c("dataset", "sample_id"))
-  }
-  if (with_source && nrow(active.covs)) {
-    active.covs <- mutate(active.covs, source = "ephemeral")
-  }
-
-  stored.covs <- NextMethod()
-
-  out <- bind_rows(active.covs, stored.covs)
-
-  unknown <- setdiff(covariates, out[["variable"]])
-  if (length(unknown)) {
-    warning("Unknown covariates: ", paste(unknown, collapse = ","))
-  }
-
-  out <- distinct(out, dataset, sample_id, variable, .keep_all = TRUE)
-  as_facile_frame(out, fds(x), "eav_covariates", .valid_sample_check = FALSE)
+  req(initialized(x))
+  stop("update_reactive_covariates(rfds) is not yet implemented")
+  # Do something with x[[".state"]][["active_covariates"]]
 }
 
-# #' @rdname active_samples
-# #' @export
-# `active_samples<-.ReactiveFacileDataStore` <- function(x, value) {
-#   .as <- value %>%
-#     assert_sample_subset() %>%
-#     collect(n = Inf)
-#
-#   current <- active_samples(x) %>%
-#     collect(n = Inf)
-#
-#   is.same <- setequal(
-#     with(current, paste(dataset, sample_id)),
-#     with(.as, paste(dataset, sample_id)))
-#
-#   if (!is.same) {
-#     # active_samples(rfds) <- .as
-#     NextMethod(value = .as)
-#     trigger(x, "samples")
-#   }
-#
-#   x
-# }
 
 # Inner helpers ================================================================
 
@@ -419,9 +463,18 @@ fetch_sample_covariates.ReactiveFacileDataStore <- function(
     dataset = character(),
     sample_id = character(),
     variable = character(),
+    value = character(),
     class = character(),
     type = character(),
     date_entered = integer())
+}
+
+.empty_facet_tbl <- function() {
+  tibble(
+    dataset = character(),
+    sample_id = character(),
+    facet = character(),
+    description = character())
 }
 
 .empty_feature_annotation_tbl <- function() {

@@ -19,6 +19,7 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
                        rfds, covariate, .reactive = FALSE)
 
   these.samples <- reactive({
+    req(initialized(rfds))
     req(isolate(active_samples(rfds)))
   })
 
@@ -55,14 +56,18 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
 
 #' @export
 #' @rdname facileSampleFilter
-#' @importFrom shiny selectInput selectizeInput
+#' @importFrom shiny column fluidRow NS
 facileSampleFilterUI <- function(id, ...) {
   ns <- NS(id)
 
-  tagList(
-    categoricalSampleCovariateSelectUI(ns("covariate"), label = "Covariate"),
-    categoricalSampleCovariateLevelsUI(ns("values"), label = "Value(s)",
-                                       multiple = TRUE))
+  fluidRow(
+    column(
+      4,
+      categoricalSampleCovariateSelectUI(ns("covariate"), label = "Covariate")),
+    column(
+      4,
+      categoricalSampleCovariateLevelsUI(ns("values"), label = "Value(s)",
+                                         multiple = TRUE)))
 }
 
 # Accessor / Update Functions ==================================================

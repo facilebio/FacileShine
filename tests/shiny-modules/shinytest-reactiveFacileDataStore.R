@@ -1,29 +1,27 @@
 library(FacileData)
-
-fds <- FacileData::exampleFacileDataSet()
-user <- Sys.getenv("USER")
+library(shiny)
 
 devtools::load_all(".")
 
-# The following to apps should produce the same output. We'll use the
-# `filteredReactiveFacileDataStore` going forward in our proof of concept
-# modules to encapsulate everythign that will be there.
+efds <- exampleFacileDataSet()
+s <- filter_samples(efds, indication == "BLCA")
+s <- NULL
 
-# manual <- shiny::shinyApp(
-#   ui = shiny::fluidPage(
-#     reactiveFacileDataStoreUI("ds"),
-#     facileSampleFilterUI("rfdsFilter"),
-#     NULL),
-#
-#   server = function(input, output) {
-#     rfds <- callModule(reactiveFacileDataStore, "ds", fds, user = user)
-#     rfilter <- callModule(facileSampleFilter, "rfdsFilter", rfds)
-#   }
-# )
-
-composed <- shiny::shinyApp(
-  ui = shiny::fluidPage(filteredReactiveFacileDataStoreUI("ds")),
+# With filter
+shinyApp(
+  ui = fluidPage(
+    reactiveFacileDataStoreUI("rfds"),
+    # facileSampleFilterUI("f1"),
+    categoricalSampleCovariateSelectUI("cov")
+    ),
   server = function(input, output) {
-    rfds <- callModule(filteredReactiveFacileDataStore, "ds", fds, user = user)
+    path <- reactive(efds$parent.dir)
+    # rfds <- callModule(reactiveFacileDataStore, "rfds", path)
+    # rfds <- ReactiveFacileDataStore(path, "rfds")
+    # f1 <- callModule(facileSampleFilter, "f1", rfds)
+
+    # rfds <- callModule(reactiveFacileDataStore, "rfds", path)
+    rfds <- ReactiveFacileDataStore(path, "rfds", samples = s)
+    cov <- callModule(categoricalSampleCovariateSelect, "cov", rfds)
   }
 )
