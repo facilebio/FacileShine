@@ -40,7 +40,13 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
+  active.samples <- reactive({
+    req(initialized(rfds))
+    isolate.(active_samples(rfds))
+  })
+
   active.covariates <- reactive({
+    req(initialized(rfds))
     all.covs <- isolate.(active_covariates(rfds))
     cat.covs <- filter(all.covs, class == "categorical")
     cat.covs
@@ -84,11 +90,6 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     }
     state$covariate
   })
-
-  active.samples <- reactive({
-    isolate.(active_samples(rfds))
-  })
-
 
   covariate.summary <- reactive({
     covariate. <- state$covariate
@@ -181,15 +182,29 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
     values = "__initializing__")
 
   observe({
+    req(initialized(rfds))
     cov.levels <- covariate$levels()
-    updateSelectizeInput(session, "values", choices = cov.levels, server = TRUE)
+    selected. <- intersect(cov.levels, isolate(input$values))
+    if (length(selected.) == 0L) selected. <- NULL
+    updateSelectizeInput(session, "values", choices = cov.levels,
+                         selected = selected., server = TRUE)
   })
 
   values <- reactive({
     vals <- input$values
-    if (!setequal(vals, state$values)) {
+
+    # For some reason, when updateSelectizeInput updates the available
+    # values, this isn't propogated immediately to the inputs. I
+    # think shiny goes through a complete round of responding to
+    # the reactivity before the input$ values get updated.
+    invalid <- setdiff(vals, covariate$levels())
+
+    if (length(invalid)) {
+      state$values <- ""
+    } else if (!setequal(vals, state$values)) {
       state$values <- vals
     }
+
     state$values
   })
 

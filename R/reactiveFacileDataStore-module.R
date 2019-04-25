@@ -40,29 +40,53 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     efeature_annotation = .empty_feature_annotation_tbl(),
     efacets = .empty_facet_tbl())
 
+  vals <- local({
+    v <- list(
+      user = user,
+      trigger = list(
+        dataset = makeReactiveTrigger(),
+        samples = makeReactiveTrigger(),
+        covariates = makeReactiveTrigger()),
+      .state = state,
+      .ns = session$ns)
+    classes <- c("ReactiveFacileDataStore", "FacileDataStore")
+    if (!is.null(restrict_samples.)) {
+      classes <- c("RestrictedReactiveFacileDataStore", classes)
+    }
+    class(v) <- classes
+    v
+  })
+
   observeEvent(path(), {
     path. <- req(path())
     assert_string(path.)
     assert_directory_exists(path., "r")
 
     fds. <- FacileDataSet(path.)
+
+    # Setting this to __initializing__ so that things "reacting" on an
+    # initialized(rfds) wait until the first pass of
+    # observeEvent(state$active_samples) goes through before they use the
+    # new ReactiveFacileDataSet again
+    state[["name"]] <-  "__initializing__"
+
     # Wrapping this as "BoxedFacileDataStore" so we can intercept some facile
     # API calls and allow them to accept ephemeral annotations.
     class(fds.) <- c("BoxedFacileDataStore", class(fds.))
-    # Reset the ephemeral stuff
     state[["fds"]] <- fds.
-    state[["name"]] <- name(fds.)
-    # state[["filters"]] <- list()
 
-    # restrict_samples. is here for convenience to enable launching an
-    # gadget over a restricted set of samples.
-    asamples <- collect(samples(fds.), n = Inf)
-    if (!is.null(restrict_samples.)) {
-      assert_sample_subset(restrict_samples.)
-      asamples <- semi_join(asamples, restrict_samples.,
-                            by = c("dataset", "sample_id"))
-    }
-    state[["active_samples"]] <- asamples
+    # Reset the ephemeral stuff
+    state[["active_samples"]] <- local({
+      asamples <- collect(samples(fds.), n = Inf)
+      if (!is.null(restrict_samples.)) {
+        # restrict_samples. is here for convenience to enable launching an
+        # gadget over a restricted set of samples.
+        assert_sample_subset(restrict_samples.)
+        asamples <- semi_join(asamples, restrict_samples.,
+                              by = c("dataset", "sample_id"))
+      }
+      asamples
+    })
     state[["esample_annotation"]] <- .empty_sample_annotation_tbl()
     state[["efeature_annotation"]] <- .empty_feature_annotation_tbl()
     state[["efacets"]] <- .empty_facet_tbl()
@@ -78,12 +102,20 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     acovs <- fetch_sample_covariates(fds., samples = samples.,
                                      custom_key = user, with_source = TRUE,
                                      extra_covariates = ecovs)
+
+    # we are crashing on dataset switches because samples. is empty
     state$active_covariates <- summary(acovs)
 
     # Update assay info over samples
     state$active_assays <- fds. %>%
       assay_info_over_samples(samples.) %>%
       collect(n = Inf)
+
+    # This should trigger reactives in other modules waiting on
+    # req(initialized(rfds)) to take another crack at what they need.
+    if (state[["name"]] != name(fds.)) {
+      state[["name"]] <- name(fds.)
+    }
   })
 
   output$fdsname <- shiny::renderText({
@@ -94,21 +126,6 @@ reactiveFacileDataStore <- function(intput, output, session, path,
   output$nsamples <- shiny::renderText({
     nrow(state$active_samples)
   })
-
-  vals <- list(
-    user = user,
-    trigger = list(
-      dataset = makeReactiveTrigger(),
-      samples = makeReactiveTrigger(),
-      covariates = makeReactiveTrigger()),
-    .state = state,
-    .ns = session$ns)
-
-  classes <- c("ReactiveFacileDataStore", "FacileDataStore")
-  if (!is.null(restrict_samples.)) {
-    classes <- c("RestrictedReactiveFacileDataStore", classes)
-  }
-  class(vals) <- classes
 
   return(vals)
 }
@@ -159,6 +176,9 @@ ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
 # ReactiveFacile API ===========================================================
 # (defined in FacileShine)
 
+#' Note that calls to this should "fire" reactivity when the inner
+#' faciledatastore is initialized and/or replaced, because of the repeated
+#' hits to the [["state"]] reactiveValues object
 #' @noRd
 #' @export
 initialized.ReactiveFacileDataStore <- function(x, ...) {
@@ -375,6 +395,7 @@ filter_samples.ReactiveFacileDataStore <- function(x, ...,
   stop("TODO: filter_samples.ReactiveFacileDataStore")
 }
 
+#' Note that this fires reactivity when callers ask for the name()
 #' @noRd
 #' @export
 name.ReactiveFacileDataStore <- function(x, ...) {
@@ -410,8 +431,9 @@ update_rfds <- function(x, dataset, ...) {
 
   # Reset the ephemeral stuff
   x[[".state"]][["fds"]] <- dataset
-  x[[".state"]][["name"]] <- name(dataset)
+  # x[[".state"]][["name"]] <- name(dataset)
   # x[[".state"]][["filters"]] <- list()
+  x[[".state"]][["name"]] <-  "__initializing__"
   x[[".state"]][["active_samples"]] <- collect(samples(dataset), n = Inf)
   x[[".state"]][["esample_annotation"]] <- .empty_sample_annotation_tbl()
   x[[".state"]][["efeature_annotation"]] <- .empty_feature_annotation_tbl()

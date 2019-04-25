@@ -19,11 +19,16 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
                        rfds, covariate, .reactive = FALSE)
 
   these.samples <- reactive({
+    # where. <- "these.samples"
+    # browser()
     req(initialized(rfds))
     req(isolate(active_samples(rfds)))
   })
 
   these.covariates <- reactive({
+    # where. <- "these.covariates"
+    # browser()
+    req(initialized(rfds))
     req(isolate(active_covariates(rfds)))
   })
 
