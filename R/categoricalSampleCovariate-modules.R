@@ -52,22 +52,26 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     cat.covs
   })
 
-  # Updates the covariate selectInput object. This is a bit more complicated
-  # than you might think it needs to be because the active.covariates() my
-  # fire, but we don't want to change the currently selected covariate if it
-  # is available in the update covariates.
+  # Updating the covariate select dropdown is a little tricky because we want
+  # to support the situation where the current active.covariates change in
+  # response to the current set of active_samples changing.
+  #
+  # For now we just try to keep the same covariate selected if it still remains
+  # in the ones that are available after the underlying set of active_samples
+  # and nactive_covariates shifts.
   observe({
     choices <- req(active.covariates()) %>%
       filter(nlevels > 1) %>%
       pull(variable)
+
+    ftrace("Updating available covariates to select from")
 
     choices <- sort(choices)
     if (.with_none) {
       choices <- c("---", choices)
     }
 
-    # overlap <- intersect(state$covariate, choices)
-    selected <- input$covariate
+    selected <- isolate(input$covariate)
     overlap <- intersect(selected, choices)
     if (length(overlap)) {
       if (!setequal(state$covariate, overlap)) state$covariate <- overlap
@@ -84,7 +88,9 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   # A reactive for the currently selected covariate in the selectInput
   covariate <- reactive({
     cov <- input$covariate
+
     if (unselected(cov)) cov <- ""
+
     if (!setequal(cov, state$covariate)) {
       state$covariate <- cov
     }
@@ -92,7 +98,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   })
 
   covariate.summary <- reactive({
-    covariate. <- state$covariate
+    covariate. <- covariate()
     allcovs. <- active.covariates()
     notselected <- unselected(covariate.) ||
       !covariate. %in% allcovs.[["variable"]]
@@ -176,13 +182,13 @@ label.CategoricalCovariateSelect <- function(x, ...) {
 categoricalSampleCovariateLevels <- function(input, output, session, rfds,
                                              covariate, ...,
                                              .exclude = NULL,
-                                             .reactive = TRUE) {
+                                             .reactive = TRUE,
+                                             debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   state <- reactiveValues(
     values = "__initializing__")
 
   observe({
-    req(initialized(rfds))
     cov.levels <- covariate$levels()
     selected. <- intersect(cov.levels, isolate(input$values))
     if (length(selected.) == 0L) selected. <- NULL
@@ -208,8 +214,14 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
     state$values
   })
 
+  if (debug) {
+    output$selected <- renderText(values())
+  }
+
   vals <- list(
-    values = values)
+    values = values,
+    .state = state,
+    .ns = session$ns)
 
   return(vals)
 }
@@ -217,13 +229,22 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
 #' @noRd
 #' @export
 #' @rdname categoricalSampleCovariateLevels
+#' @importFrom shiny NS selectizeInput tagList textOutput
 categoricalSampleCovariateLevelsUI <- function(id, ..., choices = NULL,
-                                               options = NULL, width = NULL) {
+                                               options = NULL, width = NULL,
+                                               debug = FALSE) {
   ns <- NS(id)
 
-  tagList(
+  out <- tagList(
     selectizeInput(ns("values"), ..., choices = choices,
                    options = options, width = width))
+  if (debug) {
+    out <- tagList(
+      out,
+      tags$p("Selected levels:", textOutput(ns("selected"))))
+  }
+
+  out
 }
 
 # Internal Helper Functions ====================================================
