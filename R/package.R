@@ -4,4 +4,5 @@
 #' @import FacileData
 #' @import FacileViz
 #' @import dplyr
+#' @importFrom glue glue
 NULL

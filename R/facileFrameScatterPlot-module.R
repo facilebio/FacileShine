@@ -1,13 +1,7 @@
-#' An interactive scatterplot module (2-3 dimensions).
+#' An interactive scatterplot module (2-3 dimensions) over a facile_frame.
 #'
-#' This module presents all three dimensions for plotting. If the user only
-#' specifies two dimensions in a weird way (x and z, only), then z will be
-#' collapsed to y.
-#'
-#' We can make this more user-proof by incrementally activating "the next"
-#' dimension by ensuring the previous dimension is selected.
-#'
-#' A 1d scatter plot might just default to a density plot.
+#' This module presents all of the numeric columns in x + internal quantitative
+#' data for plotting, and categorical covariates for aesthetic mapping
 #'
 #' @export
 #' @importFrom shiny column wellPanel
@@ -17,11 +11,12 @@
 #' @param ndim Defaults to 3. When any two dimensions are provided, a plot will
 #'   be drawn, so provides both 2d and 3d functionality. If set to 2, then only
 #'   2d functionality would be enabled.
-facileScatterPlot <- function(input, output, session, rfds, ...,
+facileFrameScatterPlot <- function(input, output, session, rfds, fframe, ...,
                               ndim = 3, x = NULL, y = NULL, z = NULL,
                               event_source = session$ns("selection"),
                               .reactive = TRUE) {
   assert_class(rfds, "ReactiveFacileDataStore")
+  assesrt_class(fframe, "facile_frame")
   assert_int(ndim, lower = 2L, upper = 3L)
   ns <- session$ns
 
@@ -59,7 +54,6 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
   })
 
   aes.covs <- reactive({
-    ftrace("aes$covariates() fires in facileScatterPlot")
     aes$covariates()
   })
 
@@ -77,9 +71,8 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     xdim <- .ndim()
     req(xdim >= 2L)
     f.all <- features()
-    covs <- unname(unique(unlist(aes.covs())))
+    covs <- unlist(aes.covs())
 
-    ftrace("Assembling tibble for scatterplot")
     # The "fluent" facile data access call on a 2d plot looks like:
     # out <- rfds %>%
     #   active_samples() %>%
@@ -96,7 +89,7 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     out <- collect(out, n = Inf)
     colnames(out) <- c("dataset", "sample_id", qcolnames())
     if (length(covs)) {
-      out <- with_sample_covariates(out, covs)
+      out <- with_sample_covariates(out, covs, .fds = fds(rfds))
     }
     out
   })
@@ -106,9 +99,6 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     .axes <- qcolnames()
     .aes <- aes.covs()
     .labels <- qlabels()
-
-    ftrace("Drawing scatterplot")
-
     fscatterplot(dat, .axes, color_aes = .aes$color, shape_aes = .aes$shape,
                  facet_aes = .aes$facet,
                  xlabel = .labels[1], # label(axes$x),
@@ -128,7 +118,7 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     xaxis = axes$x,
     yaxis = axes$y,
     zaxis = axes$z,
-    # aes = aes,
+    aes = aes,
     viz = fscatter,
     .ns = session$ns)
 
@@ -140,7 +130,7 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
 #' @importFrom shiny column tagList wellPanel uiOutput
 #' @importFrom plotly plotlyOutput
 #' @rdname facileScatterPlot
-facileScatterPlotUI <- function(id, ...) {
+facileFrameScatterPlot <- function(id, ...) {
   ns <- NS(id)
   tagList(
     fluidRow(

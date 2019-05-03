@@ -15,8 +15,8 @@ filteredReactiveFacileDataStore <- function(input, output, session, path,
   rfds
 }
 
+#' @noRd
 #' @export
-#' @rdname filteredReactiveFacileDataStore_v1
 filteredReactiveFacileDataStoreUI <- function(id, nfilters = 1, ...) {
   ns <- NS(id)
 
@@ -98,7 +98,7 @@ singleFilteredReactiveFacileDataStore <- function(input, output, session, path,
 }
 
 #' @export
-#' @rdname filteredReactiveFacileDataStore_v1
+#' @noRd
 singleFilteredReactiveFacileDataStoreUI <- function(id, nfilters = 1, ...) {
   ns <- NS(id)
 

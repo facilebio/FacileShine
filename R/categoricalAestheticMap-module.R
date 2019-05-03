@@ -18,8 +18,13 @@ categoricalAestheticMap <- function(input, output, session, rfds,
   }, simplify = FALSE)
 
   covariates <- reactive({
-    out <- lapply(modules, function(mod) mod$covariate())
-    out[!out %in% c("---", "")]
+    out <- sapply(names(mod.include), function(name) {
+      mod <- modules[[name]]
+      ftrace(name, "$covariate() fires")
+      val <- mod$covariate()
+      if (unselected(val)) NULL else val
+    }, simplify = FALSE)
+    out
   })
 
   vals <- list(

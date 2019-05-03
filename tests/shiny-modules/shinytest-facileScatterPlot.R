@@ -1,19 +1,21 @@
-library(FacileData)
-library(shiny)
+# library(FacileShine)
+devtools::load_all(".")
 
-fds <- FacileData::exampleFacileDataSet()
+efds <- FacileData::exampleFacileDataSet()
 user <- Sys.getenv("USER")
 
-devtools::load_all(".")
+
+options(facile.log.level.fshine = "trace")
 
 shiny::shinyApp(
   ui = shiny::fluidPage(
-    shiny::wellPanel(filteredReactiveFacileDataStoreUI("ds")),
+    shiny::wellPanel(singleFilteredReactiveFacileDataStoreUI("rfds")),
     tags$h2("facileScatterPlot"),
     facileScatterPlotUI("scatter")),
 
   server = function(input, output) {
-    rfds <- callModule(filteredReactiveFacileDataStore, "ds", fds, user = user)
+    path <- reactive(efds$parent.dir)
+    rfds <- callModule(singleFilteredReactiveFacileDataStore, "rfds", path)
     scatter <- callModule(facileScatterPlot, "scatter", rfds, ndim = 3)
   }
 )

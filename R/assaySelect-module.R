@@ -8,40 +8,51 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
   assert_class(rfds, "ReactiveFacileDataStore")
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
+  # store the current selected assay in state
   state <- reactiveValues(
     assay_info = tibble(
       assay = "__initializing__",
       assay_type = "__initializing__",
       feature_type = "__initializing__"))
 
+  # This a tibble of the available assays available for the active_samples
+  # of the rfds
   assays <- reactive({
-    req(isolate.(active_assays(rfds)))
+    aa <- req(isolate.(active_assays(rfds)))
+    ftrace("Updating available set of assays")
+    aa
   })
 
-  # Update the assay choice dropdown with the active assays over the current
-  # set of samples
+  # Update the assay choice dropdown if necessary when the underlying samples
+  # change. If the currently selected assay is still available, then keep it
+  # selected.
   observe({
-    choices <- assays()$assay
+    available_assays <- assays()$assay
     .ai <- state$assay_info
-    if (.ai$assay %in% choices) {
+    if (.ai$assay %in% available_assays) {
       selected <- .ai$assay
     } else {
-      selected <- choices[1L]
+      selected <- available_assays[1L]
+      ftrace("A change in active_assays() changes selected assay in ",
+             "{red}{bold}state{reset} variable")
       state$assay_info <- FacileData::assay_info(rfds, selected)
     }
-    updateSelectInput(session, "assay", choices = choices, selected = selected)
+    updateSelectInput(session, "assay", choices = available_assays,
+                      selected = selected)
   })
 
   assay_info <- reactive({
     .assay <- req(input$assay)
     .ai <- state$assay_info
     if (.ai$assay != .assay) {
+      ftrace("upated selected assay from input changes {red}{bold}state{reset}")
       state$assay_info <- FacileData::assay_info(rfds, .assay)
     }
     state$assay_info
   })
 
   features <- reactive({
+    ftrace("updating available features")
     if (!is(state$assay_info, "facile_frame")) {
       out <- collect(assay_feature_info(rfds, default_assay(rfds)), n = 1L)
       out <- filter(out, FALSE)
@@ -81,7 +92,7 @@ assaySelectUI <- function(id, label = "Assay", choices = NULL, selected = NULL,
 #' @return a tibble of features
 assay_feature_info.AssaySelectInput <- function(x, assay_name,
                                                 feature_ids = NULL, ...) {
-  assert_reacting()
+  # assert_reacting()
   if (!missing(assay_name)) warning("`assay_name` parameter ignored")
   out <- x[["features"]]()
   if (!is.null(feature_ids)) {

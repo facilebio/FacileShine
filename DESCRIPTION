@@ -13,9 +13,11 @@ Depends:
 Imports:
     broom,
     checkmate,
+    crayon,
     dplyr,
     FacileData,
     FacileViz,
+    glue,
     miniUI,
     promises,
     shiny (>= 1.3.1),

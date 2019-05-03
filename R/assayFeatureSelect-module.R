@@ -41,6 +41,7 @@ assayFeatureSelect <- function(input, output, session, rfds, ...,
                          server = TRUE, selected = NULL)
   })
 
+  # I think this may invalidate twice, which causes double draws in fscatter
   features <- reactive({
     fid <- input$features
     is.empty <- unselected(fid)
