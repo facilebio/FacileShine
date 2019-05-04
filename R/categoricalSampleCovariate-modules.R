@@ -88,9 +88,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   # A reactive for the currently selected covariate in the selectInput
   covariate <- reactive({
     cov <- input$covariate
-
     if (unselected(cov)) cov <- ""
-
     if (!setequal(cov, state$covariate)) {
       state$covariate <- cov
     }

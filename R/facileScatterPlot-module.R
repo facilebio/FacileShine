@@ -73,20 +73,14 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     out[!grepl("^nothing$", out)]
   })
 
-  rdat <- reactive({
+  # The quantitative data to plot, without aesthetic mappings
+  rdat.core <- reactive({
     xdim <- .ndim()
     req(xdim >= 2L)
     f.all <- features()
-    covs <- unname(unique(unlist(aes.covs())))
 
-    ftrace("Assembling tibble for scatterplot")
-    # The "fluent" facile data access call on a 2d plot looks like:
-    # out <- rfds %>%
-    #   active_samples() %>%
-    #   with_assay_data(axes$x$features(), aggregate.by = "ewm") %>%
-    #   with_assay_data(axes$y$features(), aggregate.by = "ewm") %>%
-    #   with_sample_covariates(covs)
-    #   collect(n = Inf)
+    ftrace("Retrieving assay data for scatterplot")
+
     out <- active_samples(rfds)
     for (f in f.all) {
       if (nrow(f)) {
@@ -95,8 +89,17 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     }
     out <- collect(out, n = Inf)
     colnames(out) <- c("dataset", "sample_id", qcolnames())
-    if (length(covs)) {
-      out <- with_sample_covariates(out, covs)
+    out
+  })
+
+  rdat <- reactive({
+    out <- req(rdat.core())
+    req(nrow(out) > 0)
+    aes.map <- aes$map()
+    aes.covs <- setdiff(unlist(unname(aes.map)), colnames(out))
+    if (length(aes.covs)) {
+      ftrace("retrieving aes covariates for scatterplot")
+      out <- with_sample_covariates(out, aes.covs)
     }
     out
   })
@@ -104,11 +107,9 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
   fscatter <- reactive({
     dat <- req(rdat())
     .axes <- qcolnames()
-    .aes <- aes.covs()
+    .aes <- isolate(aes$map())
     .labels <- qlabels()
-
-    ftrace("Drawing scatterplot")
-
+    ftrace("drawing scatterplot")
     fscatterplot(dat, .axes, color_aes = .aes$color, shape_aes = .aes$shape,
                  facet_aes = .aes$facet,
                  xlabel = .labels[1], # label(axes$x),

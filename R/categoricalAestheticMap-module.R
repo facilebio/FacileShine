@@ -7,40 +7,127 @@ categoricalAestheticMap <- function(input, output, session, rfds,
                                     facet = TRUE, ..., .with_none = TRUE,
                                     .exclude = NULL, .reactive = TRUE) {
   assert_class(rfds, "ReactiveFacileDataStore")
+  state <- reactiveValues(
+    color = "",
+    shape = "",
+    group = "",
+    facet = "")
+
+  # Not using categoricalSampleCovariateSelect N times, because trying to be
+  # more efficient. Basically the different aesthetics can just select from
+  # the same set of covariates, so lets just pull that down ones.
+
+  if (!is.null(.exclude) && !.reactive) {
+    assert_tibble(.exclude)
+    assert_subset(names(.exclude), c("variable", "value"))
+  }
+
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
-  mod.include <- .module_list(color, shape, group, facet)
+  active.samples <- reactive({
+    req(initialized(rfds))
+    isolate.(active_samples(rfds))
+  })
 
-  modules <- sapply(names(mod.include), function(name) {
-    callModule(categoricalSampleCovariateSelect, name, rfds, ...,
-               .with_none = .with_none, .exclude = .exclude,
-               .reactive = .reactive)
-  }, simplify = FALSE)
+  active.covariates <- reactive({
+    req(initialized(rfds))
+    all.covs <- isolate.(active_covariates(rfds))
+    cat.covs <- filter(all.covs, class == "categorical")
+    cat.covs
+  })
 
-  covariates <- reactive({
-    out <- sapply(names(mod.include), function(name) {
-      mod <- modules[[name]]
-      ftrace(name, "$covariate() fires")
-      val <- mod$covariate()
-      if (unselected(val)) NULL else val
-    }, simplify = FALSE)
-    out
+  # Updating the covariate select dropdown is a little tricky because we want
+  # to support the situation where the current active.covariates change in
+  # response to the current set of active_samples changing.
+  #
+  # For now we just try to keep the same covariate selected if it still remains
+  # in the ones that are available after the underlying set of active_samples
+  # and nactive_covariates shifts.
+  observe({
+    choices <- req(active.covariates()) %>%
+      filter(nlevels > 1) %>%
+      pull(variable)
+
+    ftrace("Updating available covariates for aesthetic  map")
+
+    choices <- sort(choices)
+    if (.with_none) {
+      choices <- c("---", choices)
+    }
+
+    for (aes. in names(state)) {
+      include <- get(aes.)
+      if (include) {
+        selected <- isolate(input[[aes.]])
+        if (unselected(selected)) selected <- ""
+        overlap <- intersect(selected, choices)
+        if (length(overlap)) {
+          if (!setequal(state[[aes.]], overlap)) state[[aes.]] <- overlap
+          selected <- overlap
+        } else {
+          selected <- NULL
+          state[[aes.]] <- ""
+        }
+        updateSelectInput(session, aes., choices = choices,
+                          selected = selected)
+      }
+    }
+  })
+
+  observeEvent(input$color, {
+    selected <- input$color
+    if (unselected(selected)) selected <- ""
+    if (!is.null(selected) && !setequal(selected, state$color)) {
+      state$color <- selected
+    }
+  })
+
+  observeEvent(input$shape, {
+    selected <- input$shape
+    if (unselected(selected)) selected <- ""
+    if (!is.null(selected) && !setequal(selected, state$shape)) {
+      state$shape <- selected
+    }
+  })
+
+  observeEvent(input$group, {
+    selected <- input$group
+    if (unselected(selected)) selected <- ""
+    if (!is.null(selected) && !setequal(selected, state$group)) {
+      state$group <- selected
+    }
+  })
+
+  observeEvent(input$facet, {
+    selected <- input$facet
+    if (unselected(selected)) selected <- ""
+    if (!is.null(selected) && !setequal(selected, state$facet)) {
+      state$facet <- selected
+    }
+  })
+
+  # Character vector: names are the aesthetics, values are the covariate names
+  aes.covs <- reactive({
+    covs <- list(color = state$color, shape = state$shape,
+                 group = state$group, facet = state$facet)
+    covs[sapply(covs, function(val) nchar(val) > 0)]
   })
 
   vals <- list(
-    color = modules$color,
-    shape = modules$shape,
-    group = modules$group,
-    facet = modules$facet,
-    covariates = covariates,
+    # color = reactive(state$color),
+    # shape = reactive(state$shape),
+    # group = reactive(state$group),
+    # facet = reactive(state$facet),
+    map = aes.covs,
+    .state = state,
     .ns = session$ns)
-  class(vals) <- c("CategoricalAesMap")
-  return(vals)
+  class(vals) <- "CategoricalAesMap"
+  vals
 }
 
 #' @export
 #' @importFrom tools toTitleCase
-#' @importFrom shiny NS column fluidRow
+#' @importFrom shiny NS column fluidRow selectizeInput
 #' @rdname categoricalAestheticMap
 categoricalAestheticMapUI <- function(id, color = TRUE, shape = TRUE,
                                       group = FALSE,  facet = TRUE,
@@ -52,7 +139,8 @@ categoricalAestheticMapUI <- function(id, color = TRUE, shape = TRUE,
 
   aes.tags <- sapply(names(mod.include), function(aname) {
     label <- toTitleCase(aname)
-    ui <- categoricalSampleCovariateSelectUI(ns(aname), label = label)
+    ui <- selectizeInput(ns(aname), label = aname, choices = NULL,
+                         multiple = FALSE)
     if (horizontal) ui <- column(ncol, ui)
     ui
   }, simplify = FALSE)
@@ -64,10 +152,6 @@ categoricalAestheticMapUI <- function(id, color = TRUE, shape = TRUE,
   aes.tags
 }
 
-available_aes <- function(x, ...) {
-  assert_class(x, "CategoricalAesMap")
-  aes.all <- sapply(x, )
-}
 update_aes <- function(x, aesthethic, covariate, ...) {
   # TODO: enable callback/update of aesthetic map
 }

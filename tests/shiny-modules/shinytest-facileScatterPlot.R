@@ -1,11 +1,13 @@
 # library(FacileShine)
 devtools::load_all(".")
 
+debug <- TRUE
+
 efds <- FacileData::exampleFacileDataSet()
 user <- Sys.getenv("USER")
 
 
-options(facile.log.level.fshine = "trace")
+options(facile.log.level.fshine = "warn")
 
 shiny::shinyApp(
   ui = shiny::fluidPage(

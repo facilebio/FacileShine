@@ -5,7 +5,7 @@
 \title{Use this with categoricalSampleCovariateSelect to enumerate its levels.}
 \usage{
 categoricalSampleCovariateLevels(input, output, session, rfds, covariate,
-  ..., .exclude = NULL, .reactive = TRUE)
+  ..., .exclude = NULL, .reactive = TRUE, debug = FALSE)
 }
 \arguments{
 \item{covaraite}{the \code{categoricalSampleCovariateSelect} module.}

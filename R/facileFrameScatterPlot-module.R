@@ -53,10 +53,6 @@ facileFrameScatterPlot <- function(input, output, session, rfds, fframe, ...,
     out
   })
 
-  aes.covs <- reactive({
-    aes$covariates()
-  })
-
   qcolnames <- reactive({
     out <- sapply(axes, name)
     out[!grepl("\\.nothing$", out)]
@@ -67,19 +63,14 @@ facileFrameScatterPlot <- function(input, output, session, rfds, fframe, ...,
     out[!grepl("^nothing$", out)]
   })
 
-  rdat <- reactive({
+  # The quantitative data to plot, without aesthetic mappings
+  rdat.core <- reactive({
     xdim <- .ndim()
     req(xdim >= 2L)
     f.all <- features()
-    covs <- unlist(aes.covs())
 
-    # The "fluent" facile data access call on a 2d plot looks like:
-    # out <- rfds %>%
-    #   active_samples() %>%
-    #   with_assay_data(axes$x$features(), aggregate.by = "ewm") %>%
-    #   with_assay_data(axes$y$features(), aggregate.by = "ewm") %>%
-    #   with_sample_covariates(covs)
-    #   collect(n = Inf)
+    ftrace("Retrieving assay data for scatterplot")
+
     out <- active_samples(rfds)
     for (f in f.all) {
       if (nrow(f)) {
@@ -88,8 +79,16 @@ facileFrameScatterPlot <- function(input, output, session, rfds, fframe, ...,
     }
     out <- collect(out, n = Inf)
     colnames(out) <- c("dataset", "sample_id", qcolnames())
-    if (length(covs)) {
-      out <- with_sample_covariates(out, covs, .fds = fds(rfds))
+    out
+  })
+
+  rdat <- reactive({
+    out <- req(rdat.core())
+    aes.map <- aes$map()
+    aes.covs <- setdiff(unlist(unname(aes.map)), colnames(out))
+    if (length(aes.covs)) {
+      ftrace("retrieving aes covariates for scatterplot")
+      out <- with_sample_covariates(dat.core, aes.covs)
     }
     out
   })
@@ -97,8 +96,9 @@ facileFrameScatterPlot <- function(input, output, session, rfds, fframe, ...,
   fscatter <- reactive({
     dat <- req(rdat())
     .axes <- qcolnames()
-    .aes <- aes.covs()
+    .aes <- isolate(aes$map())
     .labels <- qlabels()
+    ftrace("drawing scatterplot")
     fscatterplot(dat, .axes, color_aes = .aes$color, shape_aes = .aes$shape,
                  facet_aes = .aes$facet,
                  xlabel = .labels[1], # label(axes$x),
