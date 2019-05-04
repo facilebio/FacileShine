@@ -134,7 +134,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 #' @noRd
 #' @export
 #' @rdname categoricalSampleCovariateSelect
-#' @importFrom shiny NS selectizeInput
+#' @importFrom shiny NS selectInput
 categoricalSampleCovariateSelectUI <- function(id, label = "Covariate",
                                                choices = NULL, selected = NULL,
                                                multiple = FALSE,
@@ -177,6 +177,7 @@ label.CategoricalCovariateSelect <- function(x, ...) {
 #' @export
 #' @rdname categoricalSampleCovariateLevels
 #' @param covaraite the `categoricalSampleCovariateSelect` module.
+#' @importFrom shiny updateSelectizeInput
 categoricalSampleCovariateLevels <- function(input, output, session, rfds,
                                              covariate, ...,
                                              .exclude = NULL,

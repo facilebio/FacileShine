@@ -1,8 +1,14 @@
 #' Retrieves assay features from a FacileDataStore for a given assay type.
 #'
 #' @export
+#' @importFrom shiny
+#'   callModule
+#'   isolate
+#'   observe
+#'   reactive
+#'   reactiveValues
+#'   updateSelectizeInput
 #' @rdname assayFeatureSelect
-#'
 #' @return a list with the following elements:
 #'   * `assay_info`: one row assay,assay_type,feature_type tibble
 #'   * `features`: n-row feature_info_tbl() like tbl enumerating the assay
@@ -71,6 +77,7 @@ assayFeatureSelect <- function(input, output, session, rfds, ...,
 }
 
 #' @export
+#' @importFrom shiny selectInput selectizeInput
 #' @rdname assayFeatureSelect
 #' @param multiple,... passed into the `"features"` `selectizeInput`
 assayFeatureSelectUI <- function(id, multiple = TRUE, ...) {

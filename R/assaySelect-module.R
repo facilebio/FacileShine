@@ -2,6 +2,11 @@
 #'
 #' @export
 #' @rdname assaySelect
+#' @importFrom shiny
+#'   observe
+#'   reactive
+#'   reactiveValues
+#'   updateSelectInput
 #' @param rfds A ReactiveFacileDataStore
 assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
 

@@ -1,9 +1,12 @@
+library(FacileDenaliDataSets)
 # library(FacileShine)
 devtools::load_all(".")
 
+
 debug <- TRUE
 
-efds <- FacileData::exampleFacileDataSet()
+# efds <- FacileData::exampleFacileDataSet()
+efds <- FacileDenaliDataSet("mouse")
 user <- Sys.getenv("USER")
 
 
