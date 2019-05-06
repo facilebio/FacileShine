@@ -64,19 +64,19 @@ label.Labeled <- function(x, ...) {
 
 # Defined primarily for ReactiveFacileDataStore ================================
 
-#' @rdname reactiveFacileDataStore
+#' @rdname reactiveFacileDataStore-module
 #' @export
 active_assays <- function(x, ...) {
   UseMethod("active_assays", x)
 }
 
-#' @rdname reactiveFacileDataStore
+#' @rdname reactiveFacileDataStore-module
 #' @export
 active_covariates <- function(x, ...) {
   UseMethod("active_covariates", x)
 }
 
-#' @rdname reactiveFacileDataStore
+#' @rdname reactiveFacileDataStore-module
 #' @export
 active_samples <- function(x, ...) {
   UseMethod("active_samples", x)

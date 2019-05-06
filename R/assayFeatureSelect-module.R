@@ -24,7 +24,7 @@ assayFeatureSelect <- function(input, output, session, rfds, ...,
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
   state <- reactiveValues(
-    features = .no_features(),
+    selected = .no_features(),
     # "labeled" API
     name = "__initializing__",
     label = "__initializing__")
@@ -34,41 +34,41 @@ assayFeatureSelect <- function(input, output, session, rfds, ...,
     # TODO: Are we excluding assays altogether, features from assays, or both?
   }
 
-  assay <- callModule(assaySelect, "assay", rfds, .reactive = .reactive)
+  assay_select <- callModule(assaySelect, "assay", rfds, .reactive = .reactive)
 
-  # Update the features available for selection based on the value of the
-  # currently selected assay
+  # Update assayFeatureSelect with feature universe from assay_select
   observe({
-    features. <- req(assay_feature_info(assay))
-    choices <- with(
-      filter(features., nchar(name) > 0),
-      setNames(feature_id, name))
+    universe <- assay_select$features()
+    choices <- setNames(universe[["feature_id"]], universe[["name"]])
     updateSelectizeInput(session, "features", choices = choices,
-                         server = TRUE, selected = NULL)
+                         selected = NULL, server = TRUE)
   })
 
-  # I think this may invalidate twice, which causes double draws in fscatter
-  features <- reactive({
-    fid <- input$features
-    is.empty <- unselected(fid)
-    if (is.empty) fid <- character()
+  selected <- reactive({
+    req(initialized(rfds))
+    current <- isolate(state$selected)
+    selected_ids <- input$features
+    universe <- assay_select$features()
 
-    current <- isolate(state$features)
-    if (!setequal(fid, current$feature_id)) {
-      if (is.empty) {
-        state$features <- .no_features()
-      } else {
-        f.all <- isolate(assay_feature_info(assay))
-        state$features <- filter(f.all, feature_id %in% fid)
-      }
+    is.unselected <- unselected(selected_ids)
+    bad.ids <- setdiff(selected_ids, universe[["feature_id"]])
+
+    if (is.unselected || length(bad.ids)) {
+      selected <- .no_features()
+    } else {
+      selected <- filter(universe, feature_id %in% selected_ids)
     }
 
-    state$features
+    if (!setequal(current$feature_id, selected$feature_id)) {
+      state$selected <- selected
+    }
+
+    state$selected
   })
 
   vals <- list(
-    features = features,
-    assay_info = assay$result,
+    selected = selected,
+    assay_info = assay_select$result,
     .state = state,
     .ns = session$ns)
   class(vals) <- c("AssayFeatureSelect", "FacileDataAPI", "Labeled")
@@ -100,8 +100,7 @@ assayFeatureSelectUI <- function(id, multiple = TRUE, ...) {
 #' @noRd
 #' @export
 name.AssayFeatureSelect <- function(x, ...) {
-  assert_reacting()
-  xf <- x[["features"]]()
+  xf <- x[["selected"]]()
   out <- if (nrow(xf) == 0) {
     "nothing"
   } else if (nrow(xf) == 1) {
@@ -115,8 +114,7 @@ name.AssayFeatureSelect <- function(x, ...) {
 #' @noRd
 #' @export
 label.AssayFeatureSelect <- function(x, ...) {
-  assert_reacting()
-  xf <- x[["features"]]()
+  xf <- x[["selected"]]()
   if (nrow(xf) == 0) {
     "nothing"
   } else if (nrow(xf) == 1) {

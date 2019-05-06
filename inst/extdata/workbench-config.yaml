@@ -1,0 +1,113 @@
+appname: FacileWorkbench
+# The config section is where we can put global application configuration
+# parameters.
+# Each datastore can provide dataset-level parameters
+datastores:
+  params:
+    group_order:
+      - "Denali Internal"
+      - "Denali Reprocessed Public"
+      - "ARCHS4 Public RNA-seq"
+      - "Consortia"
+  datastores:
+# Denali Internal --------------------------------------------------------------
+    dnli_human:
+      group: Denali Internal
+      name: Denali Human
+      path: /Users/lianoglou/workspace/data/FacileData/denali_internal/FacileDenaliHumanDataSet
+      url: "http://internal.denalitherapeutics.com/datasets"
+      description: >
+        RNA-seq (and other omics) datasets internally generated to support
+        reseach at Denali.
+    dnli_mouse:
+      group: Denali Internal
+      name: Denali Mouse
+      path: /Users/lianoglou/workspace/data/FacileData/denali_internal/FacileDenaliMouseDataSet
+      url: "http://internal.denalitherapeutics.com/datasets"
+      description: >
+        RNA-seq (and other omics) datasets internally generated to support
+        reseach at Denali.
+    dnli_cyno:
+      group: Denali Internal
+      name: Denali Cyno
+      path: /Users/lianoglou/workspace/data/FacileData/denali_internal/FacileDenaliCynoDataSet
+      url: "http://internal.denalitherapeutics.com/datasets"
+      description: >
+        RNA-seq (and other omics) datasets internally generated to support
+        reseach at Denali.
+# Denali External --------------------------------------------------------------
+    ext_dnli_human:
+      group: Denali Reprocessed Public
+      name: External Human
+      path: /Users/lianoglou/workspace/data/FacileData/denali_reprocessed/FacileDenaliExternalHumanDataSet
+      url: "http://internal.denalitherapeutics.com/datasets"
+      description: >
+        Public human RNA-seq (and other omics) datasets that have reprocessed
+        using Denali's internal pipelines.
+    ext_dnli_mouse:
+      group: Denali Reprocessed Public
+      name: External Mouse
+      path: /Users/lianoglou/workspace/data/FacileData/denali_reprocessed/FacileDenaliExternalMouseDataSet
+      url: "http://internal.denalitherapeutics.com/datasets"
+      description: >
+        Public mouse RNA-seq (and other omics) datasets that have reprocessed
+        using Denali's internal pipelines.
+    ext_dnli_cyno:
+      group: Denali Reprocessed Public
+      name: External Cyno Monkey
+      path: /Users/lianoglou/workspace/data/FacileData/denali_reprocessed/FacileDenaliExternalCynoDataSet
+      url: "http://internal.denalitherapeutics.com/datasets"
+      description: >
+        Public cyno RNA-seq (and other omics) datasets that have reprocessed
+        using Denali's internal pipelines.
+# ARCHS4 -----------------------------------------------------------------------
+    archs4human:
+      group: ARCHS4 Public RNA-seq
+      name: ARCHS4 Human
+      path: /Users/lianoglou/workspace/data/FacileData/archs4/FacileArchs4HumanDataSet
+      url: "https://amp.pharm.mssm.edu/archs4/"
+      description: >
+        Public human Illumnia based RNA-seq data reprocessed using a standard
+        pipeline, provided by the ARCSH4 project from The Ma'ayan Lab at Mount
+        Sinai.
+    archs4mouse:
+      group: ARCHS4 Public RNA-seq
+      name: ARCHS4 Mouse
+      path: /Users/lianoglou/workspace/data/FacileData/archs4/FacileArchs4MouseDataSet
+      url: "https://amp.pharm.mssm.edu/archs4/"
+      description: >
+        Public mouse Illumnia based RNA-seq data reprocessed using a standard
+        pipeline, provided by the ARCSH4 project from The Ma'ayan Lab at Mount
+        Sinai.
+# Consortia --------------------------------------------------------------------
+    test_tcga:
+      group: Consortia
+      name: Example TCGA Dataset
+      path: /Users/lianoglou/workspace/projects/FacileData/FacileData/inst/extdata/exampleFacileDataSet/
+      url: https://www.cancer.gov/about-nci/organization/ccg/research/structural-genomics/tcga
+      description: >
+        A subset of RNA-seq data from the bladder and colorectal indications
+    targetals:
+      group: Consortia
+      name: Target ALS
+      path: /Users/lianoglou/workspace/data/FacileData/FacileTargetALSDataSet
+      url: http://www.targetals.org/
+      description: >
+        Target ALS RNA-seq (and something else?), harmonized by Thomas Sandmann.
+    rosmap:
+      group: Consortia
+      name: ROS/MAP
+      path: /Users/lianoglou/workspace/data/FacileData/FacileRosMapDataSet
+      url: https://www.rushu.rush.edu/research/departmental-research/religious-orders-study
+      description: >
+        ROSMAP dataset
+# The config section isn't used  yet.
+modules:
+  scatterplot:
+    module: facileScatterPlot
+  boxplot:
+    module: facileBoxPlot
+  dge:
+    module: facileDifferentialExpression
+  heatmap:
+    module: facileHeatmap

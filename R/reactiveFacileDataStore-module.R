@@ -50,6 +50,7 @@
 #'
 #' @export
 #' @importFrom shiny observeEvent reactiveValues
+#' @rdname reactiveFacileDataStore-module
 #' @param path A "reactive string" that points to the url/directory to
 #'   instantiate the ReactiveFacileDataStore from.
 reactiveFacileDataStore <- function(intput, output, session, path,
@@ -183,9 +184,22 @@ reactiveFacileDataStoreUI <- function(id, ...) {
     DT::DTOutput(ns("active_covariates")))
 }
 
+#' @section ReactiveFacileDataStore:
+#' We also provide a constructor-like-looking function which can be used
+#' instead of the `callModule(reactiveFacileDataStore, ...)` stuff in server
+#' functions, like so:
+#'
+#' ```r
+#' rfds <- ReactiveFacileDataStore(path, "rfds", samples = s)
+#' ```
+#'
 #' @noRd
 #' @export
-#' @importFrom shiny getDefaultReactiveDomain
+#' @rdname reactiveFacileDataStore-module
+#'
+#' @param x The path to the datsstore
+#' @param id the id of the shiny module
+#' @return a reactiveFacileDataStore module
 ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
                                     samples = NULL, ...) {
   pf <- parent.frame()
@@ -233,31 +247,6 @@ initialized.ReactiveFacileDataStore <- function(x, ...) {
 initialized.BoxedFacileDataStore <- function(x, ...) {
   TRUE
 }
-
-# #' Extracts the "reactive" list from a FacileDataStore
-# #'
-# #' An S3 ReactiveFacileDataStore (`rfds`) stores the reactives list in
-# #' `rfds[[".reactive."]]`. An S4 ReactiveFacileDataStore (ie. a FacileDataStore
-# #' over a `SingleCellExperiment`) will store this somehwere else.
-# #'
-# #' TODO: remove reactives() S3?
-# #'
-# #' @export
-# reactives <- function(x, name = NULL, ...) {
-#   UseMethod("reactives", x)
-# }
-#
-# #' This will enable trigger & depend, as defined in
-# #' FacileShine::reactiveFacileDataStore_v1-module.R to work
-# #'
-# #' TODO: remove reactives() S3?
-# #'
-# #' @noRd
-# #' @export
-# reactives.ReactiveFacileDataStore <- function(x, name = NULL, ...) {
-#   assert_choice(name, names(x), null.ok = FALSE)
-#   x[[name]]
-# }
 
 #' @noRd
 #' @export

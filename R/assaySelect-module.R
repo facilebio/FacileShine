@@ -18,13 +18,19 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
     assay_info = tibble(
       assay = "__initializing__",
       assay_type = "__initializing__",
-      feature_type = "__initializing__"))
+      feature_type = "__initializing__"),
+    universe = tibble(
+      feature_type = character(),
+      feature_id = character(),
+      name = character()))
 
   # This a tibble of the available assays available for the active_samples
   # of the rfds
   assays <- reactive({
+    req(initialized(rfds))
     aa <- req(isolate.(active_assays(rfds)))
-    ftrace("Updating available set of assays")
+    ftrace("Updating available set of assays stored internally: ",
+           paste(aa$assay, collapse = ","))
     aa
   })
 
@@ -33,20 +39,26 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
   # selected.
   observe({
     available_assays <- assays()$assay
-    .ai <- state$assay_info
+    .ai <- isolate(state$assay_info)
     if (.ai$assay %in% available_assays) {
       selected <- .ai$assay
     } else {
       selected <- available_assays[1L]
-      ftrace("A change in active_assays() changes selected assay in ",
-             "{red}{bold}state{reset} variable")
+    }
+
+    if (isolate(state$assay_info$assay) != selected) {
+      ftrace("A change in available assays (assays()$assay) changes ",
+             "{red}{bold}assay_info state{reset} variable to: {bold}",
+             selected, "{reset}")
       state$assay_info <- FacileData::assay_info(rfds, selected)
     }
+
     updateSelectInput(session, "assay", choices = available_assays,
                       selected = selected)
   })
 
-  assay_info <- reactive({
+  assay_info <- eventReactive(list(input$assay, state$assay_info), {
+    req(!unselected(input$assay_info$assay))
     .assay <- req(input$assay)
     .ai <- state$assay_info
     if (.ai$assay != .assay) {
@@ -58,13 +70,16 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
 
   features <- reactive({
     ftrace("updating available features")
-    if (!is(state$assay_info, "facile_frame")) {
+    assay_info. <- state$assay_info
+    if (!is(assay_info., "facile_frame")) {
+      # Creates a 0-row tibble with correct columns
       out <- collect(assay_feature_info(rfds, default_assay(rfds)), n = 1L)
       out <- filter(out, FALSE)
     } else {
-      out <- assay_feature_info(rfds, state$assay_info[["assay"]])
+      out <- assay_feature_info(rfds, assay_info.[["assay"]])
       out <- collect(arrange(out, name), n = Inf)
     }
+    out <- select(out, assay, feature_type, feature_id, name)
     out
   })
 

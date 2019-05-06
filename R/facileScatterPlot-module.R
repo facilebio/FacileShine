@@ -30,30 +30,18 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
   aes <- callModule(categoricalAestheticMap, "aes", rfds,
                     group = FALSE, ..., .reactive = .reactive)
 
-  # Handle dynamic number of axes
-  axnames <- head(c("x", "y", "z"), ndim)
-
-  output$axes <- renderUI({
-    ncol <- floor(12 / ndim)
-    out <- sapply(axnames, function(axis) {
-      column(ncol, wellPanel(assayFeatureSelectUI(ns(axis))))
-    }, simplify = FALSE)
-  })
-
-  axes <- sapply(axnames, function(axis) {
-    callModule(assayFeatureSelect, axis, rfds)
-  }, simplify = FALSE)
+  xaxis <- callModule(assayFeatureSelect, "xaxis", rfds)
+  yaxis <- callModule(assayFeatureSelect, "yaxis", rfds)
+  zaxis <- callModule(assayFeatureSelect, "zaxis", rfds)
 
   features <- reactive({
-    lapply(axes, function(axis) {
-      tryCatch(axis$features(), error = function(e) NULL)
-    })
+    list(x = xaxis$selected(), y = yaxis$selected(), z = zaxis$selected())
   })
 
   .ndim <- reactive({
     out <- 0L
     for (f in features()) {
-      if (nrow(f) > 0L) out <- out + 1L
+      if (!is.null(f) && nrow(f) > 0L) out <- out + 1L
     }
     out
   })
@@ -64,12 +52,12 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
   })
 
   qcolnames <- reactive({
-    out <- sapply(axes, name)
+    out <- c(x = name(xaxis), y = name(yaxis), z = name(zaxis))
     out[!grepl("\\.nothing$", out)]
   })
 
   qlabels <- reactive({
-    out <- sapply(axes, label)
+    out <- c(x = label(xaxis), y = label(yaxis), z = label(zaxis))
     out[!grepl("^nothing$", out)]
   })
 
@@ -126,10 +114,10 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
 
   vals <- list(
     ndim = .ndim,
-    xaxis = axes$x,
-    yaxis = axes$y,
-    zaxis = axes$z,
-    # aes = aes,
+    xaxis = xaxis,
+    yaxis = yaxis,
+    zaxis = zaxis,
+    aes = aes,
     viz = fscatter,
     .ns = session$ns)
 
@@ -145,7 +133,9 @@ facileScatterPlotUI <- function(id, ...) {
   ns <- NS(id)
   tagList(
     fluidRow(
-      uiOutput(ns("axes"))),
+      column(4, wellPanel(assayFeatureSelectUI(ns("xaxis")))),
+      column(4, wellPanel(assayFeatureSelectUI(ns("yaxis")))),
+      column(4, wellPanel(assayFeatureSelectUI(ns("zaxis"))))),
     fluidRow(
       column(
         12,
