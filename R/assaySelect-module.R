@@ -79,6 +79,7 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
       out <- assay_feature_info(rfds, assay_info.[["assay"]])
       out <- collect(arrange(out, name), n = Inf)
     }
+    out <- filter(out, grepl("^[a-zA-Z]", name))
     out <- select(out, assay, feature_type, feature_id, name)
     out
   })

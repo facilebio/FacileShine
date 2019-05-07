@@ -162,7 +162,9 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     state$name
   })
 
-  output$active_covariates <- DT::renderDT(state$active_covariates)
+  output$active_covariates <- DT::renderDT({
+    state$active_covariates
+  }, server = TRUE)
   output$nsamples <- shiny::renderText({
     nrow(state$active_samples)
   })

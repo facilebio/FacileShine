@@ -82,8 +82,8 @@ staticbenchplus <- function(config = NULL, user = Sys.getenv("USER"), ...) {
         icon = icon("binoculars", lib = "font-awesome"),
         startExpanded = FALSE,
         menuSubItem(
-          text = "Dimensionality Reduction",
-          tabName = "dimredtab",
+          text = "PCA",
+          tabName = "pcatab",
           # compress-arrows-alt
           icon = icon("compress", lib = "font-awesome")),
         menuSubItem(
@@ -135,7 +135,7 @@ staticbenchplus <- function(config = NULL, user = Sys.getenv("USER"), ...) {
         "dataselecttab",
         datasetSelectUI("dselect"),
         singleFilteredReactiveFacileDataStoreUI("rfds")),
-      tabItem("dimredtab", "Dimensionality Reduction"),
+      tabItem("pcatab", "Principal Components Analysis"),
       tabItem("scatterplottab", facileScatterPlotUI("scatter")),
       tabItem("boxplottab", "Box Plot"),
       # tabItem("dgetab", fdgeAnalysisUI("fdgea")),
