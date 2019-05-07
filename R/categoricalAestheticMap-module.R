@@ -3,15 +3,17 @@
 #' @export
 #' @rdname categoricalAestheticMap
 categoricalAestheticMap <- function(input, output, session, rfds,
-                                    color = TRUE, shape = TRUE, group = FALSE,
-                                    facet = TRUE, ..., .with_none = TRUE,
-                                    .exclude = NULL, .reactive = TRUE) {
+                                    color = FALSE, facet = FALSE, group = FALSE,
+                                    hover = FALSE, shape = FALSE, ...,
+                                    .with_none = TRUE, .exclude = NULL,
+                                    .reactive = TRUE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   state <- reactiveValues(
     color = "",
-    shape = "",
+    facet = "",
     group = "",
-    facet = "")
+    hover = "",
+    shape = "")
 
   # Not using categoricalSampleCovariateSelect N times, because trying to be
   # more efficient. Basically the different aesthetics can just select from
@@ -74,7 +76,11 @@ categoricalAestheticMap <- function(input, output, session, rfds,
     }
   })
 
+  if (color) {
+
+  }
   observeEvent(input$color, {
+    if (!color) return(invisible(NULL))
     selected <- input$color
     if (unselected(selected)) selected <- ""
     if (!is.null(selected) && !setequal(selected, state$color)) {
@@ -82,23 +88,8 @@ categoricalAestheticMap <- function(input, output, session, rfds,
     }
   })
 
-  observeEvent(input$shape, {
-    selected <- input$shape
-    if (unselected(selected)) selected <- ""
-    if (!is.null(selected) && !setequal(selected, state$shape)) {
-      state$shape <- selected
-    }
-  })
-
-  observeEvent(input$group, {
-    selected <- input$group
-    if (unselected(selected)) selected <- ""
-    if (!is.null(selected) && !setequal(selected, state$group)) {
-      state$group <- selected
-    }
-  })
-
   observeEvent(input$facet, {
+    if (!facet) return(invisible(NULL))
     selected <- input$facet
     if (unselected(selected)) selected <- ""
     if (!is.null(selected) && !setequal(selected, state$facet)) {
@@ -106,18 +97,43 @@ categoricalAestheticMap <- function(input, output, session, rfds,
     }
   })
 
+  observeEvent(input$group, {
+    if (!group) return(invisible(NULL))
+    selected <- input$group
+    if (unselected(selected)) selected <- ""
+    if (!is.null(selected) && !setequal(selected, state$group)) {
+      state$group <- selected
+    }
+  })
+
+  observeEvent(input$hover, {
+    if (!hover) return(invisible(NULL))
+    selected <- input$hover
+    if (unselected(selected)) selected <- ""
+    if (!is.null(selected) && !setequal(selected, state$hover)) {
+      state$hover <- selected
+    }
+  })
+
+  observeEvent(input$shape, {
+    if (!shape) return(invisible(NULL))
+    selected <- input$shape
+    if (unselected(selected)) selected <- ""
+    if (!is.null(selected) && !setequal(selected, state$shape)) {
+      state$shape <- selected
+    }
+  })
+
   # Character vector: names are the aesthetics, values are the covariate names
   aes.covs <- reactive({
-    covs <- list(color = state$color, shape = state$shape,
-                 group = state$group, facet = state$facet)
-    covs[sapply(covs, function(val) nchar(val) > 0)]
+    covs <- list(color = state$color, facet = state$facet,
+                 group = state$group,
+                 hover = state$hover,
+                 shape = state$shape)
+    covs[sapply(covs, function(val) all(nchar(val) > 0))]
   })
 
   vals <- list(
-    # color = reactive(state$color),
-    # shape = reactive(state$shape),
-    # group = reactive(state$group),
-    # facet = reactive(state$facet),
     map = aes.covs,
     .state = state,
     .ns = session$ns)
@@ -129,18 +145,18 @@ categoricalAestheticMap <- function(input, output, session, rfds,
 #' @importFrom tools toTitleCase
 #' @importFrom shiny NS column fluidRow selectizeInput
 #' @rdname categoricalAestheticMap
-categoricalAestheticMapUI <- function(id, color = TRUE, shape = TRUE,
-                                      group = FALSE,  facet = TRUE,
-                                      horizontal = TRUE, ...) {
+categoricalAestheticMapUI <- function(id, color = FALSE, facet = FALSE,
+                                      group = FALSE, hover = FALSE,
+                                      shape = FALSE, horizontal = TRUE, ...) {
   ns <- NS(id)
 
-  mod.include <- .module_list(color, shape, group, facet)
+  mod.include <- .module_list(color, facet, group, hover, shape)
   ncol <- floor(12 / length(mod.include))
 
   aes.tags <- sapply(names(mod.include), function(aname) {
     label <- toTitleCase(aname)
     ui <- selectizeInput(ns(aname), label = aname, choices = NULL,
-                         multiple = FALSE)
+                         multiple = aname == "hover")
     if (horizontal) ui <- column(ncol, ui)
     ui
   }, simplify = FALSE)
@@ -157,10 +173,9 @@ update_aes <- function(x, aesthethic, covariate, ...) {
 }
 
 # Helper Functions =============================================================
-.module_list <- function(color = TRUE, shape = TRUE, group = TRUE,
-                         facet = TRUE) {
+.module_list <- function(color = FALSE, facet = FALSE, group = FALSE,
+                         hover = FALSE, shape = FALSE) {
   mod.include <- list(
-    color = color, shape = shape,
-    group = group, facet = facet)
+    color = color, facet = facet, group = group, hover = hover, shape = shape)
   mod.include[unlist(mod.include)]
 }

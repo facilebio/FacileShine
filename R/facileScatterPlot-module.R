@@ -10,8 +10,8 @@
 #' A 1d scatter plot might just default to a density plot.
 #'
 #' @export
-#' @importFrom shiny column wellPanel
-#' @importFrom plotly renderPlotly
+#' @importFrom shiny column renderUI wellPanel
+#' @importFrom plotly renderPlotly plotlyOutput
 #' @rdname facileScatterPlot
 #'
 #' @param ndim Defaults to 3. When any two dimensions are provided, a plot will
@@ -28,6 +28,7 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
   aes <- callModule(categoricalAestheticMap, "aes", rfds,
+                    color = TRUE, shape = TRUE, facet = TRUE, hover = TRUE,
                     group = FALSE, ..., .reactive = .reactive)
 
   xaxis <- callModule(assayFeatureSelect, "xaxis", rfds)
@@ -97,19 +98,33 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     .axes <- qcolnames()
     .aes <- isolate(aes$map())
     .labels <- qlabels()
+    hover. <- unique(unlist(unname(.aes), recursive = TRUE))
+    if (length(hover.) == 0) hover. <- NULL
     ftrace("drawing scatterplot")
+    if (length(.axes) == 3L) .aes$facet <- NULL
     fscatterplot(dat, .axes, color_aes = .aes$color, shape_aes = .aes$shape,
-                 facet_aes = .aes$facet,
+                 facet_aes = .aes$facet, hover = hover.,
+                 webgl = nrow(dat) > 1000,
                  xlabel = .labels[1], # label(axes$x),
                  ylabel = .labels[2], # label(axes$y),
                  zlabel = .labels[3], # label(axes$z),
                  source = event_source)
   })
 
-  output$scatter <- renderPlotly({
+  plotsize <- reactive({
     fs <- fscatter()
     req(fs, "FacileScatterViz")
-    plot(fs)
+    list(width = plot(fs)$width, height = plot(fs)$height)
+  })
+
+  observeEvent(plotsize(), {
+    psize <- req(plotsize())
+    output$scatterplot <- renderPlotly(plot(fscatter()))
+    output$plotlybox <- renderUI({
+      plotlyOutput(session$ns("scatterplot"),
+                   width = psize$width,
+                   height = psize$height)
+    })
   })
 
   vals <- list(
@@ -139,9 +154,15 @@ facileScatterPlotUI <- function(id, ...) {
     fluidRow(
       column(
         12,
-        wellPanel(categoricalAestheticMapUI(ns("aes"), group = FALSE)))),
+        wellPanel(
+          categoricalAestheticMapUI(
+            ns("aes"), color = TRUE, shape = TRUE, facet = TRUE, hover = TRUE,
+            group = FALSE)))),
+    # fluidRow(
+    #   column(12, plotlyOutput(ns("scatter")))))
     fluidRow(
-      column(12, plotlyOutput(ns("scatter")))))
+      column(12, uiOutput(ns("plotlybox"))))
+    )
 }
 
 update_aes <- function(x, aesthethic, covariate, ...) {
