@@ -80,12 +80,12 @@ assayFeatureSelect <- function(input, output, session, rfds, ...,
 #' @importFrom shiny selectInput selectizeInput
 #' @rdname assayFeatureSelect
 #' @param multiple,... passed into the `"features"` `selectizeInput`
-assayFeatureSelectUI <- function(id, multiple = TRUE, ...) {
+assayFeatureSelectUI <- function(id, label = NULL, multiple = TRUE, ...) {
   ns <- NS(id)
 
   tagList(
     fluidRow(
-      column(9, selectizeInput(ns("features"), label = NULL, choices = NULL,
+      column(9, selectizeInput(ns("features"), label = label, choices = NULL,
                                multiple = multiple, ...)),
       # column(3, selectInput(ns("assay"), label = NULL, choices = NULL))),
       column(3, assaySelectUI(ns("assay"), label = NULL, choices = NULL))),

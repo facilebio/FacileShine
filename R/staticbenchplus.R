@@ -123,8 +123,10 @@ staticbenchplus <- function(config = NULL, user = Sys.getenv("USER"), ...) {
 #'   dashboardBody
 #'   tabItem
 #'   tabItems
+#' @importFrom shinyjs useShinyjs
 .staticbenchplus_body <- function() {
   dashboardBody(
+    useShinyjs(),
     tags$head(tags$style(HTML('
       .main-footer {
         background-color: #BFBFBF; color: white;

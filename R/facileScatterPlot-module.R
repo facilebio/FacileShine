@@ -108,7 +108,7 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
                  xlabel = .labels[1], # label(axes$x),
                  ylabel = .labels[2], # label(axes$y),
                  zlabel = .labels[3], # label(axes$z),
-                 source = event_source)
+                 event_source = event_source)
   })
 
   plotsize <- reactive({

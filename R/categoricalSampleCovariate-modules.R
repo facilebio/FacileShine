@@ -42,11 +42,13 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
   active.samples <- reactive({
     req(initialized(rfds))
+    ftrace("Updating active_samples")
     isolate.(active_samples(rfds))
   })
 
   active.covariates <- reactive({
     req(initialized(rfds))
+    ftrace("Updating active.covariates()")
     all.covs <- isolate.(active_covariates(rfds))
     cat.covs <- filter(all.covs, class == "categorical")
     cat.covs

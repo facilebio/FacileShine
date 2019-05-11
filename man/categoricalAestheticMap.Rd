@@ -5,12 +5,13 @@
 \alias{categoricalAestheticMapUI}
 \title{Provides re-usable a widget bar to map data to aesthetics.}
 \usage{
-categoricalAestheticMap(input, output, session, rfds, color = TRUE,
-  shape = TRUE, group = FALSE, facet = TRUE, ...,
+categoricalAestheticMap(input, output, session, rfds, color = FALSE,
+  facet = FALSE, group = FALSE, hover = FALSE, shape = FALSE, ...,
   .with_none = TRUE, .exclude = NULL, .reactive = TRUE)
 
-categoricalAestheticMapUI(id, color = TRUE, shape = TRUE,
-  group = FALSE, facet = TRUE, horizontal = TRUE, ...)
+categoricalAestheticMapUI(id, color = FALSE, facet = FALSE,
+  group = FALSE, hover = FALSE, shape = FALSE, horizontal = TRUE,
+  ...)
 }
 \description{
 Provides re-usable a widget bar to map data to aesthetics.

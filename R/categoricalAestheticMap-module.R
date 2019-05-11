@@ -76,9 +76,6 @@ categoricalAestheticMap <- function(input, output, session, rfds,
     }
   })
 
-  if (color) {
-
-  }
   observeEvent(input$color, {
     if (!color) return(invisible(NULL))
     selected <- input$color
