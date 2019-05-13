@@ -60,13 +60,16 @@ reactiveFacileDataStore <- function(intput, output, session, path,
   state <- reactiveValues(
     fds = "__initializing__",
     name = "__initializing__",
-    active_samples = tibble(
-      dataset = character(), sample_id = character()),
-    active_assays = tibble(
-      assay = character(), ndatasets = integer(), nsamples = integer()),
-    # a summary()-table of the stored and ephemeral eav_sample_covariates
-    active_covariates = tibble(
-      assay = character(), ndatasets = integer(), nsamples = integer()),
+    # active_samples = tibble(
+    #   dataset = character(), sample_id = character()),
+    # active_assays = tibble(
+    #   assay = character(), ndatasets = integer(), nsamples = integer()),
+    ## a summary()-table of the stored and ephemeral eav_sample_covariates
+    # active_covariates = tibble(
+    #   assay = character(), ndatasets = integer(), nsamples = integer()),
+    active_samples = "__initializing__",
+    active_assays = "__initializing__",
+    active_covariates = "__initializing__",
     # ephemeral annotations provided by user during interactive exploration
     esample_annotation = .empty_sample_annotation_tbl(),
     efeature_annotation = .empty_feature_annotation_tbl(),
@@ -117,8 +120,9 @@ reactiveFacileDataStore <- function(intput, output, session, path,
         asamples <- semi_join(asamples, restrict_samples.,
                               by = c("dataset", "sample_id"))
       }
-      asamples
+      as_facile_frame(asamples, fds., "reactive_facile_frame")
     })
+    # browser()
     state[["esample_annotation"]] <- .empty_sample_annotation_tbl()
     state[["efeature_annotation"]] <- .empty_feature_annotation_tbl()
     state[["efacets"]] <- .empty_facet_tbl()
@@ -130,7 +134,7 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     samples. <- state[["active_samples"]]
     ecovs <- state[["esample_annotation"]]
 
-    ftrace("enter observeEvent(state$active_samples")
+    ftrace("Observed update to {bold}{red}state$active_samples{reset}")
 
     # TODO: test that replacements for state variables are different than
     #       what is already stored there (maybe this will avoid double firing)
@@ -163,6 +167,7 @@ reactiveFacileDataStore <- function(intput, output, session, path,
   })
 
   output$active_covariates <- DT::renderDT({
+    req(!is.character(state$active_covariates))
     state$active_covariates
   }, server = TRUE)
   output$nsamples <- shiny::renderText({
@@ -241,7 +246,18 @@ ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
 initialized.ReactiveFacileDataStore <- function(x, ...) {
   # is(fds(x), "FacileDataStore") && !unselected(name(x))
   # Not using fds() because fds() itself calls req(initialized(x))
-  is(x[[".state"]][["fds"]], "FacileDataStore") && !unselected(name(x))
+
+  # Check if anything is __initializing__ and we have a FacileDataStore
+  # inside
+  check <- c("active_samples", "active_assays", "active_covariates")
+  initing <- sapply(check, function(var) {
+    obj <- x[[".state"]][[var]]
+    is.character(obj) && obj == "__initializing__"
+  })
+
+  !any(initing) &&
+    is(x[[".state"]][["fds"]], "FacileDataStore") &&
+    !unselected(name(x))
 }
 
 #' @noRd
@@ -559,6 +575,7 @@ update_reactive_samples.ReactiveFacileDataStore <- function(x, active_samples,
     with(.as, paste(dataset, sample_id)))
 
   if (!is.same) {
+    .as <- as_facile_frame(.as, fds(x), "reactive_facile_frame")
     x[[".state"]][["active_samples"]] <- .as
   }
 

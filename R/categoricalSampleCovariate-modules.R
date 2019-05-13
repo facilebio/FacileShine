@@ -54,6 +54,12 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     cat.covs
   })
 
+  categorical.covariates <- reactive({
+    req(active.covariates()) %>%
+      filter(nlevels > 1) %>%
+      pull(variable)
+  })
+
   # Updating the covariate select dropdown is a little tricky because we want
   # to support the situation where the current active.covariates change in
   # response to the current set of active_samples changing.
@@ -62,11 +68,10 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   # in the ones that are available after the underlying set of active_samples
   # and nactive_covariates shifts.
   observe({
-    choices <- req(active.covariates()) %>%
-      filter(nlevels > 1) %>%
-      pull(variable)
+    choices <- categorical.covariates()
 
     ftrace("Updating available covariates to select from")
+    # browser()
 
     choices <- sort(choices)
     if (.with_none) {
@@ -74,6 +79,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     }
 
     selected <- isolate(input$covariate)
+    if (unselected(selected)) selected <- ""
     overlap <- intersect(selected, choices)
     if (length(overlap)) {
       if (!setequal(state$covariate, overlap)) state$covariate <- overlap
@@ -85,15 +91,29 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
     updateSelectInput(session, "covariate", choices = choices,
                       selected = selected)
-  })
+  }, priority = 10)
+
+  # Due to dynamic chort selection, sometimes the value stored in
+  # state$covariate isn't the one that is returned in module$covariate(),
+  # so, let's double check here
+  # in.sync <- reactive({
+  #   unselected(state$covariate) ||
+  #     all(state$covariate %in% categorical.covariates())
+  # })
 
   # A reactive for the currently selected covariate in the selectInput
   covariate <- reactive({
+    # req(in.sync())
+    req(active.covariates()) # ensures this widget is initalized first
     cov <- input$covariate
+    current <- state$covariate
     if (unselected(cov)) cov <- ""
-    if (!setequal(cov, state$covariate)) {
+    if (!setequal(cov, current)) {
+      ftrace("Updating covariate state: {current} {bold}->{reset} {cov}",
+             current = current, cov = cov)
       state$covariate <- cov
     }
+    ftrace("Retrieving covariate({red}", state$covariate, "{reset})")
     state$covariate
   })
 
@@ -108,6 +128,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
       scovs <- fetch_sample_covariates(rfds, active.samples(), covariate.)
       out <- summary(scovs, expanded = TRUE)
     }
+    ftrace("Calculating covariate({red}", covariate., "{reset}) summary")
     out
   })
 
@@ -124,6 +145,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     covariate = covariate,
     summary = covariate.summary,
     levels = cov.levels,
+    # kosher = reactive(all(covariate() %in% covariate.summary()[["variable"]])),
     .state = state,
     .ns = session$ns)
   class(vals) <- c("CategoricalCovariateSelect",
@@ -192,7 +214,10 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
   observe({
     cov.levels <- covariate$levels()
     selected. <- intersect(cov.levels, isolate(input$values))
-    if (length(selected.) == 0L) selected. <- NULL
+    if (length(selected.) == 0L) {
+      selected. <- NULL
+      state$values <- ""
+    }
     updateSelectizeInput(session, "values", choices = cov.levels,
                          selected = selected., server = TRUE)
   })

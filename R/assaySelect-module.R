@@ -69,7 +69,6 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
   })
 
   features <- reactive({
-    ftrace("updating available features")
     assay_info. <- state$assay_info
     if (!is(assay_info., "facile_frame")) {
       # Creates a 0-row tibble with correct columns
@@ -81,6 +80,7 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
     }
     out <- filter(out, grepl("^[a-zA-Z]", name))
     out <- select(out, assay, feature_type, feature_id, name)
+    ftrace("updating available features")
     out
   })
 

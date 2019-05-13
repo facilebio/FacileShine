@@ -8,7 +8,7 @@
 assayFeatureSelect(input, output, session, rfds, ..., .exclude = NULL,
   .reactive = TRUE)
 
-assayFeatureSelectUI(id, multiple = TRUE, ...)
+assayFeatureSelectUI(id, label = NULL, multiple = TRUE, ...)
 }
 \arguments{
 \item{multiple, ...}{passed into the \code{"features"} \code{selectizeInput}}

@@ -47,10 +47,10 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     out
   })
 
-  aes.covs <- reactive({
-    ftrace("aes$covariates() fires in facileScatterPlot")
-    aes$covariates()
-  })
+  # aes.covs <- reactive({
+  #   ftrace("aes$covariates() fires in facileScatterPlot")
+  #   aes$covariates()
+  # })
 
   qcolnames <- reactive({
     out <- c(x = name(xaxis), y = name(yaxis), z = name(zaxis))
@@ -81,16 +81,20 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     out
   })
 
+  # rdat <- reactive({
+  #   out <- req(rdat.core())
+  #   req(nrow(out) > 0)
+  #   aes.map <- aes$map()
+  #   aes.covs <- setdiff(unlist(unname(aes.map)), colnames(out))
+  #   if (length(aes.covs)) {
+  #     ftrace("retrieving aes covariates for scatterplot")
+  #     out <- with_sample_covariates(out, aes.covs)
+  #   }
+  #   out
+  # })
+
   rdat <- reactive({
-    out <- req(rdat.core())
-    req(nrow(out) > 0)
-    aes.map <- aes$map()
-    aes.covs <- setdiff(unlist(unname(aes.map)), colnames(out))
-    if (length(aes.covs)) {
-      ftrace("retrieving aes covariates for scatterplot")
-      out <- with_sample_covariates(out, aes.covs)
-    }
-    out
+    with_aesthetics(rdat.core(), aes)
   })
 
   fscatter <- reactive({
