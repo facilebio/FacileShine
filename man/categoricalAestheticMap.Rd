@@ -2,17 +2,70 @@
 % Please edit documentation in R/categoricalAestheticMap-module.R
 \name{categoricalAestheticMap}
 \alias{categoricalAestheticMap}
+\alias{with_aesthetics.reactive_facile_frame}
 \alias{categoricalAestheticMapUI}
-\title{Provides re-usable a widget bar to map data to aesthetics.}
+\title{Provides customizable widget bar to map data to aesthetics.}
 \usage{
 categoricalAestheticMap(input, output, session, rfds, color = FALSE,
   facet = FALSE, group = FALSE, hover = FALSE, shape = FALSE, ...,
   .with_none = TRUE, .exclude = NULL, .reactive = TRUE)
+
+\method{with_aesthetics}{reactive_facile_frame}(rdat, aes_mod, ...)
 
 categoricalAestheticMapUI(id, color = FALSE, facet = FALSE,
   group = FALSE, hover = FALSE, shape = FALSE, horizontal = TRUE,
   ...)
 }
 \description{
-Provides re-usable a widget bar to map data to aesthetics.
+A widget-bar that provides selectize dropdowns that list the categorical
+covariates available for the current set of \code{active_samples(rfds)} and can be
+assocaited to color, facet, group, hover, and shape aesthetics.
 }
+\section{Response to Cohott Selection}{
+
+Due to the possibility that the set of underlying samples (and, therefore,
+covariates) can change from "underneath" the user's feet, based on cohort
+selection, the categorical aesthetic maps are "reactive" at a higher priority
+(10) than the default (0). If some aesthetics are mapped to covariates that
+are "removed from play" due to narrowhing of a cohort, the values for these
+aesthetic will be set to "---" before any default reactivity fires. This
+should prevent some of the crashing behavior that may happen when decorating
+data in downstream modules using the following pattern:\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
+                  color = TRUE, facet = TRUE, hover = TRUE,
+                  ..., .reactive = .reactive)
+dat <- reactive({
+  # ... retrieve `core.data` from somewhere
+  aes.covs <- aes$map()
+  with_sample_covariates(core.data, aes$map())
+
+})
+}
+}
+
+\section{with_aesthetics}{
+
+\strong{Experimental} We override the FacileViz::with_aesthetics method to make
+programming with this module "more natural".
+
+Explicit coding might look like:\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
+                  color = TRUE, facet = TRUE, hover = TRUE,
+                  ..., .reactive = .reactive)
+dat <- reactive({
+  # ... retrieve `core.data` from somewhere
+  aes.covs <- aes$map()
+  with_sample_covariates(core.data, aes$map())
+
+})
+}
+
+But it may look more natural to do something like:\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
+                  color = TRUE, facet = TRUE, hover = TRUE,
+                  ..., .reactive = .reactive)
+dat <- reactive({
+  # ... retrieve `core.data` from somewhere
+  # aes.covs <- aes$map()
+  with_aesthetics(core.data, aes)
+})
+}
+}
+

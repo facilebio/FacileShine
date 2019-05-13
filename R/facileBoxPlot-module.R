@@ -11,7 +11,7 @@
 #'
 #' @export
 #' @importFrom shiny column renderUI wellPanel
-#' @importFrom shinyjs disable enable
+#' @importFrom shinyjs toggleState
 #' @importFrom plotly renderPlotly plotlyOutput
 #' @rdname facileScatterPlot
 #'
@@ -45,67 +45,63 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
     out
   })
 
-  aes.covs <- reactive({
-    ftrace("aes$covariates() fires in facileBoxPlot")
-    aes$covariates()
-  })
-
-  # observe({
-  #   if (nrow(yvals()) > 0) {
-  #     # ftrace("Enabling checkbox")
-  #     shinyjs::enable("individual")
-  #   } else {
-  #     # ftrace("Disabling checkbox")
-  #     shinyjs::disable("individual")
-  #   }
+  # aes.covs <- reactive({
+  #   ftrace("aes$covariates() fires in facileBoxPlot")
+  #   aes$covariates()
   # })
+
+  # "Individual" checkbox is only active when multiple genes are entered
+  # in the y-axis selector
   observe({
-    shinyjs::toggleState("individual", condition = nrow(yvals()) > 1)
+    toggleState("individual", condition = nrow(yvals()) > 1)
   })
 
   # Due to the limitations of the curent boxplot implementation, if the user
-  # wants to show multiple genes at once, faceting is disabled
-  # observe({
-  #   if (input$individual && nrow(yvals()) > 1) {
-  #     # disable facet
-  #     ftrace("Faceting {bold}{red}disabled{reset}")
-  #     shinyjs::disable("aes-facet")
-  #   } else {
-  #     # enable facet
-  #     shinyjs::enable("aes-facet")
-  #   }
-  # })
+  # wants to show multiple genes at once, faceting is disabled, ie. multiple
+  # genes are selected in y-axis and "Individual" box is checked
   observe({
-    shinyjs::toggleState("aes-facet",
-                         condition = !input$individual || nrow(yvals()) <= 1)
+    toggleState("aes-facet",
+                condition = !input$individual || nrow(yvals()) <= 1)
   })
 
   # The quantitative data to plot, without aesthetic mappings
   rdat.core <- reactive({
     indiv. <- input$individual
-    xaxis. <- xaxis$covariate()
-    req(!unselected(xaxis.))
+
     yvals. <- yvals()
     req(!unselected(yvals.))
+
+    xsum <- xaxis$summary()
+    xaxis. <- xaxis$covariate()
+    req(!unselected(xaxis.))
+
     samples. <- active_samples(rfds)
     ftrace("Retrieving assay data for boxplot")
     agg.by <- if (!indiv.) "ewm" else NULL
 
     out <- fetch_assay_data(rfds, yvals., samples., normalized = TRUE,
                             aggregate.by = agg.by)
-    with_sample_covariates(out, xaxis.)
-  })
-
-  rdat <- reactive({
-    out <- req(rdat.core())
-    req(nrow(out) > 0)
-    aes.map <- aes$map()
-    aes.covs <- setdiff(unlist(unname(aes.map)), colnames(out))
-    if (length(aes.covs)) {
-      ftrace("retrieving aes covariates for boxplot")
-      out <- with_sample_covariates(out, aes.covs)
+    out <- try(with_sample_covariates(out, xaxis.))
+    if (is(out, "try-error")) {
+      browser()
     }
     out
+  })
+
+  # rdat <- reactive({
+  #   out <- req(rdat.core())
+  #   req(nrow(out) > 0)
+  #   aes.map <- aes$map()
+  #   aes.covs <- setdiff(unlist(unname(aes.map)), colnames(out))
+  #   if (length(aes.covs)) {
+  #     ftrace("retrieving aes covariates for boxplot")
+  #     out <- with_sample_covariates(out, aes.covs)
+  #   }
+  #   out
+  # })
+
+  rdat <- reactive({
+    with_aesthetics(rdat.core(), aes)
   })
 
   fbox <- eventReactive(rdat(), {

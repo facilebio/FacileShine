@@ -1,4 +1,30 @@
-#' Provides re-usable a widget bar to map data to aesthetics.
+#' Provides customizable widget bar to map data to aesthetics.
+#'
+#' A widget-bar that provides selectize dropdowns that list the categorical
+#' covariates available for the current set of `active_samples(rfds)` and can be
+#' assocaited to color, facet, group, hover, and shape aesthetics.
+#'
+#' @section Response to Cohott Selection:
+#' Due to the possibility that the set of underlying samples (and, therefore,
+#' covariates) can change from "underneath" the user's feet, based on cohort
+#' selection, the categorical aesthetic maps are "reactive" at a higher priority
+#' (10) than the default (0). If some aesthetics are mapped to covariates that
+#' are "removed from play" due to narrowhing of a cohort, the values for these
+#' aesthetic will be set to "---" before any default reactivity fires. This
+#' should prevent some of the crashing behavior that may happen when decorating
+#' data in downstream modules using the following pattern:
+#'
+#' ```r
+#' aes <- callModule(categoricalAestheticMap, "aes", rfds,
+#'                   color = TRUE, facet = TRUE, hover = TRUE,
+#'                   ..., .reactive = .reactive)
+#' dat <- reactive({
+#'   # ... retrieve `core.data` from somewhere
+#'   aes.covs <- aes$map()
+#'   with_sample_covariates(core.data, aes$map())
+#'
+#' })
+#' ```
 #'
 #' @export
 #' @rdname categoricalAestheticMap
@@ -74,7 +100,7 @@ categoricalAestheticMap <- function(input, output, session, rfds,
                           selected = selected)
       }
     }
-  })
+  }, priority = 10)
 
   observeEvent(input$color, {
     if (!color) return(invisible(NULL))
@@ -138,6 +164,56 @@ categoricalAestheticMap <- function(input, output, session, rfds,
   vals
 }
 
+#' @section with_aesthetics:
+#' **Experimental** We override the FacileViz::with_aesthetics method to make
+#' programming with this module "more natural".
+#'
+#' Explicit coding might look like:
+#'
+#' ```r
+#' aes <- callModule(categoricalAestheticMap, "aes", rfds,
+#'                   color = TRUE, facet = TRUE, hover = TRUE,
+#'                   ..., .reactive = .reactive)
+#' dat <- reactive({
+#'   # ... retrieve `core.data` from somewhere
+#'   aes.covs <- aes$map()
+#'   with_sample_covariates(core.data, aes$map())
+#'
+#' })
+#' ```
+#'
+#' But it may look more natural to do something like:
+#'
+#' ```r
+#' aes <- callModule(categoricalAestheticMap, "aes", rfds,
+#'                   color = TRUE, facet = TRUE, hover = TRUE,
+#'                   ..., .reactive = .reactive)
+#' dat <- reactive({
+#'   # ... retrieve `core.data` from somewhere
+#'   # aes.covs <- aes$map()
+#'   with_aesthetics(core.data, aes)
+#' })
+#' ```
+#'
+#' @export
+#' @importFrom FacileViz with_aesthetics
+#' @rdname categoricalAestheticMap
+with_aesthetics.reactive_facile_frame <- function(dat, aes_mod, ...) {
+  # This only works in a reactive context
+  # req(nrow(rdat) > 0)
+  if (missing(aes_mod) || !is(aes_mod, "CategoricalAesMap")) {
+    return(NextMethod())
+  }
+  aes.map <- aes_mod$map()
+  aes.covs <- setdiff(unlist(unname(aes.map)), colnames(dat))
+  if (length(aes.covs)) {
+    ftrace("retrieving aes covariates for boxplot")
+    dat <- with_sample_covariates(dat, aes.covs)
+  }
+  dat
+}
+
+# UI ===========================================================================
 #' @export
 #' @importFrom tools toTitleCase
 #' @importFrom shiny NS column fluidRow selectizeInput
@@ -169,6 +245,8 @@ update_aes <- function(x, aesthethic, covariate, ...) {
   # TODO: enable callback/update of aesthetic map
 }
 
+#' @noRd
+#'
 # Helper Functions =============================================================
 .module_list <- function(color = FALSE, facet = FALSE, group = FALSE,
                          hover = FALSE, shape = FALSE) {
