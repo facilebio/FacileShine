@@ -122,7 +122,6 @@ reactiveFacileDataStore <- function(intput, output, session, path,
       }
       as_facile_frame(asamples, fds., "reactive_facile_frame")
     })
-    # browser()
     state[["esample_annotation"]] <- .empty_sample_annotation_tbl()
     state[["efeature_annotation"]] <- .empty_feature_annotation_tbl()
     state[["efacets"]] <- .empty_facet_tbl()
@@ -145,8 +144,6 @@ reactiveFacileDataStore <- function(intput, output, session, path,
                                      custom_key = user, with_source = TRUE,
                                      extra_covariates = ecovs)
     acovs <- summary(acovs)
-    # acovs <- try(summary(acovs), silent = TRUE)
-    # if (is(acovs, "try-error")) browser()
 
     # Test if available covariates have changed
     # we are crashing on dataset switches because samples. is empty
@@ -572,8 +569,11 @@ update_reactive_samples.ReactiveFacileDataStore <- function(x, active_samples,
   is.same <- setequal(
     with(current, paste(dataset, sample_id)),
     with(.as, paste(dataset, sample_id)))
-# browser()
+
   if (!is.same) {
+    if (nrow(.as) == 0L) {
+      fwarn("{bold}{red}Updating active samples to empty set{reset}")
+    }
     .as <- as_facile_frame(.as, fds(x), "reactive_facile_frame")
     x[[".state"]][["active_samples"]] <- .as
   }

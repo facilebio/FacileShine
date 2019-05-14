@@ -129,7 +129,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
       ftrace("Resetting available levels for {red}", isolate(covariate()), "{reset}")
       state$levels <- lvls
     }
-  })
+  }, priority = 10)
 
   cov.levels <- reactive({
     req(state$levels != "__initializing__")
@@ -220,7 +220,7 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
     }
     updateSelectizeInput(session, "values", choices = levels.,
                          selected = overlap., server = TRUE)
-  })
+  }, priority = 10)
 
   observeEvent(input$values, {
     selected. <- input$values
