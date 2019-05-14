@@ -22,16 +22,12 @@ facileSampleFilter <- function(input, output, session, rfds, ...,
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
   these.samples <- reactive({
-    # where. <- "these.samples"
-    # browser()
     req(initialized(rfds))
     ftrace("{bold}filter::these.samples(){reset}")
     req(isolate.(active_samples(rfds)))
   })
 
   these.covariates <- reactive({
-    # where. <- "these.covariates"
-    # browser()
     req(initialized(rfds))
     req(isolate(active_covariates(rfds)))
   })
@@ -40,7 +36,6 @@ facileSampleFilter <- function(input, output, session, rfds, ...,
     cov.name <- covariate$covariate()
     cov.vals <- values$values()
     suniverse <- these.samples()
-# browser()
 
     # it is possible that the elements in cov.vals can be stale due to cohort
     # narrowing, ie. the selected values stored in the select haven't updated
@@ -54,7 +49,9 @@ facileSampleFilter <- function(input, output, session, rfds, ...,
       selected.samples <- rfds %>%
         fetch_sample_covariates(suniverse, cov.name) %>%
         filter(value %in% !!cov.vals)
-      if (nrow(selected.samples) == 0) browser()
+      if (nrow(selected.samples) == 0) {
+        fwarn("Cohort updates have set the active samples to the empty set")
+      }
     } else {
       selected.samples <- suniverse
     }

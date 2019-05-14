@@ -129,7 +129,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
       ftrace("Resetting available levels for {red}", isolate(covariate()), "{reset}")
       state$levels <- lvls
     }
-  })
+  }, priority = 10)
 
   cov.levels <- reactive({
     req(state$levels != "__initializing__")
