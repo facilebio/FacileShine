@@ -81,10 +81,7 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
 
     out <- fetch_assay_data(rfds, yvals., samples., normalized = TRUE,
                             aggregate.by = agg.by)
-    out <- try(with_sample_covariates(out, xaxis.))
-    if (is(out, "try-error")) {
-      browser()
-    }
+    out <- with_sample_covariates(out, xaxis.)
     out
   })
 

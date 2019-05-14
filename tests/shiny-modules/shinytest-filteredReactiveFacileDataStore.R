@@ -1,6 +1,8 @@
 library(FacileData)
 library(shiny)
 
+options(facile.log.level.fshine = "trace")
+
 devtools::load_all(".")
 
 efds <- exampleFacileDataSet()

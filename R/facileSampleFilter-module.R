@@ -10,7 +10,8 @@
 #' @export
 #' @rdname facileSampleFilter
 #' @importFrom shiny updateSelectInput
-facileSampleFilter <- function(input, output, session, rfds, ...) {
+facileSampleFilter <- function(input, output, session, rfds, ...,
+                               .reactive = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
 
   covariate <- callModule(categoricalSampleCovariateSelect, "covariate",
@@ -18,11 +19,14 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
   values <- callModule(categoricalSampleCovariateLevels, "values",
                        rfds, covariate, .reactive = FALSE)
 
+  isolate. <- if (.reactive) base::identity else shiny::isolate
+
   these.samples <- reactive({
     # where. <- "these.samples"
     # browser()
     req(initialized(rfds))
-    req(isolate(active_samples(rfds)))
+    ftrace("{bold}filter::these.samples(){reset}")
+    req(isolate.(active_samples(rfds)))
   })
 
   these.covariates <- reactive({
@@ -36,6 +40,12 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
     cov.name <- covariate$covariate()
     cov.vals <- values$values()
     suniverse <- these.samples()
+# browser()
+
+    # it is possible that the elements in cov.vals can be stale due to cohort
+    # narrowing, ie. the selected values stored in the select haven't updated
+    # to a newly selected covariate. In this case, we try to intersect, or
+    # blow out the selection entirely.
 
     # Is the user trying to restrict the sample space
     restrict.samples <- !unselected(cov.vals)
@@ -44,6 +54,7 @@ facileSampleFilter <- function(input, output, session, rfds, ...) {
       selected.samples <- rfds %>%
         fetch_sample_covariates(suniverse, cov.name) %>%
         filter(value %in% !!cov.vals)
+      if (nrow(selected.samples) == 0) browser()
     } else {
       selected.samples <- suniverse
     }

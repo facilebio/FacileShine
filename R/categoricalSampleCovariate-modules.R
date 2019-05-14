@@ -42,7 +42,6 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
   active.samples <- reactive({
     req(initialized(rfds))
-    ftrace("Updating active_samples")
     isolate.(active_samples(rfds))
   })
 
@@ -56,7 +55,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
 
   categorical.covariates <- reactive({
     req(active.covariates()) %>%
-      filter(nlevels > 1) %>%
+      # filter(nlevels > 1) %>%
       pull(variable)
   })
 
@@ -64,21 +63,21 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
   # to support the situation where the current active.covariates change in
   # response to the current set of active_samples changing.
   #
-  # For now we just try to keep the same covariate selected if it still remains
-  # in the ones that are available after the underlying set of active_samples
-  # and nactive_covariates shifts.
-  observe({
+  # Because this event listens to the underlying active.covariates() and can
+  # update the internal state of the selected covariate, we want crank up the
+  # priority to 10, so that if a covariate "goes missing" in a cohort swap,
+  # the selected covariate gets reset to unselected
+  observeEvent(categorical.covariates(), {
     choices <- categorical.covariates()
 
     ftrace("Updating available covariates to select from")
-    # browser()
 
     choices <- sort(choices)
     if (.with_none) {
       choices <- c("---", choices)
     }
 
-    selected <- isolate(input$covariate)
+    selected <- input$covariate
     if (unselected(selected)) selected <- ""
     overlap <- intersect(selected, choices)
     if (length(overlap)) {
@@ -93,51 +92,47 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
                       selected = selected)
   }, priority = 10)
 
-  # Due to dynamic chort selection, sometimes the value stored in
-  # state$covariate isn't the one that is returned in module$covariate(),
-  # so, let's double check here
-  # in.sync <- reactive({
-  #   unselected(state$covariate) ||
-  #     all(state$covariate %in% categorical.covariates())
-  # })
-
-  # A reactive for the currently selected covariate in the selectInput
-  covariate <- reactive({
-    # req(in.sync())
-    req(active.covariates()) # ensures this widget is initalized first
+  observeEvent(input$covariate, {
     cov <- input$covariate
     current <- state$covariate
     if (unselected(cov)) cov <- ""
     if (!setequal(cov, current)) {
-      ftrace("Updating covariate state: {current} {bold}->{reset} {cov}",
+      ftrace("{bold}Updating covariate state: {current} -> {cov}{reset}",
              current = current, cov = cov)
       state$covariate <- cov
     }
-    ftrace("Retrieving covariate({red}", state$covariate, "{reset})")
-    state$covariate
   })
+
+  covariate <- reactive(state$covariate)
 
   covariate.summary <- reactive({
     covariate. <- covariate()
     allcovs. <- active.covariates()
     notselected <- unselected(covariate.) ||
       !covariate. %in% allcovs.[["variable"]]
+
+    ftrace("Calculating covariate({red}", covariate., "{reset}) summary")
+
     if (notselected) {
       out <- .empty_covariate_summary(rfds)
     } else {
       scovs <- fetch_sample_covariates(rfds, active.samples(), covariate.)
       out <- summary(scovs, expanded = TRUE)
     }
-    ftrace("Calculating covariate({red}", covariate., "{reset}) summary")
     out
   })
 
-  cov.levels <- reactive({
-    ci <- req(covariate.summary())
-    lvls <- ci[["level"]]
+  observeEvent(req(covariate.summary()), {
+    csummary <- req(covariate.summary())
+    lvls <- csummary[["level"]]
     if (!setequal(state$levels, lvls)) {
+      ftrace("Resetting available levels for {red}", isolate(covariate()), "{reset}")
       state$levels <- lvls
     }
+  })
+
+  cov.levels <- reactive({
+    req(state$levels != "__initializing__")
     state$levels
   })
 
@@ -211,34 +206,33 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
   state <- reactiveValues(
     values = "__initializing__")
 
-  observe({
-    cov.levels <- covariate$levels()
-    selected. <- intersect(cov.levels, isolate(input$values))
-    if (length(selected.) == 0L) {
-      selected. <- NULL
-      state$values <- ""
+  observeEvent(covariate$levels(), {
+    req(initialized(rfds))
+    levels. <- req(covariate$levels())
+    selected. <- input$values
+    if (unselected(selected.)) selected. <- ""
+
+    overlap. <- intersect(selected., levels.)
+    if (unselected(overlap.)) overlap. <- ""
+    ftrace("updating selectizeInput: ", paste(levels., collapse = ","))
+    if (!isTRUE(setequal(overlap., state$values))) {
+      state$values <- overlap.
     }
-    updateSelectizeInput(session, "values", choices = cov.levels,
-                         selected = selected., server = TRUE)
+    updateSelectizeInput(session, "values", choices = levels.,
+                         selected = overlap., server = TRUE)
   })
 
-  values <- reactive({
-    vals <- input$values
-
-    # For some reason, when updateSelectizeInput updates the available
-    # values, this isn't propogated immediately to the inputs. I
-    # think shiny goes through a complete round of responding to
-    # the reactivity before the input$ values get updated.
-    invalid <- setdiff(vals, covariate$levels())
-
-    if (length(invalid)) {
-      state$values <- ""
-    } else if (!setequal(vals, state$values)) {
-      state$values <- vals
+  observeEvent(input$values, {
+    selected. <- input$values
+    if (unselected(selected.)) {
+      selected. <- ""
     }
+    if (!isTRUE(setequal(selected., state$values))) {
+      state$values <- selected.
+    }
+  }, ignoreNULL = FALSE)
 
-    state$values
-  })
+  values <- reactive(state$values)
 
   if (debug) {
     output$selected <- renderText(values())

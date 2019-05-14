@@ -145,6 +145,8 @@ reactiveFacileDataStore <- function(intput, output, session, path,
                                      custom_key = user, with_source = TRUE,
                                      extra_covariates = ecovs)
     acovs <- summary(acovs)
+    # acovs <- try(summary(acovs), silent = TRUE)
+    # if (is(acovs, "try-error")) browser()
 
     # Test if available covariates have changed
     # we are crashing on dataset switches because samples. is empty
@@ -160,7 +162,7 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     if (state[["name"]] != name(fds.)) {
       state[["name"]] <- name(fds.)
     }
-  })
+  }, priority = 10)
 
   output$fdsname <- shiny::renderText({
     state$name
@@ -238,26 +240,26 @@ ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
 # ReactiveFacile API ===========================================================
 # (defined in FacileShine)
 
-#' Note that calls to this should "fire" reactivity when the inner
-#' faciledatastore is initialized and/or replaced, because of the repeated
-#' hits to the [["state"]] reactiveValues object
+#' Note that calls to this should only "fire" reactivity when the "name"
+#' attribute of the inner faciledatastore is changed.
+#'
 #' @noRd
 #' @export
 initialized.ReactiveFacileDataStore <- function(x, ...) {
   # is(fds(x), "FacileDataStore") && !unselected(name(x))
   # Not using fds() because fds() itself calls req(initialized(x))
 
-  # Check if anything is __initializing__ and we have a FacileDataStore
-  # inside
+  fds.name <- name(x)
+  fds. <- isolate(x[[".state"]][["fds"]])
+
+  # Check if any internal state elements are __initializing__
   check <- c("active_samples", "active_assays", "active_covariates")
   initing <- sapply(check, function(var) {
-    obj <- x[[".state"]][[var]]
+    obj <- isolate(x[[".state"]][[var]])
     is.character(obj) && obj == "__initializing__"
   })
 
-  !any(initing) &&
-    is(x[[".state"]][["fds"]], "FacileDataStore") &&
-    !unselected(name(x))
+  !any(initing) && is(fds., "FacileDataStore") && !unselected(name(x))
 }
 
 #' @noRd
@@ -309,7 +311,7 @@ triggered <- function(x, name = "covariates", ...) {
 #' @noRd
 #' @export
 active_assays.ReactiveFacileDataStore <- function(x, ...) {
-  # assert_reacting()
+  req(initialized(x))
   x[[".state"]][["active_assays"]]
 }
 
@@ -317,7 +319,6 @@ active_assays.ReactiveFacileDataStore <- function(x, ...) {
 #' @export
 active_covariates.ReactiveFacileDataStore <- function(x, active_only = TRUE,
                                                       ...) {
-  # assert_reacting()
   req(initialized(x))
   as_facile_frame(x[[".state"]][["active_covariates"]], x,
                   .valid_sample_check = FALSE)
@@ -326,7 +327,6 @@ active_covariates.ReactiveFacileDataStore <- function(x, active_only = TRUE,
 #' @noRd
 #' @export
 active_samples.ReactiveFacileDataStore <- function(x, ...) {
-  # assert_reacting()
   req(initialized(x))
   as_facile_frame(x[[".state"]][["active_samples"]], x,
                   .valid_sample_check = FALSE)
@@ -502,14 +502,13 @@ filter_samples.ReactiveFacileDataStore <- function(x, ...,
 #' @noRd
 #' @export
 name.ReactiveFacileDataStore <- function(x, ...) {
-  name. <- assert_string(x[[".state"]][["name"]])
-  name.
+  name. <- x[[".state"]][["name"]]
+  assert_string(name.)
 }
 
 #' @noRd
 #' @export
 samples.ReactiveFacileDataStore <- function(x, ...) {
-  # req(initialized(x))
   as_facile_frame(active_samples(x), x, .valid_sample_check = FALSE)
 }
 
@@ -573,7 +572,7 @@ update_reactive_samples.ReactiveFacileDataStore <- function(x, active_samples,
   is.same <- setequal(
     with(current, paste(dataset, sample_id)),
     with(.as, paste(dataset, sample_id)))
-
+# browser()
   if (!is.same) {
     .as <- as_facile_frame(.as, fds(x), "reactive_facile_frame")
     x[[".state"]][["active_samples"]] <- .as
@@ -592,7 +591,6 @@ update_reactive_covariates <- function(x, covariates, namespace, ...) {
 #' @export
 update_reactive_covariates.ReactiveFacileDataStore <- function(x, covariates,
                                                                namespace, ...) {
-  # assert_reacting()
   req(initialized(x))
   stop("update_reactive_covariates(rfds) is not yet implemented")
   # Do something with x[[".state"]][["active_covariates"]]

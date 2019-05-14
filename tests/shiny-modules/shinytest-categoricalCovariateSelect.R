@@ -6,12 +6,18 @@ efds <- FacileData::exampleFacileDataSet()
 user <- Sys.getenv("USER")
 debug <- TRUE
 
+with.sample.filter <- TRUE
+
 options(facile.log.level.fshine = "trace")
 
 shiny::shinyApp(
   ui = shiny::fluidPage(
     shiny::tagList(
-      shiny::wellPanel(singleFilteredReactiveFacileDataStoreUI("rfds")),
+      if (with.sample.filter) {
+        shiny::wellPanel(singleFilteredReactiveFacileDataStoreUI("rfds"))
+      } else {
+        reactiveFacileDataStoreUI("rfds")
+      },
       categoricalSampleCovariateSelectUI("covariate", label = "Covariate"),
       categoricalSampleCovariateLevelsUI("values", label = "Value(s)",
                                          multiple = TRUE, debug = debug))
@@ -19,7 +25,11 @@ shiny::shinyApp(
 
   server = function(input, output) {
     path <- reactive(efds$parent.dir)
-    rfds <- callModule(singleFilteredReactiveFacileDataStore, "rfds", path)
+    if (with.sample.filter) {
+      rfds <- callModule(singleFilteredReactiveFacileDataStore, "rfds", path)
+    } else {
+      rfds <- callModule(reactiveFacileDataStore, "rfds", path)
+    }
     scov <-  callModule(categoricalSampleCovariateSelect, "covariate",
                         rfds, .with_none = FALSE, .reactive = TRUE,
                         debug = debug)
@@ -28,3 +38,5 @@ shiny::shinyApp(
 
   }
 )
+
+
