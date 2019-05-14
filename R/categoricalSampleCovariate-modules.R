@@ -140,7 +140,6 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds, ...,
     covariate = covariate,
     summary = covariate.summary,
     levels = cov.levels,
-    # kosher = reactive(all(covariate() %in% covariate.summary()[["variable"]])),
     .state = state,
     .ns = session$ns)
   class(vals) <- c("CategoricalCovariateSelect",
@@ -206,6 +205,7 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
   state <- reactiveValues(
     values = "__initializing__")
 
+
   observeEvent(covariate$levels(), {
     req(initialized(rfds))
     levels. <- req(covariate$levels())
@@ -220,7 +220,7 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
     }
     updateSelectizeInput(session, "values", choices = levels.,
                          selected = overlap., server = TRUE)
-  })
+  }, priority = 10)
 
   observeEvent(input$values, {
     selected. <- input$values
