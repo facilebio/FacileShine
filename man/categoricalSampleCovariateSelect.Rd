@@ -5,8 +5,8 @@
 \title{A categoricalSampleCovariate selector}
 \usage{
 categoricalSampleCovariateSelect(input, output, session, rfds,
-  universe = NULL, ..., .with_none = TRUE, .exclude = NULL,
-  .reactive = TRUE, debug = FALSE)
+  universe = NULL, include1 = TRUE, ..., .with_none = TRUE,
+  .exclude = NULL, .reactive = TRUE, debug = FALSE)
 }
 \description{
 This is the second version of this module, which was updated to allow for a
