@@ -16,7 +16,8 @@
 #'   req
 #'   updateSelectInput
 categoricalSampleCovariateSelect <- function(input, output, session, rfds,
-                                             universe = NULL, ...,
+                                             universe = NULL, include1 = TRUE,
+                                             ...,
                                              .with_none = TRUE,
                                              .exclude = NULL,
                                              .reactive = TRUE,
@@ -74,9 +75,11 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
   })
 
   categorical.covariates <- reactive({
-    req(active.covariates()) %>%
-      # filter(nlevels > 1) %>%
-      pull(variable)
+    out <- req(active.covariates())
+    if (!include1) {
+      out <- filter(out, nlevels > 1)
+    }
+    pull(out, variable)
   })
 
   # Updating the covariate select dropdown is a little tricky because we want
@@ -160,6 +163,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
     covariate = covariate,
     summary = covariate.summary,
     levels = cov.levels,
+    catcovs = categorical.covariates,
     .state = state,
     .ns = session$ns)
   class(vals) <- c("CategoricalCovariateSelect",

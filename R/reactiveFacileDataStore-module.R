@@ -55,7 +55,7 @@
 #'   instantiate the ReactiveFacileDataStore from.
 reactiveFacileDataStore <- function(intput, output, session, path,
                                     user = Sys.getenv("USER"), ...,
-                                    restrict_samples. = NULL) {
+                                    restrict_samples. = NULL, debug = FALSE) {
   if (!is.null(restrict_samples.)) {
     assert_sample_subset(collect_samples.)
     restrict_samples <- collect(collect_samples., n = Inf)
@@ -162,13 +162,15 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     state$name
   })
 
-  output$active_covariates <- DT::renderDT({
-    req(!is.character(state$active_covariates))
-    state$active_covariates
-  }, server = TRUE)
-  output$nsamples <- shiny::renderText({
-    nrow(state$active_samples)
-  })
+  if (debug) {
+    output$active_covariates <- DT::renderDT({
+      req(!is.character(state$active_covariates))
+      state$active_covariates
+    }, server = TRUE)
+    output$nsamples <- shiny::renderText({
+      nrow(state$active_samples)
+    })
+  }
 
   return(vals)
 }
@@ -177,14 +179,19 @@ reactiveFacileDataStore <- function(intput, output, session, path,
 #' @export
 #' @importFrom shiny NS tags textOutput
 #' @importFrom DT DTOutput
-reactiveFacileDataStoreUI <- function(id, ...) {
+reactiveFacileDataStoreUI <- function(id, ..., debug = FALSE) {
   ns <- NS(id)
 
-  tagList(
+  out <- tagList(
     tags$h3("ReactiveFacileDataStore"),
-    textOutput(ns("fdsname")),
-    tags$p("Number of active samples:", textOutput(ns("nsamples"))),
-    DT::DTOutput(ns("active_covariates")))
+    textOutput(ns("fdsname")))
+  if (debug) {
+    out <- tagList(
+      out,
+      tags$p("Number of active samples:", textOutput(ns("nsamples"))),
+      DT::DTOutput(ns("active_covariates")))
+  }
+  out
 }
 
 #' @section ReactiveFacileDataStore:
@@ -204,7 +211,7 @@ reactiveFacileDataStoreUI <- function(id, ...) {
 #' @param id the id of the shiny module
 #' @return a reactiveFacileDataStore module
 ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
-                                    samples = NULL, ...) {
+                                    samples = NULL, ..., debug = FALSE) {
   pf <- parent.frame()
   assert_string(id)
 
@@ -225,7 +232,7 @@ ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
   # path <- reactive(path)
   out <- eval({
     callModule(reactiveFacileDataStore, id, path, user = user, ...,
-               restrict_samples. = samples)
+               restrict_samples. = samples, debug = debug)
   }, envir = pf)
 
   out
