@@ -56,70 +56,10 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
   #   }
   # })
 
+  # Reactivity -----------------------------------------------------------------
   filters <- reactive({
     ftrace("filters() fired")
     state$filters
-  })
-
-  # Remove Filter button should only be enabled if there is >= 1 filters here
-  observe({
-    toggleState("rm_filter_btn", condition = length(filters()) > 0)
-  })
-
-  # Add button should only be enabled if we have no filters, or if the
-  # current filter is empty
-  observe({
-    filters. <- filters()
-    flen <- length(filters.)
-    if (flen == 0) {
-      enabled <- TRUE
-    } else {
-      f <- filters.[[flen]]
-      enabled <- !unselected(f$values$values())
-    }
-    toggleState("add_filter_btn", condition = enabled)
-  })
-
-  observeEvent(input$rm_filter_btn, {
-    filters. <- filters()
-    flen <- length(filters.)
-    req(flen > 0)
-
-    id <- names(filters.)[flen]
-    state$filters[[id]] <- NULL
-    removeUI(selector = paste0("#", ns(paste0(id, "_container"))))
-  })
-
-  last.filter <- reactive({
-    filters. <- filters()
-    flen <- length(filters.)
-    if (flen == 0) NULL else filters.[[flen]]
-  })
-
-  # When a new filter is added, or the last one is removed, the only
-  # sampleFilter that should be editable is the last one on the list.
-  observeEvent(last.filter(), {
-    filters. <- filters()
-    flen <- length(filters.)
-    req(flen > 0)
-    for (i in seq(flen)) {
-      name <- names(filters.)[i]
-      enabled <- i == flen
-      select_id <- paste0(name, "-covariate-covariate")
-      levels_id <- paste0(name, "-values-values")
-      toggleState(select_id, condition = enabled)
-      toggleState(levels_id, condition = enabled)
-    }
-  })
-
-  reduced.samples <- reactive({
-    lf <- last.filter()
-    if (is.null(lf)) {
-      out <- collect(samples(fds(rfds)), n = Inf)
-    } else {
-      out <- lf$active_samples()
-    }
-    out
   })
 
   # Adds a sampleFilter module when the "Add" button is pushed
@@ -154,6 +94,71 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
       immediate = TRUE)
   })
 
+  # Removes the last sampleFilter in the list
+  observeEvent(input$rm_filter_btn, {
+    filters. <- filters()
+    flen <- length(filters.)
+    req(flen > 0)
+
+    id <- names(filters.)[flen]
+    state$filters[[id]] <- NULL
+    removeUI(selector = paste0("#", ns(paste0(id, "_container"))))
+  })
+
+  # Quick access to the last filter in the list, or NULL if no filters exist
+  last.filter <- reactive({
+    filters. <- filters()
+    flen <- length(filters.)
+    if (flen == 0) NULL else filters.[[flen]]
+  })
+
+  reduced.samples <- reactive({
+    lf <- last.filter()
+    if (is.null(lf)) {
+      out <- collect(samples(fds(rfds)), n = Inf)
+    } else {
+      out <- lf$active_samples()
+    }
+    out
+  })
+
+  # Toggle (enable/disable) web component states -------------------------------
+
+  # The "Remove" filter button is only enabled if there is >= 1 filters present
+  observe({
+    toggleState("rm_filter_btn", condition = length(filters()) > 0)
+  })
+
+  # The "Add" button should only be enabled if there are no filters yet, or if
+  # the current filter Value(s) is non-empty.
+  observe({
+    filters. <- filters()
+    flen <- length(filters.)
+    if (flen == 0) {
+      enabled <- TRUE
+    } else {
+      f <- filters.[[flen]]
+      enabled <- !unselected(f$values$values())
+    }
+    toggleState("add_filter_btn", condition = enabled)
+  })
+
+  # Ensures that only the last sampleFilter is editable by the user
+  observeEvent(last.filter(), {
+    filters. <- filters()
+    flen <- length(filters.)
+    req(flen > 0)
+    for (i in seq(flen)) {
+      name <- names(filters.)[i]
+      enabled <- i == flen
+      select_id <- paste0(name, "-covariate-covariate")
+      levels_id <- paste0(name, "-values-values")
+      toggleState(select_id, condition = enabled)
+      toggleState(levels_id, condition = enabled)
+    }
+  })
+
+  # Server Debug ---------------------------------------------------------------
   if (debug) {
     output$samples <- DT::renderDT({
       samples. <- reduced.samples()
