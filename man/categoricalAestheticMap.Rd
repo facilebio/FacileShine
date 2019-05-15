@@ -10,7 +10,7 @@ categoricalAestheticMap(input, output, session, rfds, color = FALSE,
   facet = FALSE, group = FALSE, hover = FALSE, shape = FALSE, ...,
   .with_none = TRUE, .exclude = NULL, .reactive = TRUE)
 
-\method{with_aesthetics}{reactive_facile_frame}(rdat, aes_mod, ...)
+\method{with_aesthetics}{reactive_facile_frame}(dat, aes_mod, ...)
 
 categoricalAestheticMapUI(id, color = FALSE, facet = FALSE,
   group = FALSE, hover = FALSE, shape = FALSE, horizontal = TRUE,

@@ -56,17 +56,14 @@
 reactiveFacileDataStore <- function(intput, output, session, path,
                                     user = Sys.getenv("USER"), ...,
                                     restrict_samples. = NULL) {
+  if (!is.null(restrict_samples.)) {
+    assert_sample_subset(collect_samples.)
+    restrict_samples <- collect(collect_samples., n = Inf)
+  }
 
   state <- reactiveValues(
     fds = "__initializing__",
     name = "__initializing__",
-    # active_samples = tibble(
-    #   dataset = character(), sample_id = character()),
-    # active_assays = tibble(
-    #   assay = character(), ndatasets = integer(), nsamples = integer()),
-    ## a summary()-table of the stored and ephemeral eav_sample_covariates
-    # active_covariates = tibble(
-    #   assay = character(), ndatasets = integer(), nsamples = integer()),
     active_samples = "__initializing__",
     active_assays = "__initializing__",
     active_covariates = "__initializing__",
@@ -291,7 +288,6 @@ trigger <- function(x, name = "covariates", trigger. = TRUE, ...) {
   # trgr <- assert_class(reactives(x, "trigger")[[name]], "ReactiveTrigger")
   trgr <- assert_class(x[["trigger"]][[name]], "ReactiveTrigger")
   if (trigger.) {
-    assert_reacting()
     trgr$trigger()
   }
   invisible(trgr)
@@ -332,7 +328,6 @@ active_samples.ReactiveFacileDataStore <- function(x, ...) {
 #' @noRd
 #' @export
 user.ReactiveFacileDataStore <- function(x, ...) {
-  # assert_reacting()
   req(initialized(x))
   x[["user"]]
 }
@@ -348,7 +343,6 @@ user.ReactiveFacileDataStore <- function(x, ...) {
 assay_feature_info.ReactiveFacileDataStore <- function(x, assay_name,
                                                        feature_ids = NULL,
                                                        ...) {
-  # assert_reacting()
   req(initialized(x))
   assay_feature_info(fds(x), assay_name, feature_ids, ...)
 }
@@ -357,7 +351,6 @@ assay_feature_info.ReactiveFacileDataStore <- function(x, assay_name,
 #' @export
 #' @importFrom shiny req
 assay_info.ReactiveFacileDataStore <- function(x, assay_name = NULL, ...) {
-  # assert_reacting()
   req(initialized(x))
   req(initialized(x))
   assay_info(fds(x), assay_name = assay_name, ...)
@@ -367,7 +360,6 @@ assay_info.ReactiveFacileDataStore <- function(x, assay_name = NULL, ...) {
 #' @export
 #' @importFrom shiny req
 assay_names.ReactiveFacileDataStore <- function(x, default_first = TRUE, ...) {
-  # assert_reacting()
   req(initialized(x))
   assay_names(fds(x), default_first = default_first, ...)
 }
@@ -382,7 +374,6 @@ covariate_definitions.ReactiveFacileDataStore <- function(x, as.list = TRUE,
 #' @noRd
 #' @export
 fds.ReactiveFacileDataStore <- function(x) {
-  # assert_reacting()
   req(initialized(x))
   x[[".state"]][["fds"]]
 }
@@ -390,7 +381,6 @@ fds.ReactiveFacileDataStore <- function(x) {
 #' @noRd
 #' @export
 default_assay.ReactiveFacileDataStore <- function(x, ...) {
-  # assert_reacting()
   req(initialized(x))
   default_assay(fds(x))
 }
@@ -398,7 +388,6 @@ default_assay.ReactiveFacileDataStore <- function(x, ...) {
 #' @noRd
 #' @export
 facet_frame.ReactiveFacileDataStore <- function(x, name = "default", ...) {
-  # assert_reacting()
   req(initialized(x))
   as_facile_frame(bind_rows(x[["efacets"]], facet_frame(fds(x))), x,
                   .valid_sample_check = FALSE)
@@ -411,7 +400,6 @@ fetch_assay_data.ReactiveFacileDataStore <- function(x, features, samples=NULL,
                                                      normalized=FALSE,
                                                      as.matrix=FALSE, ...,
                                                      aggregate.by=NULL) {
-  # assert_reacting()
   req(initialized(x))
   fetch_assay_data(fds(x), features = features, samples = samples,
                    assay_name = assay_name, normalized = normalized,
@@ -423,7 +411,6 @@ fetch_assay_data.ReactiveFacileDataStore <- function(x, features, samples=NULL,
 fetch_sample_covariates.BoxedFacileDataStore <- function(
     x, samples = NULL, covariates = NULL, custom_key = user(x),
     with_source = TRUE, ..., extra_covariates = NULL) {
-  # assert_reacting()
   req(initialized(x))
 
   if (!is.null(extra_covariates)) {
@@ -458,7 +445,6 @@ fetch_sample_covariates.BoxedFacileDataStore <- function(
 fetch_sample_covariates.ReactiveFacileDataStore <- function(
     x, samples = active_samples(x), covariates = NULL, custom_key = user(x),
     with_source = TRUE, ...) {
-  # assert_reacting()
   req(initialized(x))
 
   extra_covs <- x[["state."]][["esample_annotation"]]
@@ -475,7 +461,6 @@ fetch_sample_covariates.ReactiveFacileDataStore <- function(
 fetch_custom_sample_covariates.ReactiveFacileDataStore <- function(
     x, samples = NULL, covariates = NULL, custom_key = user(x),
     with_source = FALSE, file.prefix = "facile", ...) {
-  # assert_reacting()
   req(initialized(x))
 
   # Get this to delegate to the *.FacileDataSet version
@@ -490,9 +475,10 @@ fetch_custom_sample_covariates.ReactiveFacileDataStore <- function(
 #' @export
 filter_samples.ReactiveFacileDataStore <- function(x, ...,
                                                    with_covariates = FALSE) {
-  # assert_reacting()
-  req(initialized(x))
-  stop("TODO: filter_samples.ReactiveFacileDataStore")
+  stop("fiter_samples.ReactiveFacileDataStore not implemented")
+  req(isolate(initialized(x)))
+
+  if (!is(..1, "FacileSampleFilter")) NextMethod()
 }
 
 #' Note that this fires reactivity when callers ask for the name()
@@ -522,7 +508,6 @@ samples.ReactiveFacileDataStore <- function(x, ...) {
 #' @noRd
 #' @export
 update_rfds <- function(x, dataset, ...) {
-  # assert_reacting()
   assert_class(x, "ReactiveFacileDataStore")
   assert_class(dataset, "FacileDataStore")
 
@@ -557,7 +542,6 @@ update_reactive_samples <- function(x, actives_samples, criterion = NULL, ...) {
 update_reactive_samples.ReactiveFacileDataStore <- function(x, active_samples,
                                                             criterion = NULL,
                                                             ...) {
-  # assert_reacting()
   req(initialized(x))
   .as <- active_samples %>%
     assert_sample_subset() %>%
@@ -594,6 +578,8 @@ update_reactive_covariates.ReactiveFacileDataStore <- function(x, covariates,
   req(initialized(x))
   stop("update_reactive_covariates(rfds) is not yet implemented")
   # Do something with x[[".state"]][["active_covariates"]]
+  trigger(x, "covariates")
+  invisible(x)
 }
 
 

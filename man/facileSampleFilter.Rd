@@ -5,7 +5,7 @@
 \alias{facileSampleFilterUI}
 \title{A composable module to filter to a subset of samples from a FacileDataStore.}
 \usage{
-facileSampleFilter(input, output, session, rfds, ...)
+facileSampleFilter(input, output, session, rfds, ..., .reactive = FALSE)
 
 facileSampleFilterUI(id, ...)
 }

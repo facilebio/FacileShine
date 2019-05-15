@@ -1,3 +1,5 @@
+# Sample Filter Module (original) =============================================
+
 #' A composable module to filter to a subset of samples from a FacileDataStore.
 #'
 #' This module will eventually be composed / replicated by adding more or less
@@ -21,21 +23,22 @@ facileSampleFilter <- function(input, output, session, rfds, ...,
 
   isolate. <- if (.reactive) base::identity else shiny::isolate
 
-  these.samples <- reactive({
+  # The universe of samples in play.
+  universe <- reactive({
     req(initialized(rfds))
-    ftrace("{bold}filter::these.samples(){reset}")
+    ftrace("{bold}filter::universe(){reset}")
     req(isolate.(active_samples(rfds)))
   })
 
   these.covariates <- reactive({
     req(initialized(rfds))
-    req(isolate(active_covariates(rfds)))
+    req(isolate.(active_covariates(rfds)))
   })
 
   observe({
     cov.name <- covariate$covariate()
     cov.vals <- values$values()
-    suniverse <- these.samples()
+    suniverse <- universe()
 
     # it is possible that the elements in cov.vals can be stale due to cohort
     # narrowing, ie. the selected values stored in the select haven't updated
@@ -86,11 +89,11 @@ facileSampleFilterUI <- function(id, ...) {
 # Accessor / Update Functions ==================================================
 
 #' Returns a representaiton of the filters used to specify the active dataset
-filters <- function(x, ...) {
-  # TODO: Implemenet filters accessor for facileSampleFilter
-}
+# filters <- function(x, ...) {
+#   # TODO: Implemenet filters accessor for facileSampleFilter
+# }
 
 #' Updates the filters used to set the active dataset
-update_filters <- function(x, filters, ...) {
-  # TODOO: Implement update_filters for facileSampleFilter
-}
+# update_filters <- function(x, filters, ...) {
+#   # TODOO: Implement update_filters for facileSampleFilter
+# }

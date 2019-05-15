@@ -12,16 +12,12 @@ shinyApp(
   ui = fluidPage(
     reactiveFacileDataStoreUI("rfds"),
     # facileSampleFilterUI("f1"),
-    categoricalSampleCovariateSelectUI("cov")
-    ),
-  server = function(input, output) {
-    path <- reactive(efds$parent.dir)
-    # rfds <- callModule(reactiveFacileDataStore, "rfds", path)
-    # rfds <- ReactiveFacileDataStore(path, "rfds")
-    # f1 <- callModule(facileSampleFilter, "f1", rfds)
+    categoricalSampleCovariateSelectUI("cov")),
 
+  server = function(input, output) {
+    # path <- reactive(efds$parent.dir)
     # rfds <- callModule(reactiveFacileDataStore, "rfds", path)
-    rfds <- ReactiveFacileDataStore(path, "rfds", samples = s)
+    rfds <- ReactiveFacileDataStore(efds, "rfds", samples = s)
     cov <- callModule(categoricalSampleCovariateSelect, "cov", rfds)
   }
 )

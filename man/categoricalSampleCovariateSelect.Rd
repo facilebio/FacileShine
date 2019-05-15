@@ -2,26 +2,16 @@
 % Please edit documentation in R/categoricalSampleCovariate-modules.R
 \name{categoricalSampleCovariateSelect}
 \alias{categoricalSampleCovariateSelect}
-\title{A selectInput that provides the categorical covariates over a FacileDataStore}
+\title{A categoricalSampleCovariate selector}
 \usage{
-categoricalSampleCovariateSelect(input, output, session, rfds, ...,
-  .with_none = TRUE, .exclude = NULL, .reactive = TRUE)
-}
-\arguments{
-\item{rfds}{A \code{ReactiveFacileDataStore}}
-
-\item{.exclude}{a covariate tibble that incluees covariate,value pairs that
-should not be used in this covariate selector. This can be a reactive
-tibble if you want to be able to update the things one can't select for.}
-
-\item{.reactive}{If \code{TRUE} (default), the module will constantly update the
-covariates made available based on changes to the
-\code{active_covariates(rfds)} tibble. Otherwise, the covariates made
-availabe (or .excluded) are fixed on module creation.}
+categoricalSampleCovariateSelect(input, output, session, rfds,
+  universe = NULL, ..., .with_none = TRUE, .exclude = NULL,
+  .reactive = TRUE, debug = FALSE)
 }
 \description{
-Use in conjunction with a categoricalSampleCovariateLevels module.
-}
-\details{
-Why am I using all of these seriously tortured names?
+This is the second version of this module, which was updated to allow for a
+\code{universe} argument, which specifies a subset of samples from \code{rfds} to get
+covariate data from. The original implementation always retrieved covariates
+from \code{active_samples(rfds)}. If \code{universe = NULL}, original behavior is
+kept.
 }
