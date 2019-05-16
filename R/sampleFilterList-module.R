@@ -56,9 +56,32 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
   #   }
   # })
 
+  # Support a restricted universe in the original ReactiveFacileDataStore
+  fds.universe <- reactive({
+    if (is(rfds, "RestrictedReactiveFacileDataStore")) {
+      out <- rfds$universe
+    } else {
+      out <- samples(fds(rfds))
+    }
+    collect(out, n = Inf)
+  })
+
   # Reactivity -----------------------------------------------------------------
   filters <- reactive({
     state$filters
+  })
+
+  # Quick access to the last filter in the list, or NULL if no filters exist
+  last.filter <- reactive({
+    filters. <- filters()
+    flen <- length(filters.)
+    if (flen == 0) NULL else filters.[[flen]]
+  })
+
+  active.samples <- reactive({
+    req(initialized(rfds))
+    lf <- last.filter()
+    if (is.null(lf)) fds.universe() else lf$active_samples()
   })
 
   # Adds a sampleFilter module when the "Add" button is pushed
@@ -73,11 +96,7 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
     rmid <- paste0("remove_", id)
 
     if (flen == 0) {
-      if (is(rfds, "RestrictedReactiveFacileDataStore")) {
-        universe <- reactive(rfds$universe)
-      } else {
-        universe <- reactive(collect(samples(fds(rfds)), n = Inf))
-      }
+      universe <- fds.universe
     } else {
       universe <- reactive(isolate(filters.[[flen]]$active_samples()))
     }
@@ -107,24 +126,6 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
     id <- names(filters.)[flen]
     state$filters[[id]] <- NULL
     removeUI(selector = paste0("#", ns(paste0(id, "_container"))))
-  })
-
-  # Quick access to the last filter in the list, or NULL if no filters exist
-  last.filter <- reactive({
-    filters. <- filters()
-    flen <- length(filters.)
-    if (flen == 0) NULL else filters.[[flen]]
-  })
-
-  active.samples <- reactive({
-    req(initialized(rfds))
-    lf <- last.filter()
-    if (is.null(lf)) {
-      out <- collect(samples(fds(rfds)), n = Inf)
-    } else {
-      out <- lf$active_samples()
-    }
-    out
   })
 
   # Toggle (enable/disable) web component states -------------------------------

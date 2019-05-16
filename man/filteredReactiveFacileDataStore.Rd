@@ -2,23 +2,12 @@
 % Please edit documentation in R/filteredReactiveFacileDataStore.R
 \name{filteredReactiveFacileDataStore}
 \alias{filteredReactiveFacileDataStore}
-\alias{singleFilteredReactiveFacileDataStore}
 \title{Composition of modules to provide a filtering schema over a FaclieDataStore.}
 \usage{
 filteredReactiveFacileDataStore(input, output, session, path,
   user = Sys.getenv("USER"), ..., debug = FALSE)
-
-singleFilteredReactiveFacileDataStore(input, output, session, path,
-  user = Sys.getenv("USER"), nfilters = 1, ...)
 }
 \description{
 We compose the \code{\link[=reactiveFacileDataStore]{reactiveFacileDataStore()}} and a list of
 \code{\link[=facileSampleFilter]{facileSampleFilter()}} modules to make a super-module.
 }
-\section{Single Filtered}{
-
-
-We compose the \code{\link[=reactiveFacileDataStore]{reactiveFacileDataStore()}} and a list of
-\code{\link[=facileSampleFilter]{facileSampleFilter()}} modules to make a super-module.
-}
-

@@ -11,14 +11,14 @@ universe. <- filter_samples(efds, indication == "BLCA")
 # With filter
 shinyApp(
   ui = fluidPage(
-    reactiveFacileDataStoreUI("rfds"),
+    filteredReactiveFacileDataStoreUI("rfds"),
     # facileSampleFilterUI("f1"),
-    categoricalSampleCovariateSelectUI("cov")),
+    assaySelectUI("assay")),
 
   server = function(input, output) {
     # path <- reactive(efds$parent.dir)
     # rfds <- callModule(reactiveFacileDataStore, "rfds", path)
     rfds <- ReactiveFacileDataStore(efds, "rfds", samples = universe.)
-    cov <- callModule(categoricalSampleCovariateSelect, "cov", rfds)
+    assay <- callModule(assaySelect, "assay", rfds)
   }
 )

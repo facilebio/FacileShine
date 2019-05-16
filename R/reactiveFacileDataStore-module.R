@@ -56,9 +56,10 @@
 reactiveFacileDataStore <- function(intput, output, session, path,
                                     user = Sys.getenv("USER"), ...,
                                     restrict_samples. = NULL, debug = FALSE) {
+
   if (!is.null(restrict_samples.)) {
-    assert_sample_subset(collect_samples.)
-    restrict_samples. <- collect(collect_samples., n = Inf)
+    assert_sample_subset(restrict_samples.)
+    restrict_samples. <- collect(restrict_samples., n = Inf)
   }
 
   state <- reactiveValues(
