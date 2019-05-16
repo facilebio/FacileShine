@@ -105,13 +105,22 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     hover. <- unique(unlist(unname(.aes), recursive = TRUE))
     if (length(hover.) == 0) hover. <- NULL
     ftrace("drawing scatterplot")
-    if (length(.axes) == 3L) .aes$facet <- NULL
+    if (length(.axes) == 3L) {
+      .aes$facet <- NULL
+      height <- 800
+      width <- 900
+    } else {
+      height <- 600
+      width <- 700
+    }
+
     fscatterplot(dat, .axes, color_aes = .aes$color, shape_aes = .aes$shape,
                  facet_aes = .aes$facet, hover = hover.,
                  webgl = nrow(dat) > 1000,
                  xlabel = .labels[1], # label(axes$x),
                  ylabel = .labels[2], # label(axes$y),
                  zlabel = .labels[3], # label(axes$z),
+                 height = height, width = width,
                  event_source = event_source)
   })
 

@@ -158,7 +158,7 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
 }
 
 #' @export
-#' @importFrom shiny column tagList wellPanel uiOutput
+#' @importFrom shiny checkboxInput column tagList wellPanel uiOutput
 #' @importFrom plotly plotlyOutput
 #' @rdname facileScatterPlot
 facileBoxPlotUI <- function(id, ...) {

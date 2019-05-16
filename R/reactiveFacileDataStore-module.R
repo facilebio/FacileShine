@@ -58,7 +58,7 @@ reactiveFacileDataStore <- function(intput, output, session, path,
                                     restrict_samples. = NULL, debug = FALSE) {
   if (!is.null(restrict_samples.)) {
     assert_sample_subset(collect_samples.)
-    restrict_samples <- collect(collect_samples., n = Inf)
+    restrict_samples. <- collect(collect_samples., n = Inf)
   }
 
   state <- reactiveValues(
@@ -75,6 +75,7 @@ reactiveFacileDataStore <- function(intput, output, session, path,
   vals <- local({
     v <- list(
       user = user,
+      universe = restrict_samples.,
       trigger = list(
         dataset = makeReactiveTrigger(),
         samples = makeReactiveTrigger(),
@@ -211,7 +212,8 @@ reactiveFacileDataStoreUI <- function(id, ..., debug = FALSE) {
 #' @param id the id of the shiny module
 #' @return a reactiveFacileDataStore module
 ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
-                                    samples = NULL, ..., debug = FALSE) {
+                                    samples = NULL, ...,
+                                    debug = FALSE) {
   pf <- parent.frame()
   assert_string(id)
 
@@ -221,6 +223,7 @@ ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
     path <- reactive(x[["parent.dir"]])
   } else if (is(x, "facile_frame")) {
     path <- reactive(fds(x)[["parent.dir"]])
+    samples <- collect(distinct(x, dataset, sample_id), n = Inf)
   } else if (is(x, "reactiveExpr")) {
     path <- x
   } else if (is(x, "ReactiveFacileDataStore")) {
@@ -229,11 +232,16 @@ ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
     stop("You are passing an illegal type of argument")
   }
 
-  # path <- reactive(path)
+  # out <- eval({
+  #   callModule(reactiveFacileDataStore, id, path, user = user, ...,
+  #              restrict_samples. = samples, debug = debug)
+  # }, envir = pf)
+
   out <- eval({
-    callModule(reactiveFacileDataStore, id, path, user = user, ...,
+    callModule(filteredReactiveFacileDataStore, id, path, user = user, ...,
                restrict_samples. = samples, debug = debug)
   }, envir = pf)
+
 
   out
 }

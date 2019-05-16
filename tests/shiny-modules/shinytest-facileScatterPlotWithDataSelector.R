@@ -9,12 +9,12 @@ options(facile.log.level.fshine = "trace")
 shinyApp(
   ui = fluidPage(
     datasetSelectUI("dataselect"),
-    singleFilteredReactiveFacileDataStoreUI("rfds"),
-    tags$h2("facileScatterPlot"),
+    filteredReactiveFacileDataStoreUI("rfds"),
+    tags$h3("facileScatterPlot"),
     facileScatterPlotUI("scatter")),
   server = function(input, output) {
     ds <- callModule(datasetSelect, "dataselect")
-    rfds <- callModule(singleFilteredReactiveFacileDataStore, "rfds", ds$path)
+    rfds <- callModule(filteredReactiveFacileDataStore, "rfds", ds$path)
     scatter <- callModule(facileScatterPlot, "scatter", rfds, ndim = 3)
   }
 )

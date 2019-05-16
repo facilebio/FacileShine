@@ -58,12 +58,12 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
 
   # Reactivity -----------------------------------------------------------------
   filters <- reactive({
-    ftrace("filters() fired")
     state$filters
   })
 
   # Adds a sampleFilter module when the "Add" button is pushed
   observeEvent(input$add_filter_btn, {
+    req(initialized(rfds))
     filters. <- isolate(filters())
     flen <- length(filters.)
 
@@ -73,7 +73,11 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
     rmid <- paste0("remove_", id)
 
     if (flen == 0) {
-      universe <- reactive(collect(samples(fds(rfds)), n = Inf))
+      if (is(rfds, "RestrictedReactiveFacileDataStore")) {
+        universe <- reactive(rfds$universe)
+      } else {
+        universe <- reactive(collect(samples(fds(rfds)), n = Inf))
+      }
     } else {
       universe <- reactive(isolate(filters.[[flen]]$active_samples()))
     }
@@ -112,7 +116,8 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
     if (flen == 0) NULL else filters.[[flen]]
   })
 
-  reduced.samples <- reactive({
+  active.samples <- reactive({
+    req(initialized(rfds))
     lf <- last.filter()
     if (is.null(lf)) {
       out <- collect(samples(fds(rfds)), n = Inf)
@@ -143,7 +148,7 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
     toggleState("add_filter_btn", condition = enabled)
   })
 
-  # Ensures that only the last sampleFilter is editable by the user
+  # Ensures that only the last sampleFilter is enabled and editable by the user
   observeEvent(last.filter(), {
     filters. <- filters()
     flen <- length(filters.)
@@ -161,7 +166,7 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
   # Server Debug ---------------------------------------------------------------
   if (debug) {
     output$samples <- DT::renderDT({
-      samples. <- reduced.samples()
+      samples. <- active.samples()
       covs <- sapply(filters(), function(sf) {
         cov <- sf$covariate$covariate()
         if (unselected(cov)) cov <- ""
@@ -177,7 +182,7 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
 
   vals <- list(
     filters = filters,
-    samples = reduced.samples,
+    samples = active.samples,
     .ns = session$ns)
   class(vals) <- "FacileSampleFilterList"
   vals

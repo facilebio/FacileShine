@@ -6,7 +6,7 @@
 \title{Composition of modules to provide a filtering schema over a FaclieDataStore.}
 \usage{
 filteredReactiveFacileDataStore(input, output, session, path,
-  user = Sys.getenv("USER"), nfilters = 1, ...)
+  user = Sys.getenv("USER"), ..., debug = FALSE)
 
 singleFilteredReactiveFacileDataStore(input, output, session, path,
   user = Sys.getenv("USER"), nfilters = 1, ...)

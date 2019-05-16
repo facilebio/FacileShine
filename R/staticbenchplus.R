@@ -136,10 +136,10 @@ staticbenchplus <- function(config = NULL, user = Sys.getenv("USER"), ...) {
       tabItem(
         "dataselecttab",
         datasetSelectUI("dselect"),
-        singleFilteredReactiveFacileDataStoreUI("rfds")),
+        filteredReactiveFacileDataStoreUI("rfds")),
       tabItem("pcatab", "Principal Components Analysis"),
       tabItem("scatterplottab", facileScatterPlotUI("scatter")),
-      tabItem("boxplottab", "Box Plot"),
+      tabItem("boxplottab", facileBoxPlotUI("boxplot")),
       # tabItem("dgetab", fdgeAnalysisUI("fdgea")),
       tabItem("reportingtab", "Report Generation")))
 }
@@ -162,10 +162,11 @@ staticbenchplus <- function(config = NULL, user = Sys.getenv("USER"), ...) {
   assert_string(user)
 
   dselect <- callModule(datasetSelect, "dselect", config = config, user = user)
-  rfds <- callModule(singleFilteredReactiveFacileDataStore, "rfds",
-                     dselect$path, user)
+  rfds <- callModule(filteredReactiveFacileDataStore, "rfds", dselect$path,
+                     user = user)
   # fdgea <- callModule(fdgeAnalysis, "fdgea", rfds)
   scatter <- callModule(facileScatterPlot, "scatter", rfds, ndim = 3)
+  boxplot <- callModule(facileBoxPlot, "boxplot", rfds)
 }
 
 
