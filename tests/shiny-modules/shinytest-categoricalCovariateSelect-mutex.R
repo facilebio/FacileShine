@@ -42,7 +42,6 @@ shiny::shinyApp(
                        .reactive = TRUE, debug = debug)
     observeEvent(val1$values(), {
       v2 <- isolate(val2$values())
-      # if (!unselected(v2)) browser()
       update_exclude(val2, val1$values)
     })
     observeEvent(val2$values(), {

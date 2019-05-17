@@ -6,6 +6,11 @@
 #' from `active_samples(rfds)`. If `universe = NULL`, original behavior is
 #' kept.
 #'
+#' @section Excluding covariates:
+#'
+#' TODO: Let's talk about how to exclude covariates and their levels, and point
+#' users to [update_exclude()]
+#'
 #' @rdname categoricalSampleCovariateSelect
 #' @export
 #' @importFrom shiny
@@ -42,8 +47,6 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
     exclude = tibble(variable = character(), value = character()))
 
   if (!is.null(.exclude)) {
-    # assert_tibble(.exclude)
-    # assert_subset(names(.exclude), c("variable", "value"))
     assert_class(.exclude, "reactive")
   }
 
@@ -161,8 +164,6 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
       out <- .empty_covariate_summary(rfds)
     } else {
       scovs <- fetch_sample_covariates(rfds, universe.(), covariate.)
-      # out <- try(summary(scovs, expanded = TRUE), silent = TRUE)
-      # if (!is(out, "data.frame")) browser()
       out <- summary(scovs, expanded = TRUE)
     }
     out
@@ -206,10 +207,6 @@ categoricalSampleCovariateSelectUI <- function(id, label = "Covariate",
                                                selectize = TRUE, width = NULL,
                                                size = NULL, ...) {
   ns <- NS(id)
-
-  # tagList(
-  #   selectInput(ns("covariate"), choices = NULL),
-  #   selectizeInput(ns("values", choices = NULL)))
 
   tagList(
     selectInput(ns("covariate"), label = label, choices = choices,
