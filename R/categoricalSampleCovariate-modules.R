@@ -15,6 +15,12 @@
 #'   reactiveValues
 #'   req
 #'   updateSelectInput
+#' @param a reactive character vector, which specifies the covariates to ignore
+#'   or a tibble with "variable" (and optional "value") columns. If a character
+#'   vector, or tibble with just has a "variable" column are provide, then
+#'   the variable names enumerated there will not be included in this dropdown.
+#'   A tibble with "variable" and "value" columns can be used so that only
+#'   specific levels of a covariate are ignored.
 categoricalSampleCovariateSelect <- function(input, output, session, rfds,
                                              universe = NULL, include1 = TRUE,
                                              ...,
@@ -25,19 +31,27 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
   assert_class(rfds, "ReactiveFacileDataStore")
   if (!is.null(universe)) assert_class(universe, "reactive")
 
+  isolate. <- if (.reactive) base::identity else shiny::isolate
+
   state <- reactiveValues(
     covariate = "__initializing__",
     levels = "__initializing__",
     summary = .empty_covariate_summary(rfds),
     active_covariates = "__initializing__",
-    universe = "__initializing__")
+    universe = "__initializing__",
+    exclude = tibble(variable = character(), value = character()))
 
-  if (!is.null(.exclude) && !.reactive) {
-    assert_tibble(.exclude)
-    assert_subset(names(.exclude), c("variable", "value"))
+  if (!is.null(.exclude)) {
+    # assert_tibble(.exclude)
+    # assert_subset(names(.exclude), c("variable", "value"))
+    assert_class(.exclude, "reactive")
   }
 
-  isolate. <- if (.reactive) base::identity else shiny::isolate
+  observe({
+    req(initialized(rfds))
+    update_exclude(state, .exclude, type = "covariate_select")
+  }, priority = 10)
+  exclude. <- reactive(state$exclude)
 
   observe({
     req(initialized(rfds))
@@ -50,22 +64,29 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
     }
   }, priority = 10)
 
-  observe({
-    depend(rfds, "covariates")
-    req(initialized(rfds))
-    univ <- state$universe
-    req(is.data.frame(univ))
-
-    ftrace("Updating {bold}{red}state$active_covariates{reset}")
-    acovs <- fetch_sample_covariates(rfds, univ)
-    acovs <- filter(acovs, class == "categorical")
-    state$active_covariates <- summary(acovs)
-  }, priority = 10)
-
   universe. <- reactive({
     req(is.data.frame(state$universe))
     state$universe
   })
+
+  observe({
+    depend(rfds, "covariates")
+    req(initialized(rfds))
+    univ <- universe.()
+    req(is.data.frame(univ))
+
+    ftrace("Updating {bold}{red}state$active_covariates{reset}")
+    acovs <- fetch_sample_covariates(rfds, univ)
+
+    acovs <- filter(acovs, class == "categorical")
+    ignore <- exclude.()
+    if (nrow(ignore)) {
+      anti.by <- intersect(c("variable", "value"), names(ignore))
+      acovs <- anti_join(acovs, ignore, by = anti.by)
+    }
+
+    state$active_covariates <- summary(acovs)
+  }, priority = 10)
 
   active.covariates <- reactive({
     req(initialized(rfds))
@@ -140,6 +161,8 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
       out <- .empty_covariate_summary(rfds)
     } else {
       scovs <- fetch_sample_covariates(rfds, universe.(), covariate.)
+      # out <- try(summary(scovs, expanded = TRUE), silent = TRUE)
+      # if (!is(out, "data.frame")) browser()
       out <- summary(scovs, expanded = TRUE)
     }
     out
@@ -171,6 +194,55 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
                    "FacileDataAPI",
                    "Labeled")
   return(vals)
+}
+
+#' Updates the covariates/levels to be excluded from the universe.
+#'
+#' This should be s3, but for now we are essentially performing method dispatch
+#' on the `type` parameter
+#'
+#' @noRd
+#' @param x Either the select- or level-module, or its internal `"state"`
+#'   `reactiveValues` object.
+update_exclude <- function(x, exclude, type, ...) {
+  valid.x <- c("reactivevalues", "CategoricalCovariateSelect",
+               "CategoricalCovariateSelectLevels")
+  assert_multi_class(x, valid.x)
+  if (!is.null(exclude)) assert_class(exclude, "reactive")
+  assert_choice(type, c("covariate_select", "covariate_levels"))
+
+  if (is(x, "reactivevalues")) {
+    state <- x
+  } else if (test_multi_class(valid.x)) {
+    state <- x[[".state"]]
+  } else {
+    stop("Unknown class type for x", class(x))
+  }
+  assert_class(state, "reactivevalues")
+
+  if (type == "covariate_select") {
+    # exclude is a tibble with variable and (optionally) value columns
+    out <- tibble(variable = character())
+    if (!is.null(exclude)) {
+      exclude. <- exclude()
+      if (is.character(exclude.)) {
+        out <- tibble(variable = exclude.)
+      } else {
+        assert_multi_class(exclude., c("tbl", "data.frame"))
+        assert_choice("variable", colnames(exclude.))
+        out <- collect(exclude., n = Inf)
+      }
+    }
+    out <- filter(out, !variable %in% c("", "__initializing__"))
+  } else {
+    # exclude is a character vector
+    out <- character()
+    if (!is.null(exclude)) {
+      out <- setdiff(exclude(), c("", "__initializing__"))
+    }
+  }
+  state$exclude <- out
+  invisible(x)
 }
 
 #' @noRd
@@ -225,14 +297,30 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
                                              .exclude = NULL,
                                              .reactive = TRUE,
                                              debug = FALSE) {
+  isolate. <- if (.reactive) base::identity else shiny::isolate
+
   assert_class(rfds, "ReactiveFacileDataStore")
   state <- reactiveValues(
-    values = "__initializing__")
+    values = "__initializing__",
+    levels = "__initializing__",
+    exclude = character())
 
+  observe({
+    req(initialized(rfds))
+    update_exclude(state, .exclude, type = "covariate_levels")
+  })
+  exclude. <- reactive(state$exclude)
 
-  observeEvent(covariate$levels(), {
+  levels <- reactive({
     req(initialized(rfds))
     levels. <- req(covariate$levels())
+    setdiff(levels., exclude.())
+  })
+
+  observeEvent(levels(), {
+    req(initialized(rfds))
+    # levels. <- req(covariate$levels())
+    levels. <- levels()
     selected. <- input$values
     if (unselected(selected.)) selected. <- ""
 
@@ -266,7 +354,7 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
     values = values,
     .state = state,
     .ns = session$ns)
-
+  class(vals) <- "CategoricalCovariateSelectLevels"
   return(vals)
 }
 

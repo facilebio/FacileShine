@@ -43,6 +43,7 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
   setBookmarkExclude(c("add_filter_btn"))
 
   state <- reactiveValues(
+    fdsname = "__initializing__",
     filters = list())
 
   # onBookmark(function(state) {
@@ -58,6 +59,7 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
 
   # Support a restricted universe in the original ReactiveFacileDataStore
   fds.universe <- reactive({
+    req(initialized(rfds))
     if (is(rfds, "RestrictedReactiveFacileDataStore")) {
       out <- rfds$universe
     } else {
@@ -67,6 +69,23 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
   })
 
   # Reactivity -----------------------------------------------------------------
+  # When the underyling faciledatastore changes, nuke all of the things.
+  observeEvent(name(rfds), {
+    req(initialized(rfds))
+    name. <- name(rfds)
+    if (name. != state$fdsname) {
+      filters. <- state$filters
+      state$name <- name.
+      if (length(filters.) > 0) {
+        for (id in rev(names(filters.))) {
+          ftrace("Removing filter: {bold}", id, "{reset}")
+          removeUI(selector = paste0("#", ns(paste0(id, "_container"))))
+        }
+        state$filters <- list()
+      }
+    }
+  })
+
   filters <- reactive({
     state$filters
   })

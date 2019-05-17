@@ -10,9 +10,11 @@ efds <- exampleFacileDataSet()
 # With filter
 single <- shinyApp(
   ui = fluidPage(
-    singleFilteredReactiveFacileDataStoreUI("rfds")),
+    # singleFilteredReactiveFacileDataStoreUI("rfds")
+    filteredReactiveFacileDataStoreUI("rfds", debug = TRUE)),
   server = function(input, output) {
     path <- reactive(efds$parent.dir)
-    rfds <- callModule(singleFilteredReactiveFacileDataStore, "rfds", path)
+    rfds <- callModule(filteredReactiveFacileDataStore, "rfds", path,
+                       debug = TRUE)
   }
 )
