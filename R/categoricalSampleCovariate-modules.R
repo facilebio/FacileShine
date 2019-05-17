@@ -318,7 +318,6 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
 
   observeEvent(levels(), {
     req(initialized(rfds))
-    # levels. <- req(covariate$levels())
     levels. <- levels()
     selected. <- input$values
     if (unselected(selected.)) selected. <- ""
@@ -351,6 +350,7 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
 
   vals <- list(
     values = values,
+    levels = levels,
     .state = state,
     .ns = session$ns)
   class(vals) <- "CategoricalCovariateSelectLevels"
