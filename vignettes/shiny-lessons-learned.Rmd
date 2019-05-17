@@ -1,0 +1,25 @@
+---
+title: "Shiny Lessons Learned"
+author: "Steve Lianoglou"
+date: "5/17/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## observeEvent({}, ignoreNULL = FALSE)
+
+`ignoreNULL` deafults to `TRUE`, but turning it to `FALSE` enables:
+
+1. An empty selectizeInput, such as the one provided by the
+   `categoricalSampleCovariateLevels` module, to repopulate all of its levels
+   when all values have been removed.
+
+2. When `ignoreNULL = FALSE`, you have to be wary intermediate times during the
+   reactive cycle when a selectiInput's value is `NULL`. Elaborate on the
+   note in the `categoricalSampleCovariateSelectLevels` module found in the
+   `observeEvent(input$values, {})` block. This bit me when I had two
+   `*selectLevels` modules that were tied to the same `select` module that
+   I wanted to make mutually exclusive.
