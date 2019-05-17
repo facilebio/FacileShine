@@ -8,6 +8,14 @@ categoricalSampleCovariateSelect(input, output, session, rfds,
   universe = NULL, include1 = TRUE, ..., .with_none = TRUE,
   .exclude = NULL, .reactive = TRUE, debug = FALSE)
 }
+\arguments{
+\item{a}{reactive character vector, which specifies the covariates to ignore
+or a tibble with "variable" (and optional "value") columns. If a character
+vector, or tibble with just has a "variable" column are provide, then
+the variable names enumerated there will not be included in this dropdown.
+A tibble with "variable" and "value" columns can be used so that only
+specific levels of a covariate are ignored.}
+}
 \description{
 This is the second version of this module, which was updated to allow for a
 \code{universe} argument, which specifies a subset of samples from \code{rfds} to get

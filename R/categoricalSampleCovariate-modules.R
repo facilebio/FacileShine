@@ -196,55 +196,6 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
   return(vals)
 }
 
-#' Updates the covariates/levels to be excluded from the universe.
-#'
-#' This should be s3, but for now we are essentially performing method dispatch
-#' on the `type` parameter
-#'
-#' @noRd
-#' @param x Either the select- or level-module, or its internal `"state"`
-#'   `reactiveValues` object.
-update_exclude <- function(x, exclude, type, ...) {
-  valid.x <- c("reactivevalues", "CategoricalCovariateSelect",
-               "CategoricalCovariateSelectLevels")
-  assert_multi_class(x, valid.x)
-  if (!is.null(exclude)) assert_class(exclude, "reactive")
-  assert_choice(type, c("covariate_select", "covariate_levels"))
-
-  if (is(x, "reactivevalues")) {
-    state <- x
-  } else if (test_multi_class(valid.x)) {
-    state <- x[[".state"]]
-  } else {
-    stop("Unknown class type for x", class(x))
-  }
-  assert_class(state, "reactivevalues")
-
-  if (type == "covariate_select") {
-    # exclude is a tibble with variable and (optionally) value columns
-    out <- tibble(variable = character())
-    if (!is.null(exclude)) {
-      exclude. <- exclude()
-      if (is.character(exclude.)) {
-        out <- tibble(variable = exclude.)
-      } else {
-        assert_multi_class(exclude., c("tbl", "data.frame"))
-        assert_choice("variable", colnames(exclude.))
-        out <- collect(exclude., n = Inf)
-      }
-    }
-    out <- filter(out, !variable %in% c("", "__initializing__"))
-  } else {
-    # exclude is a character vector
-    out <- character()
-    if (!is.null(exclude)) {
-      out <- setdiff(exclude(), c("", "__initializing__"))
-    }
-  }
-  state$exclude <- out
-  invisible(x)
-}
-
 #' @noRd
 #' @export
 #' @rdname categoricalSampleCovariateSelect
@@ -302,6 +253,7 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
   assert_class(rfds, "ReactiveFacileDataStore")
   state <- reactiveValues(
     values = "__initializing__",
+    levels = character(),
     exclude = character())
 
   observe({
@@ -310,11 +262,17 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
   })
   exclude. <- reactive(state$exclude)
 
-  levels <- reactive({
+  observe({
     req(initialized(rfds))
     levels. <- req(covariate$levels())
-    setdiff(levels., exclude.())
+    ignore <- exclude.()
+    newlevels <- setdiff(levels., ignore)
+    if (!setequal(state$levels, newlevels)) {
+      state$levels <- newlevels
+    }
   })
+
+  levels <- reactive(state$levels)
 
   observeEvent(levels(), {
     req(initialized(rfds))
@@ -324,8 +282,10 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
 
     overlap. <- intersect(selected., levels.)
     if (unselected(overlap.)) overlap. <- ""
-    ftrace("updating selectizeInput: ", paste(levels., collapse = ","))
     if (!isTRUE(setequal(overlap., state$values))) {
+      ftrace("change in availavble levels (",
+             paste(levels., collapse = ","),
+             ") updates selected level to: `", overlap., "`")
       state$values <- overlap.
     }
     updateSelectizeInput(session, "values", choices = levels.,
@@ -334,10 +294,25 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
 
   observeEvent(input$values, {
     selected. <- input$values
+    # This is required because ignoreNULL is set to `FALSE`. We set it to
+    # false so that when all selectred levels are removed from
+    # covariateSelectLevels, the values are released "back to the pool".
+    # When ignoreNULL is false, however, there are intermediate in the
+    # reactivity cycle when input$values is NULL even though its value
+    # hasn't changed.
+    #
+    # The latter situation hit me when I was trying to make "mutually
+    # exclusive" categoricalSampleCovariateLevels that are populated
+    # from the same categoricalCovariateSelect by using the .exclude
+    # mojo
+    req(!is.null(selected.))
     if (unselected(selected.)) {
       selected. <- ""
     }
     if (!isTRUE(setequal(selected., state$values))) {
+      ftrace("Change of selected input$values changes internal state from ",
+             "`", isolate(state$values), "` ",
+             "to `", selected., "`")
       state$values <- selected.
     }
   }, ignoreNULL = FALSE)
@@ -376,6 +351,67 @@ categoricalSampleCovariateLevelsUI <- function(id, ..., choices = NULL,
   }
 
   out
+}
+
+# Update excluded covariates and levels =======================================
+
+#' Updates the covariates/levels to be excluded from the universe.
+#'
+#' This should be s3, but for now we are essentially performing method dispatch
+#' on the `type` parameter
+#'
+#' @noRd
+#' @export
+#' @param x Either the select- or level-module, or its internal `"state"`
+#'   `reactiveValues` object.
+update_exclude <- function(x, exclude, type, ...) {
+  valid.x <- c("reactivevalues", "CategoricalCovariateSelect",
+               "CategoricalCovariateSelectLevels")
+  assert_multi_class(x, valid.x)
+  if (!is.null(exclude)) assert_class(exclude, "reactive")
+
+  if (is(x, "CategoricalCovariateSelect")) {
+    type <- "covariate_select"
+  } else if (is(x, "CategoricalCovariateSelectLevels")) {
+    type <- "covariate_levels"
+  }
+  assert_choice(type, c("covariate_select", "covariate_levels"))
+
+  if (is(x, "reactivevalues")) {
+    state <- x
+  } else if (test_multi_class(x, valid.x)) {
+    state <- x[[".state"]]
+  } else {
+    stop("Unknown class type for x", class(x))
+  }
+  assert_class(state, "reactivevalues")
+
+  if (type == "covariate_select") {
+    # exclude is a tibble with variable and (optionally) value columns
+    out <- tibble(variable = character())
+    if (!is.null(exclude)) {
+      exclude. <- exclude()
+      if (is.character(exclude.)) {
+        out <- tibble(variable = exclude.)
+      } else {
+        assert_multi_class(exclude., c("tbl", "data.frame"))
+        assert_choice("variable", colnames(exclude.))
+        out <- collect(exclude., n = Inf)
+      }
+    }
+    out <- filter(out, !variable %in% c("", "__initializing__"))
+  } else if (type == "covariate_levels") {
+    # exclude is a character vector
+    out <- character()
+    if (!is.null(exclude)) {
+      out <- setdiff(exclude(), c("", "__initializing__"))
+    }
+  } else {
+    stop("update_exclude not implemented for: ", type)
+  }
+
+  state$exclude <- out
+  invisible(x)
 }
 
 # Internal Helper Functions ====================================================
