@@ -10,8 +10,9 @@
 #' A 1d scatter plot might just default to a density plot.
 #'
 #' @export
-#' @importFrom shiny column renderUI wellPanel
 #' @importFrom plotly renderPlotly plotlyOutput
+#' @importFrom shiny column renderUI wellPanel
+#' @importFrom shinycssloaders withSpinner
 #' @rdname facileScatterPlot
 #'
 #' @param ndim Defaults to 3. When any two dimensions are provided, a plot will
@@ -134,9 +135,9 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     psize <- req(plotsize())
     output$scatterplot <- renderPlotly(plot(fscatter()))
     output$plotlybox <- renderUI({
-      plotlyOutput(session$ns("scatterplot"),
-                   width = psize$width,
-                   height = psize$height)
+      withSpinner(plotlyOutput(session$ns("scatterplot"),
+                               width = psize$width,
+                               height = psize$height))
     })
   })
 

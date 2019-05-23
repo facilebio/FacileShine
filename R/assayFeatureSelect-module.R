@@ -48,6 +48,8 @@ assayFeatureSelect <- function(input, output, session, rfds, ...,
     req(initialized(rfds))
     current <- isolate(state$selected)
     selected_ids <- input$features
+    # Putting req(!is.null(selected_ids)) kills the output
+    # req(!is.null(selected_ids)) # NULLFlash?
     universe <- assay_select$features()
 
     is.unselected <- unselected(selected_ids)

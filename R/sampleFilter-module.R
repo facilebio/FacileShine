@@ -38,6 +38,7 @@ sampleFilter <- function(input, output, session, rfds, sample_universe = NULL,
         fetch_sample_covariates(suniverse, cov.name) %>%
         filter(value %in% !!cov.vals)
       if (nrow(selected.samples) == 0) {
+        # browser()
         fwarn("Cohort updates have set the active samples to the empty set")
       }
     } else {

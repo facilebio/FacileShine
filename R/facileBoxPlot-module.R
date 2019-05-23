@@ -11,6 +11,7 @@
 #'
 #' @export
 #' @importFrom shiny column renderUI wellPanel
+#' @importFrom shinycssloaders withSpinner
 #' @importFrom shinyjs toggleState
 #' @importFrom plotly renderPlotly plotlyOutput
 #' @rdname facileScatterPlot
@@ -140,9 +141,9 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
     psize <- req(plotsize())
     output$boxplot <- renderPlotly(plot(fbox()))
     output$plotlybox <- renderUI({
-      plotlyOutput(session$ns("boxplot"),
-                   width = psize$width,
-                   height = psize$height)
+      withSpinner(plotlyOutput(session$ns("boxplot"),
+                               width = psize$width,
+                               height = psize$height))
     })
   })
 

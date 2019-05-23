@@ -105,6 +105,7 @@ categoricalAestheticMap <- function(input, output, session, rfds,
   observeEvent(input$color, {
     if (!color) return(invisible(NULL))
     selected <- input$color
+    # req(!is.null(selected)) # NULLflash (prophelactic: no error thrown yet)
     if (unselected(selected)) selected <- ""
     if (!is.null(selected) && !setequal(selected, state$color)) {
       state$color <- selected

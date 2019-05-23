@@ -78,6 +78,7 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
   observeEvent(input$assay, {
     req(initialized(rfds))
     selected <- input$assay
+    # req(!is.null(selected)) # NULLflash (prophelactic: no error thrown yet)
     if (unselected(selected) && !no.assays()) {
       # We aren't completely initialized yet, bail
       req(FALSE)

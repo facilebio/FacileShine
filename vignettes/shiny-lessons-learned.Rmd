@@ -11,6 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## observeEvent({}, ignoreNULL = FALSE)
 
+See also "`NULLflash`" in the code base
+
 `ignoreNULL` deafults to `TRUE`, but turning it to `FALSE` enables:
 
 1. An empty selectizeInput, such as the one provided by the

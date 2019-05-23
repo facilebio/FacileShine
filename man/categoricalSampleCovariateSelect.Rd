@@ -23,3 +23,10 @@ covariate data from. The original implementation always retrieved covariates
 from \code{active_samples(rfds)}. If \code{universe = NULL}, original behavior is
 kept.
 }
+\section{Excluding covariates}{
+
+
+TODO: Let's talk about how to exclude covariates and their levels, and point
+users to \code{\link[=update_exclude]{update_exclude()}}
+}
+

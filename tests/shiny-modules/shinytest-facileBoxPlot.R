@@ -14,7 +14,6 @@ shiny::shinyApp(
     shiny::tags$h3("facileBoxPlot"),
     facileBoxPlotUI("box")),
   server = function(input, output) {
-    # rfds <- shiny::callModule(singleFilteredReactiveFacileDataStore, "rfds", ds$path)
     rfds <- ReactiveFacileDataStore(efds, "rfds")
     boxplot <- shiny::callModule(facileBoxPlot, "box", rfds)
   }

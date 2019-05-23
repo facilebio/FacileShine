@@ -5,10 +5,9 @@ devtools::load_all(".")
 
 debug <- TRUE
 
-# efds <- FacileData::exampleFacileDataSet()
-efds <- FacileDenaliDataSet("mouse")
+efds <- FacileData::exampleFacileDataSet()
+# efds <- FacileDenaliDataSet("mouse")
 user <- Sys.getenv("USER")
-
 
 options(facile.log.level.fshine = "trace")
 

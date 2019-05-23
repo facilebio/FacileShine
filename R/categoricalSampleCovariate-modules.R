@@ -101,7 +101,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
   categorical.covariates <- reactive({
     out <- req(active.covariates())
     if (!include1) {
-      out <- filter(out, nlevels > 1)
+      out <- filter(out, nlevels > 1L)
     }
     pull(out, variable)
   })
@@ -141,6 +141,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
 
   observeEvent(input$covariate, {
     cov <- input$covariate
+    # req(!is.null(cov)) # NULLflash
     current <- state$covariate
     if (unselected(cov)) cov <- ""
     if (!setequal(cov, current)) {
@@ -163,8 +164,15 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
     if (notselected) {
       out <- .empty_covariate_summary(rfds)
     } else {
-      scovs <- fetch_sample_covariates(rfds, universe.(), covariate.)
-      out <- summary(scovs, expanded = TRUE)
+      # Need to isolate the [sample] universe.() because that is updated at a
+      # higher priority, and sometimes when samples changed via cohort
+      # selection, it was triggering this code block to fire before the selected
+      # covariate could be reset to one that exists in this cohort (ie. if the
+      # cohort shift removes the currently selected covariate from the cohort).
+      univ <- isolate(universe.())
+      scovs <- fetch_sample_covariates(rfds, univ, covariate.)
+      out <- try(summary(scovs, expanded = TRUE), silent = TRUE)
+      # if (!is.data.frame(out)) browser()
     }
     out
   })
@@ -255,7 +263,7 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
 
   observe({
     req(initialized(rfds))
-    update_exclude(state, .exclude, type = "covariate_levels")
+    update_exclude(state, isolate(.exclude), type = "covariate_levels")
   })
   exclude. <- reactive(state$exclude)
 
@@ -265,9 +273,11 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
     ignore <- exclude.()
     newlevels <- setdiff(levels., ignore)
     if (!setequal(state$levels, newlevels)) {
+      ftrace("Updating levels from (", state$levels, "), to (",
+             newlevels, ")")
       state$levels <- newlevels
     }
-  })
+  }, priority = 10)
 
   levels <- reactive(state$levels)
 
@@ -302,6 +312,10 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
     # exclusive" categoricalSampleCovariateLevels that are populated
     # from the same categoricalCovariateSelect by using the .exclude
     # mojo
+
+    # THIS IS SO CLOSE: I need to put the req(!is.null()) here for the
+    # mutually-excluve categoricalCovariateSelectLevel modules to work.
+    # TODO: Finish categoricalSampleCovariateLevelsMutex
     req(!is.null(selected.))
     if (unselected(selected.)) {
       selected. <- ""
@@ -345,6 +359,162 @@ categoricalSampleCovariateLevelsUI <- function(id, ..., choices = NULL,
     out <- tagList(
       out,
       tags$p("Selected levels:", textOutput(ns("selected"))))
+  }
+
+  out
+}
+
+# Mutually Exclusive select labels from one covariate ==========================
+# Implementation inspired by Caleb Lareau
+# https://github.com/caleblareau/mutuallyExclusiveShiny
+
+
+#' Creates arbitrary n-level selects from a single categorical covariate whose
+#' options are mutually exclusive of each other.
+#'
+#' @export
+#' @importFrom shiny column insertUI req selectizeInput uiOutput updateSelectizeInput
+#' @param covariate a [categoricalSampleCovariateSelect()] module.
+categoricalSampleCovariateLevelsMutex <- function(
+    input, output, session, rfds,
+    covariate, label1 = "Value 1", label2 = "Value 2",
+    multiple1 = TRUE, multiple2 = TRUE, ...,
+    .exclude = NULL,
+    .reactive = TRUE,
+    debug = FALSE) {
+  ns <- session$ns
+
+  isolate. <- if (.reactive) base::identity else shiny::isolate
+  assert_character(inpt_names, min.len = 2L)
+
+  assert_class(rfds, "ReactiveFacileDataStore")
+  state <- reactiveValues(
+    values1 = "",
+    values2 = "",
+    selected = "",
+    levels = character(),
+    exclude = character())
+
+  exclude. <- reactive({
+    if (is.null(.exclude)) NULL else .exclude()
+  })
+
+  observe({
+    req(initialized(rfds))
+    levels. <- req(covariate$levels())
+    ignore <- exclude.()
+    newlevels <- setdiff(levels., ignore)
+    if (!setequal(state$levels, newlevels)) {
+      ftrace("Updating levels from (", state$levels, "), to (",
+             newlevels, ")")
+      state$levels <- newlevels
+    }
+  }, priority = 10)
+
+  levels <- reactive(state$levels)
+
+  # AAAAAAARGHHHHHHHHHHHHHHHHHHHHH ---------------------------------------------
+  observe({
+    state$values1 <- input$values1
+    state$values2 <- input$values2
+  })
+
+  observeEvent(levels(), {
+    req(initialized(rfds))
+    levels. <- levels()
+    selected. <- input$values
+    if (unselected(selected.)) selected. <- ""
+
+    overlap. <- intersect(selected., levels.)
+    if (unselected(overlap.)) overlap. <- ""
+    if (!isTRUE(setequal(overlap., state$values))) {
+      ftrace("change in availavble levels (",
+             paste(levels., collapse = ","),
+             ") updates selected level to: `", overlap., "`")
+      state$values <- overlap.
+    }
+    updateSelectizeInput(session, "values", choices = levels.,
+                         selected = overlap., server = TRUE)
+  }, priority = 10)
+
+  observeEvent(input$values, {
+    selected. <- input$values
+    # This is required because ignoreNULL is set to `FALSE`. We set it to
+    # false so that when all selectred levels are removed from
+    # covariateSelectLevels, the values are released "back to the pool".
+    # When ignoreNULL is false, however, there are intermediate in the
+    # reactivity cycle when input$values is NULL even though its value
+    # hasn't changed.
+    #
+    # The latter situation hit me when I was trying to make "mutually
+    # exclusive" categoricalSampleCovariateLevels that are populated
+    # from the same categoricalCovariateSelect by using the .exclude
+    # mojo
+    if (unselected(selected.)) {
+      selected. <- ""
+    }
+    if (!isTRUE(setequal(selected., state$values))) {
+      ftrace("Change of selected input$values changes internal state from ",
+             "`", isolate(state$values), "` ",
+             "to `", selected., "`")
+      state$values <- selected.
+    }
+  }, ignoreNULL = FALSE)
+
+  values <- reactive(state$values)
+
+  if (debug) {
+    output$selected <- renderText(values())
+  }
+
+  vals <- list(
+    values = values,
+    levels = levels,
+    .state = state,
+    .ns = session$ns)
+  class(vals) <- "CategoricalCovariateSelectLevels"
+  return(vals)
+}
+
+#' @noRd
+#' @importFrom shiny column fluidRow NS selectizeInput tags uiOutput
+categoricalSampleCovariateLevelsMutexUI <- function(id, label1 = "Vals1",
+                                                    label2 = "Vals2",
+                                                    multiple1 = TRUE,
+                                                    multiple2 = TRUE,
+                                                    width = 4,
+                                                    horizontal = TRUE, ...) {
+  ns <- NS(id)
+
+  assert_integerish(width, min.len = 1, max.len = 2)
+  if (length(width) == 1L) width <- c(width, width)
+  names(width) <- c("values1", "values2")
+
+  vals <- list(values1 = list(label = label1, multiple = multiple1),
+               values2 = list(label = label2, multiple = multiple2))
+
+  # out <- sapply(names(vals), function(name) {
+  #   ui <- selectizeInput(ns(name), choices = NULL,
+  #                        label = vals[[name]][["label"]],
+  #                        multiple = vals[[name]][["multiple"]])
+  #   if (horizontal) {
+  #     ui <- column(width[name], ui)
+  #   }
+  # })
+  #
+  # if (horizontal) {
+  #   out <- fluidRow(out)
+  # }
+
+  out <- sapply(names(vals), function(name) {
+    out <- uiOutput(ns(name))
+    if (horizontal) {
+      ui <- column(width[name], ui)
+    }
+  })
+
+  if (horizontal) {
+    out <- fluidRow(out)
   }
 
   out
@@ -407,6 +577,9 @@ update_exclude <- function(x, exclude, type, ...) {
     stop("update_exclude not implemented for: ", type)
   }
 
+  # if (!setequal(state$exclude, out)) {
+  #   state$exclude <- out
+  # }
   state$exclude <- out
   invisible(x)
 }

@@ -84,7 +84,7 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
         state$filters <- list()
       }
     }
-  })
+  }, priority = 10)
 
   filters <- reactive({
     state$filters
