@@ -34,7 +34,7 @@
 #'   [Joe Cheng's rpharm-demo app](https://github.com/jcheng5/rpharma-demo),
 #'   [Barret's Post](https://community.rstudio.com/t/22617/5)
 #' @export
-#' @importFrom shiny insertUI removeUI setBookmarkExclude
+#' @importFrom shiny insertUI removeUI setBookmarkExclude freezeReactiveValue
 #' @importFrom shinyjs toggleState
 #' @return A `"FacileSampleFilterList"`. Use `active_samples(this)` to retrieve
 #'   the currently specified cohort of samples.
@@ -44,6 +44,7 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
 
   state <- reactiveValues(
     fdsname = "__initializing__",
+    universe = "__initializing__",
     filters = list())
 
   # onBookmark(function(state) {
@@ -57,34 +58,60 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
   #   }
   # })
 
-  # Support a restricted universe in the original ReactiveFacileDataStore
-  fds.universe <- reactive({
-    req(initialized(rfds))
-    if (is(rfds, "RestrictedReactiveFacileDataStore")) {
-      out <- rfds$universe
-    } else {
-      out <- samples(fds(rfds))
-    }
-    collect(out, n = Inf)
-  })
-
   # Reactivity -----------------------------------------------------------------
   # When the underyling faciledatastore changes, nuke all of the things.
   observeEvent(name(rfds), {
     req(initialized(rfds))
     name. <- name(rfds)
     if (name. != state$fdsname) {
+      # Freeze the filters
       filters. <- state$filters
       state$name <- name.
       if (length(filters.) > 0) {
+        # freeze all samplefilter reactivity first, then remove all
+        # for (id in rev(names(filters.))) {
+        #   ftrace("Freezing filter: {bold}", id, "{reset}")
+        #   freezeReactiveValue(state$filters[[id]]$covariate$)
+        #   removeUI(selector = paste0("#", ns(paste0(id, "_container"))),
+        #            immediate = TRUE)
+        # }
+
         for (id in rev(names(filters.))) {
           ftrace("Removing filter: {bold}", id, "{reset}")
+          levels_id <- paste0(id, "-values-values")
+          updateSelectizeInput(session, levels_id, choices = "", selected = "",
+                               server = TRUE)
+          select_id <- paste0(id, "-covariate-covariate")
+          updateSelectInput(session, select_id, choices = "", selected = "")
           removeUI(selector = paste0("#", ns(paste0(id, "_container"))))
+          state$filters[[id]] <- NULL
         }
-        state$filters <- list()
+      }
+
+      # Support a restricted universe in the underlyingReactiveFacileDataStore
+      if (is(rfds, "RestrictedReactiveFacileDataStore")) {
+        state$universe <- collect(isolate(rfds$universe), n = Inf)
+      } else {
+        state$universe <- collect(isolate(samples(fds(rfds))), n = Inf)
       }
     }
   }, priority = 10)
+
+  # TODO: re-introduce support for a restricted universe in the original
+  # ReactiveFacileDataStore
+  # fds.universe <- reactive({
+  #   req(initialized(rfds))
+  #   if (is(rfds, "RestrictedReactiveFacileDataStore")) {
+  #     out <- rfds$universe
+  #   } else {
+  #     out <- samples(fds(rfds))
+  #   }
+  #   collect(out, n = Inf)
+  # })
+  fds.universe <- reactive({
+    req(test_sample_subset(isolate(state$universe)))
+    state$universe
+  })
 
   filters <- reactive({
     state$filters
@@ -143,8 +170,15 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
     req(flen > 0)
 
     id <- names(filters.)[flen]
-    state$filters[[id]] <- NULL
+
+    levels_id <- paste0(id, "-values-values")
+    updateSelectizeInput(session, levels_id, choices = "", selected = "",
+                         server = TRUE)
+    select_id <- paste0(id, "-covariate-covariate")
+    updateSelectInput(session, select_id, choices = "", selected = "")
+
     removeUI(selector = paste0("#", ns(paste0(id, "_container"))))
+    state$filters[[id]] <- NULL
   })
 
   # Toggle (enable/disable) web component states -------------------------------

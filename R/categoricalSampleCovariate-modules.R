@@ -58,17 +58,27 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
 
   observe({
     req(initialized(rfds))
+    ftrace("Updating covaraite sample universe using rfds: ", isolate(name(rfds)))
+
     if (is.null(universe)) {
-      state$universe <- isolate.(active_samples(rfds))
+      univ <- isolate.(active_samples(rfds))
     } else {
-      universe <- isolate.(universe())
-      assert_sample_subset(universe)
-      state$universe <- universe
+      # This has been previously given a restricted universe taht is
+      # separate from active_samples(rfds). Let's make sure those samples
+      # still map to the current rfds.
+      univ <- isolate.(universe())
+      if (!test_sample_subset(univ, rfds)) {
+        fwarn("The restricted universe does not match underlying fds ",
+              "... remoeving restriction")
+        univ <- isolate(active_samples(rfds))
+      }
     }
+    # browser()
+    state$universe <- univ
   }, priority = 10)
 
   universe. <- reactive({
-    req(is.data.frame(state$universe))
+    req(test_sample_subset(state$universe))
     state$universe
   })
 
@@ -141,7 +151,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
 
   observeEvent(input$covariate, {
     cov <- input$covariate
-    # req(!is.null(cov)) # NULLflash
+    # req(!is.null(cov)) # NULLflasha
     current <- state$covariate
     if (unselected(cov)) cov <- ""
     if (!setequal(cov, current)) {
@@ -159,6 +169,8 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
     notselected <- unselected(covariate.) ||
       !covariate. %in% allcovs.[["variable"]]
 
+    # if (grepl("human", name(rfds), ignore.case = TRUE)) browser()
+
     ftrace("Calculating covariate({red}", covariate., "{reset}) summary")
 
     if (notselected) {
@@ -170,9 +182,9 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
       # covariate could be reset to one that exists in this cohort (ie. if the
       # cohort shift removes the currently selected covariate from the cohort).
       univ <- isolate(universe.())
-      scovs <- fetch_sample_covariates(rfds, univ, covariate.)
-      out <- try(summary(scovs, expanded = TRUE), silent = TRUE)
-      # if (!is.data.frame(out)) browser()
+      scovs <- try(fetch_sample_covariates(rfds, univ, covariate.), silent = TRUE)
+      req(!is(scovs, "try-error"))
+      out <- summary(scovs, expanded = TRUE)
     }
     out
   })
@@ -316,14 +328,15 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
     # THIS IS SO CLOSE: I need to put the req(!is.null()) here for the
     # mutually-excluve categoricalCovariateSelectLevel modules to work.
     # TODO: Finish categoricalSampleCovariateLevelsMutex
-    req(!is.null(selected.))
+    # req(!is.null(selected.))
     if (unselected(selected.)) {
       selected. <- ""
     }
+    # browser()
     if (!isTRUE(setequal(selected., state$values))) {
       ftrace("Change of selected input$values changes internal state from ",
              "`", isolate(state$values), "` ",
-             "to `", selected., "`")
+             "to {bold}{magenta}`", selected., "`{reset}")
       state$values <- selected.
     }
   }, ignoreNULL = FALSE)

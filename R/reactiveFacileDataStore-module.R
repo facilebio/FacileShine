@@ -503,12 +503,13 @@ filter_samples.ReactiveFacileDataStore <- function(x, ...,
 name.ReactiveFacileDataStore <- function(x, ...) {
   name. <- x[[".state"]][["name"]]
   assert_string(name.)
+  name.
 }
 
 #' @noRd
 #' @export
 samples.ReactiveFacileDataStore <- function(x, ...) {
-  as_facile_frame(active_samples(x), x, .valid_sample_check = FALSE)
+  as_facile_frame(samples(fds(x)), x, .valid_sample_check = FALSE)
 }
 
 # with_assay_data.ReactiveFacileDataStore <- function(x, ...) {
