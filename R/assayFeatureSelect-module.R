@@ -91,7 +91,7 @@ assayFeatureSelectUI <- function(id, label = NULL, multiple = TRUE, ...) {
     assay.style <- "padding-top: 1.7em"
   }
 
-  tagList(
+  out <- tagList(
     fluidRow(
       column(9, selectizeInput(ns("features"), label = label, choices = NULL,
                                multiple = multiple, ...)),
@@ -99,11 +99,17 @@ assayFeatureSelectUI <- function(id, label = NULL, multiple = TRUE, ...) {
       column(
         3,
         tags$div(style = assay.style,
-                 assaySelectUI(ns("assay"), label = NULL, choices = NULL))),
-    fluidRow(
-      column(12,
-             selectInput(ns("fset"), label = NULL,
-                         choices = "GeneSetDb for assay")))))
+                 assaySelectUI(ns("assay"), label = NULL, choices = NULL)))))
+  if (FALSE) {
+    # add genesets
+    out <- tagList(
+      out,
+      fluidRow(
+        column(12,
+               selectInput(ns("fset"), label = NULL,
+                           choices = "GeneSetDb for assay"))))
+  }
+  out
 }
 
 # Labeled API ==================================================================
