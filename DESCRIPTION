@@ -19,6 +19,7 @@ Imports:
     FacileViz,
     glue,
     miniUI,
+    plotly,
     promises,
     shiny (>= 1.3.1),
     shinycssloaders,
