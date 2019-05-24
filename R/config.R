@@ -1,6 +1,7 @@
 #' Returns a config object for the workbench
 #'
 #' @family workbench functions
+#' @importFrom yaml yaml.load_file
 #' @export
 load_config <- function(config = NULL) {
   if (is.null(config)) {
@@ -19,7 +20,6 @@ load_config <- function(config = NULL) {
 #' Returns available datasets
 #'
 #' @export
-#' @importFrom yaml yaml.load_file
 #' @importFrom stats setNames
 datastores_info <- function(config = NULL, as_selectize_list = FALSE) {
   config <- load_config(config)

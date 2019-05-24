@@ -237,6 +237,7 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
   vals <- list(
     filters = filters,
     samples = active.samples,
+    .state = state,
     .ns = session$ns)
   class(vals) <- "FacileSampleFilterList"
   vals
