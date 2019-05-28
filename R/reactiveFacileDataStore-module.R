@@ -95,6 +95,7 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     path. <- req(path())
     assert_string(path.)
     assert_directory_exists(path., "r")
+    ftrace("{bold}{red}Updating RFDS to: {blue}", path., "{reset}")
 
     fds. <- FacileDataSet(path.)
 
@@ -456,13 +457,31 @@ fetch_sample_covariates.BoxedFacileDataStore <- function(
   as_facile_frame(out, x, "eav_covariates", .valid_sample_check = FALSE)
 }
 
+#' There are a number of slippery events that can throw errors that
+#' fundamentally come from this funciton call.
+#'
+#' 1. Cohort selection within the same dataset has moved the sample subset
+#'    away from a covariate you thought you can query for, ie. the current
+#'    set of samples does not have the covariate you are asking for defined
+#'    over them. (I think these corner cases have been squased 2019-05-28)
+#' 2. The user switches the underlying datastore, and the samples you are
+#'    using to query for do not exists in this datastore.
 #' @noRd
 #' @export
+#' @importFrom shiny validate
 fetch_sample_covariates.ReactiveFacileDataStore <- function(
     x, samples = active_samples(x), covariates = NULL, custom_key = user(x),
     with_source = TRUE, ...) {
   req(initialized(x))
 
+  # Handling case #2 above
+  if (!test_sample_subset(samples, x)) {
+    fwarn("sample descriptor does not  match current ReactiveFacileDataStore")
+    validate("sample descriptor does not match current ReactiveFacileDataStore")
+  }
+
+  # Try as I might, there are still times when the underlying samples do
+  # not correspond to the curr
   extra_covs <- x[["state."]][["esample_annotation"]]
   out <- fetch_sample_covariates(fds(x), samples = samples,
                                  covariates = covariates,

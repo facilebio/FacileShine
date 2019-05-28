@@ -73,7 +73,6 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
         univ <- isolate(active_samples(rfds))
       }
     }
-    # browser()
     state$universe <- univ
   }, priority = 10)
 
@@ -89,8 +88,10 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
     req(is.data.frame(univ))
 
     ftrace("Updating {bold}{red}state$active_covariates{reset}")
-    acovs <- fetch_sample_covariates(rfds, univ)
+    # acovs <- try(fetch_sample_covariates(rfds, univ), silent = TRUE)
+    # if (is(acovs, "try-error")) browser()
 
+    acovs <- fetch_sample_covariates(rfds, univ)
     acovs <- filter(acovs, class == "categorical")
     ignore <- exclude.()
     if (nrow(ignore)) {
