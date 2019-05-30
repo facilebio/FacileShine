@@ -87,7 +87,7 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
     .ai <- state$assay_info
     if (!isTRUE(selected == .ai$assay)) {
       ftrace("New assay selected from input changes {red}{bold}state{reset}",
-             "{bold}", .ai$assay, "->", selectred, "{reset}")
+             "{bold}", .ai$assay, "->", selected, "{reset}")
       if (unselected(selected)) selected <- NULL
       .ai <- collect(FacileData::assay_info(rfds, selected), n = Inf)
       if (is.null(selected)) .ai <- filter(.ai, FALSE)

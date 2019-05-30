@@ -315,7 +315,7 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
   observeEvent(input$values, {
     selected. <- input$values
     # This is required because ignoreNULL is set to `FALSE`. We set it to
-    # false so that when all selectred levels are removed from
+    # false so that when all selected levels are removed from
     # covariateSelectLevels, the values are released "back to the pool".
     # When ignoreNULL is false, however, there are intermediate in the
     # reactivity cycle when input$values is NULL even though its value
@@ -454,7 +454,7 @@ categoricalSampleCovariateLevelsMutex <- function(
   observeEvent(input$values, {
     selected. <- input$values
     # This is required because ignoreNULL is set to `FALSE`. We set it to
-    # false so that when all selectred levels are removed from
+    # false so that when all selected levels are removed from
     # covariateSelectLevels, the values are released "back to the pool".
     # When ignoreNULL is false, however, there are intermediate in the
     # reactivity cycle when input$values is NULL even though its value
