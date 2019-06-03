@@ -340,7 +340,9 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
              "to {bold}{magenta}`", selected., "`{reset}")
       # logical covariates are stored as 0/1 when retrieved out of SQLite
       # database, let's convert T/F to 0/1 here, too
-      if (covariate$summary()$class == "logical") {
+      # browser()
+      csummary <- covariate$summary()
+      if (nrow(csummary) > 0L && csummary[["class"]] == "logical") {
         selected. <- ifelse(selected. == "TRUE", "1", selected.)
         selected. <- ifelse(selected. == "FALSE", "0", selected.)
       }
