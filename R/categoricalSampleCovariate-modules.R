@@ -92,7 +92,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
     # if (is(acovs, "try-error")) browser()
 
     acovs <- fetch_sample_covariates(rfds, univ)
-    acovs <- filter(acovs, class == "categorical")
+    acovs <- filter(acovs, class %in% c("categorical", "logical"))
     ignore <- exclude.()
     if (nrow(ignore)) {
       anti.by <- intersect(c("variable", "value"), names(ignore))
@@ -338,6 +338,12 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
       ftrace("Change of selected input$values changes internal state from ",
              "`", isolate(state$values), "` ",
              "to {bold}{magenta}`", selected., "`{reset}")
+      # logical covariates are stored as 0/1 when retrieved out of SQLite
+      # database, let's convert T/F to 0/1 here, too
+      if (covariate$summary()$class == "logical") {
+        selected. <- ifelse(selected. == "TRUE", "1", selected.)
+        selected. <- ifelse(selected. == "FALSE", "0", selected.)
+      }
       state$values <- selected.
     }
   }, ignoreNULL = FALSE)
