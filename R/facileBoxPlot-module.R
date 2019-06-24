@@ -81,7 +81,7 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
     agg.by <- if (!indiv.) "ewm" else NULL
 
     out <- fetch_assay_data(rfds, yvals., samples., normalized = TRUE,
-                            aggregate.by = agg.by)
+                            prior.count = 0.25, aggregate.by = agg.by)
     out <- with_sample_covariates(out, xaxis.)
     out
   })

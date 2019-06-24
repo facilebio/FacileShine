@@ -333,14 +333,12 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
     if (unselected(selected.)) {
       selected. <- ""
     }
-    # browser()
     if (!isTRUE(setequal(selected., state$values))) {
       ftrace("Change of selected input$values changes internal state from ",
              "`", isolate(state$values), "` ",
              "to {bold}{magenta}`", selected., "`{reset}")
       # logical covariates are stored as 0/1 when retrieved out of SQLite
       # database, let's convert T/F to 0/1 here, too
-      # browser()
       csummary <- covariate$summary()
       if (nrow(csummary) > 0L && csummary[["class"]] == "logical") {
         selected. <- ifelse(selected. == "TRUE", "1", selected.)

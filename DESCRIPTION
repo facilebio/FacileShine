@@ -17,7 +17,7 @@ Imports:
     dplyr,
     FacileData,
     FacileViz,
-    glue,
+    glue,               
     miniUI,
     plotly,
     promises,

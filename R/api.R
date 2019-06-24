@@ -42,7 +42,9 @@ update_selected <- function(x, ...) {
 reset <- function(x, ...) {
   UseMethod("reset", x)
 }
+
 # Labeled API ==================================================================
+# name and label generic definitions come from FacileData
 
 #' @noRd
 #' @export
