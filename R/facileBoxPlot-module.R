@@ -86,17 +86,16 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
     out
   })
 
-  # rdat <- reactive({
-  #   out <- req(rdat.core())
-  #   req(nrow(out) > 0)
-  #   aes.map <- aes$map()
-  #   aes.covs <- setdiff(unlist(unname(aes.map)), colnames(out))
-  #   if (length(aes.covs)) {
-  #     ftrace("retrieving aes covariates for boxplot")
-  #     out <- with_sample_covariates(out, aes.covs)
-  #   }
-  #   out
-  # })
+  ylabel <- reactive({
+    yf <- yaxis$selected()
+    if (unselected(yf)) {
+      out <- NULL
+    } else {
+      aname <- yf$assay[1L]
+      out <- assay_units(rfds, aname, normalized = TRUE)
+    }
+    out
+  })
 
   rdat <- reactive({
     with_aesthetics(rdat.core(), aes)
@@ -126,6 +125,7 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
       plt <- fboxplot(dat, xaxis., "value", with_points = TRUE,
                       facet_aes = aes.$facet, color_aes = aes.$color,
                       hover = hover., na_x = "keep",
+                      ylabel = ylabel(),
                       event_source = event_source)
     }
     plt
