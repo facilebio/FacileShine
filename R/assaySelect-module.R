@@ -150,3 +150,12 @@ assay_feature_info.AssaySelectInput <- function(x, assay_name,
   }
   out
 }
+
+#' @noRd
+#' @export
+initialized.AssaySelectInput <- function(x, ...) {
+  ainfo <- x$assay_info()
+  !(unselected(ainfo$assay) ||
+      unselected(ainfo$assay_type) ||
+      unselected(ainfo$feature_type))
+}

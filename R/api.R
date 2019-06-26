@@ -7,6 +7,12 @@ initialized <- function(x, ...) {
   UseMethod("initialized", x)
 }
 
+#' @noRd
+#' @export
+initialized.NULL <- function(x, ...) {
+  FALSE
+}
+
 #' Retrieves selection information from a module
 #'
 #' @export
