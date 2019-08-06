@@ -368,11 +368,13 @@ assay_units.ReactiveFacileDataStore <- function(x, assay_name = default_assay(x)
 
 #' @noRd
 #' @export
-assay_feature_info.ReactiveFacileDataStore <- function(x, assay_name,
-                                                       feature_ids = NULL,
-                                                       ...) {
+features.ReactiveFacileDataStore <- function(x, assay_name = NULL,
+                                             feature_type = NULL,
+                                             feature_ids = NULL,
+                                             ...) {
   req(initialized(x))
-  assay_feature_info(fds(x), assay_name, feature_ids, ...)
+  features(fds(x), assay_name = assay_name, feature_type = feature_type,
+           feature_ids = feature_ids, ...)
 }
 
 #' @noRd

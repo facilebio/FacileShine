@@ -1,7 +1,7 @@
 Package: FacileShine
 Type: Package
 Title: Shiny primitives to interact with FacileData and FacileViz objects.
-Version: 0.1.4
+Version: 0.1.5
 Authors@R: c(
     person("Steve", "Lianoglou", , "lianoglou@dnli.com", c("aut", "cre"),
       comment = c(ORCID = "0000-0002-0924-1754")),

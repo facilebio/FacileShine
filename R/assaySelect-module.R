@@ -97,14 +97,14 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
 
   assay_info <- reactive(state$assay_info)
 
-  features <- reactive({
+  features. <- reactive({
     assay_info. <- assay_info()
     if (!is(assay_info., "facile_frame")) {
       # Creates a 0-row tibble with correct columns
-      out <- collect(assay_feature_info(rfds, default_assay(rfds)), n = 1L)
+      out <- collect(features(rfds, default_assay(rfds)), n = 1L)
       out <- filter(out, FALSE)
     } else {
-      out <- assay_feature_info(rfds, assay_info.[["assay"]])
+      out <- features(rfds, assay_info.[["assay"]])
       out <- collect(arrange(out, name), n = Inf)
     }
     out <- filter(out, grepl("^[a-zA-Z]", name))
@@ -115,7 +115,7 @@ assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
 
   vals <- list(
     assay_info = assay_info,
-    features = features,
+    features = features.,
     .state = state,
     .ns = session$ns)
 
