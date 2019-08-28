@@ -8,7 +8,8 @@
 #'   reactiveValues
 #'   updateSelectInput
 #' @param rfds A ReactiveFacileDataStore
-assaySelect <- function(input, output, session, rfds, ..., .reactive = TRUE)  {
+assaySelect <- function(input, output, session, rfds, ...,
+                        .exclude = NULL, .reactive = TRUE)  {
 
   assert_class(rfds, "ReactiveFacileDataStore")
   isolate. <- if (.reactive) base::identity else shiny::isolate

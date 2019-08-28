@@ -14,7 +14,8 @@ active_covariates(x, ...)
 active_samples(x, ...)
 
 reactiveFacileDataStore(intput, output, session, path,
-  user = Sys.getenv("USER"), ..., restrict_samples. = NULL,
+  user = Sys.getenv("USER"), ..., extra_sample_covariates = NULL,
+  extra_feature_covariates = NULL, restrict_samples. = NULL,
   debug = FALSE)
 }
 \arguments{

@@ -78,10 +78,11 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
 
     samples. <- active_samples(rfds)
     ftrace("Retrieving assay data for boxplot")
-    agg.by <- if (!indiv.) "ewm" else NULL
+    # agg.by <- if (!indiv.) "ewm" else NULL
+    agg. <- !indiv.
 
     out <- fetch_assay_data(rfds, yvals., samples., normalized = TRUE,
-                            prior.count = 0.25, aggregate.by = agg.by)
+                            prior.count = 0.25, aggregate = agg.)
     out <- with_sample_covariates(out, xaxis.)
     out
   })

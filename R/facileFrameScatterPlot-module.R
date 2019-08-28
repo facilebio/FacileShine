@@ -74,7 +74,7 @@ facileFrameScatterPlot <- function(input, output, session, rfds, fframe, ...,
     out <- active_samples(rfds)
     for (f in f.all) {
       if (nrow(f)) {
-        out <- with_assay_data(out, f, aggregate.by = "ewm")
+        out <- with_assay_data(out, f, aggregate = TRUE)
       }
     }
     out <- collect(out, n = Inf)

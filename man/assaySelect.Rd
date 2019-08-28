@@ -4,7 +4,8 @@
 \alias{assaySelect}
 \title{A module to create a dropdown over the current assays defined for a datastore}
 \usage{
-assaySelect(input, output, session, rfds, ..., .reactive = TRUE)
+assaySelect(input, output, session, rfds, ..., .exclude = NULL,
+  .reactive = TRUE)
 }
 \arguments{
 \item{rfds}{A ReactiveFacileDataStore}

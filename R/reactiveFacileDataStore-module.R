@@ -56,7 +56,6 @@
 reactiveFacileDataStore <- function(intput, output, session, path,
                                     user = Sys.getenv("USER"), ...,
                                     restrict_samples. = NULL, debug = FALSE) {
-
   if (!is.null(restrict_samples.)) {
     assert_sample_subset(restrict_samples.)
     restrict_samples. <- collect(restrict_samples., n = Inf)
@@ -429,11 +428,13 @@ fetch_assay_data.ReactiveFacileDataStore <- function(x, features, samples=NULL,
                                                      assay_name=default_assay(x),
                                                      normalized=FALSE,
                                                      as.matrix=FALSE, ...,
-                                                     aggregate.by=NULL) {
+                                                     aggregate = FALSE,
+                                                     aggregate.by = "ewm") {
   req(initialized(x))
   fetch_assay_data(fds(x), features = features, samples = samples,
                    assay_name = assay_name, normalized = normalized,
-                   as.matrix = as.matrix, aggregate.by = aggregate.by, ...)
+                   as.matrix = as.matrix, aggregate = aggregate,
+                   aggregate.by = aggregate.by, ...)
 }
 
 #' @noRd
@@ -495,7 +496,7 @@ fetch_sample_covariates.ReactiveFacileDataStore <- function(
 
   # Try as I might, there are still times when the underlying samples do
   # not correspond to the curr
-  extra_covs <- x[["state."]][["esample_annotation"]]
+  extra_covs <- x[[".state"]][["esample_annotation"]]
   out <- fetch_sample_covariates(fds(x), samples = samples,
                                  covariates = covariates,
                                  custom_key = custom_key,
@@ -625,6 +626,8 @@ update_reactive_covariates <- function(x, covariates, namespace, ...) {
 update_reactive_covariates.ReactiveFacileDataStore <- function(x, covariates,
                                                                namespace, ...) {
   req(initialized(x))
+
+  current <- collect(active_cov)
   stop("update_reactive_covariates(rfds) is not yet implemented")
   # Do something with x[[".state"]][["active_covariates"]]
   trigger(x, "covariates")
