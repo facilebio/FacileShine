@@ -1,3 +1,21 @@
+#' Extract user-specified annotations
+#'
+#' During the course of an analysis, users may annotate differente things
+#' presented to them via the shiny interface. This function will pull out
+#' the specficic feature type from the interacted object, should there be any.
+#'
+#' @export
+#' @param x the interacted object
+#' @param type In a particular shiny view, the user might be looking at a
+#'   combination of samples or features. These both can be annotated, so the
+#'   caller needs to specify which subset of annotations they want. If left
+#'   `NULL` (default), the list of annotations will be returned
+#' @return a sample- or feature-level covariate table. If `type = NULL`, then
+#'   a list of all annotation tables is returnd
+annotation <- function(x, type = NULL, ...) {
+  UseMethod("annotation", x)
+}
+
 #' Tests if a module is initialized
 #'
 #' @export
