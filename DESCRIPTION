@@ -1,7 +1,7 @@
 Package: FacileShine
 Type: Package
 Title: Shiny primitives to interact with FacileData and FacileViz objects.
-Version: 0.1.5
+Version: 0.1.6
 Authors@R: c(
     person("Steve", "Lianoglou", , "lianoglou@dnli.com", c("aut", "cre"),
       comment = c(ORCID = "0000-0002-0924-1754")),
@@ -35,8 +35,8 @@ Suggests:
     knitr,
     testthat
 Remotes:
-    denalitherapeutics/FacileData,
-    denalitherapeutics/FacileViz
+    facileverse/FacileData,
+    facileverse/FacileViz
 License: Apache Version 2.0
 Encoding: UTF-8
 LazyData: true
