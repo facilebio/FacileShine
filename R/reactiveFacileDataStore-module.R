@@ -541,6 +541,12 @@ name.ReactiveFacileDataStore <- function(x, ...) {
 
 #' @noRd
 #' @export
+organism.ReactiveFacileDataStore <- function(x, ...) {
+  organism(fds(x), ...)
+}
+
+#' @noRd
+#' @export
 samples.ReactiveFacileDataStore <- function(x, ...) {
   as_facile_frame(samples(fds(x)), x, .valid_sample_check = FALSE)
 }

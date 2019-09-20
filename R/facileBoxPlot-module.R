@@ -10,7 +10,7 @@
 #' A 1d scatter plot might just default to a density plot.
 #'
 #' @export
-#' @importFrom shiny column renderUI wellPanel
+#' @importFrom shiny column downloadHandler renderUI wellPanel
 #' @importFrom shinycssloaders withSpinner
 #' @importFrom shinyjs toggleState
 #' @importFrom plotly renderPlotly plotlyOutput
@@ -45,11 +45,6 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
     }
     out
   })
-
-  # aes.covs <- reactive({
-  #   ftrace("aes$covariates() fires in facileBoxPlot")
-  #   aes$covariates()
-  # })
 
   # "Individual" checkbox is only active when multiple genes are entered
   # in the y-axis selector
@@ -86,6 +81,21 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
     out <- with_sample_covariates(out, xaxis.)
     out
   })
+
+  observe({
+    dat. <- tryCatch(rdat.core(), error = function(e) NULL)
+    enabled <- is.data.frame(dat.) && nrow(dat.) > 0L
+    shinyjs::toggleState("dldata", condition = enabled)
+  })
+
+  output$dldata <- downloadHandler(
+    filename = function() "boxplot-data.csv",
+    content = function(file) {
+      req(rdat.core()) %>%
+        with_sample_covariates() %>%
+        write.csv(file, row.names = FALSE)
+    }
+  )
 
   ylabel <- reactive({
     yf <- yaxis$selected()
@@ -160,7 +170,8 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
 }
 
 #' @export
-#' @importFrom shiny checkboxInput column tagList wellPanel uiOutput
+#' @importFrom shiny checkboxInput column downloadButton tagList wellPanel
+#'   uiOutput
 #' @importFrom plotly plotlyOutput
 #' @rdname facileScatterPlot
 facileBoxPlotUI <- function(id, ...) {
@@ -176,6 +187,7 @@ facileBoxPlotUI <- function(id, ...) {
         wellPanel(
           categoricalAestheticMapUI(
             ns("aes"), color = TRUE, facet = TRUE, hover = TRUE)))),
+    shinyjs::disabled(downloadButton(ns("dldata"), "Download Data")),
     fluidRow(
       column(12, uiOutput(ns("plotlybox"))))
     )

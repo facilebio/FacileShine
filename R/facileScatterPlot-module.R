@@ -11,7 +11,7 @@
 #'
 #' @export
 #' @importFrom plotly renderPlotly plotlyOutput
-#' @importFrom shiny column renderUI wellPanel
+#' @importFrom shiny column downloadHandler renderUI wellPanel
 #' @importFrom shinycssloaders withSpinner
 #' @rdname facileScatterPlot
 #'
@@ -82,21 +82,24 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
     out
   })
 
-  # rdat <- reactive({
-  #   out <- req(rdat.core())
-  #   req(nrow(out) > 0)
-  #   aes.map <- aes$map()
-  #   aes.covs <- setdiff(unlist(unname(aes.map)), colnames(out))
-  #   if (length(aes.covs)) {
-  #     ftrace("retrieving aes covariates for scatterplot")
-  #     out <- with_sample_covariates(out, aes.covs)
-  #   }
-  #   out
-  # })
-
   rdat <- reactive({
     with_aesthetics(rdat.core(), aes)
   })
+
+  observe({
+    dat. <- tryCatch(rdat.core(), error = function(e) NULL)
+    enabled <- is.data.frame(dat.) && nrow(dat.) > 0L
+    shinyjs::toggleState("dldata", condition = enabled)
+  })
+
+  output$dldata <- downloadHandler(
+    filename = function() "scatterplot-data.csv",
+    content = function(file) {
+      req(rdat.core()) %>%
+        with_sample_covariates() %>%
+        write.csv(file, row.names = FALSE)
+    }
+  )
 
   fscatter <- reactive({
     dat <- req(rdat())
@@ -155,10 +158,10 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
 }
 
 #' @export
-#' @importFrom shiny column tagList wellPanel uiOutput
+#' @importFrom shiny column downloadButton tagList wellPanel uiOutput
 #' @importFrom plotly plotlyOutput
 #' @rdname facileScatterPlot
-facileScatterPlotUI <- function(id, ...) {
+facileScatterPlotUI <- function(id, with_download = TRUE, ...) {
   ns <- NS(id)
   tagList(
     fluidRow(
@@ -172,8 +175,7 @@ facileScatterPlotUI <- function(id, ...) {
           categoricalAestheticMapUI(
             ns("aes"), color = TRUE, shape = TRUE, facet = TRUE, hover = TRUE,
             group = FALSE)))),
-    # fluidRow(
-    #   column(12, plotlyOutput(ns("scatter")))))
+    shinyjs::disabled(downloadButton(ns("dldata"), "Download Data")),
     fluidRow(
       column(12, uiOutput(ns("plotlybox"))))
     )

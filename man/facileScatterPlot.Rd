@@ -22,7 +22,7 @@ facileScatterPlot(input, output, session, rfds, ..., ndim = 3,
   x = NULL, y = NULL, z = NULL,
   event_source = session$ns("selection"), .reactive = TRUE)
 
-facileScatterPlotUI(id, ...)
+facileScatterPlotUI(id, with_download = TRUE, ...)
 }
 \arguments{
 \item{ndim}{Defaults to 3. When any two dimensions are provided, a plot will
