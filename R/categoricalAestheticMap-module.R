@@ -4,7 +4,7 @@
 #' covariates available for the current set of `active_samples(rfds)` and can be
 #' assocaited to color, facet, group, hover, and shape aesthetics.
 #'
-#' @section Response to Cohott Selection:
+#' @section Response to Cohort Selection:
 #' Due to the possibility that the set of underlying samples (and, therefore,
 #' covariates) can change from "underneath" the user's feet, based on cohort
 #' selection, the categorical aesthetic maps are "reactive" at a higher priority
@@ -219,12 +219,12 @@ with_aesthetics.reactive_facile_frame <- function(dat, aes_mod, ...) {
 #' @importFrom tools toTitleCase
 #' @importFrom shiny NS column fluidRow selectizeInput
 #' @rdname categoricalAestheticMap
-categoricalAestheticMapUI <- function(id, color = FALSE, facet = FALSE,
-                                      group = FALSE, hover = FALSE,
-                                      shape = FALSE, horizontal = TRUE, ...) {
+categoricalAestheticMapUI <- function(id, color = FALSE, shape = FALSE,
+                                      group = FALSE, facet = FALSE,
+                                      hover = FALSE, horizontal = TRUE, ...) {
   ns <- NS(id)
 
-  mod.include <- .module_list(color, facet, group, hover, shape)
+  mod.include <- .module_list(color, shape, group, facet, hover)
   ncol <- floor(12 / length(mod.include))
 
   aes.tags <- sapply(names(mod.include), function(aname) {
@@ -249,9 +249,9 @@ update_aes <- function(x, aesthethic, covariate, ...) {
 #' @noRd
 #'
 # Helper Functions =============================================================
-.module_list <- function(color = FALSE, facet = FALSE, group = FALSE,
-                         hover = FALSE, shape = FALSE) {
+.module_list <- function(color = FALSE, shape = FALSE, group = FALSE,
+                         facet = FALSE, hover = FALSE) {
   mod.include <- list(
-    color = color, facet = facet, group = group, hover = hover, shape = shape)
+    color = color, shape = shape, group = group, facet = facet, hover = hover)
   mod.include[unlist(mod.include)]
 }
