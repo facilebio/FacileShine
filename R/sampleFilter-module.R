@@ -4,7 +4,8 @@
 #' @noRd
 #' @export
 sampleFilter <- function(input, output, session, rfds, sample_universe = NULL,
-                         ..., .reactive = FALSE, debug = FALSE) {
+                         default_covariate = NULL, ..., .reactive = FALSE,
+                         debug = FALSE) {
   isolate. <- if (.reactive) base::identity else shiny::isolate
   if (is.null(sample_universe)) {
     sample_universe <- reactive(isolate.(active_samples(rfds)))
@@ -15,6 +16,7 @@ sampleFilter <- function(input, output, session, rfds, sample_universe = NULL,
 
   covariate <- callModule(categoricalSampleCovariateSelect, "covariate",
                           rfds, sample_universe, include1 = FALSE,
+                          default_covariate = default_covariate,
                           .with_none = FALSE,
                           .reactive = FALSE)
   values <- callModule(categoricalSampleCovariateLevels, "values",

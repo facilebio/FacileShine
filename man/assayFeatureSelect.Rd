@@ -5,8 +5,15 @@
 \alias{assayFeatureSelectUI}
 \title{Retrieves assay features from a FacileDataStore for a given assay type.}
 \usage{
-assayFeatureSelect(input, output, session, rfds, ..., .exclude = NULL,
-  .reactive = TRUE)
+assayFeatureSelect(
+  input,
+  output,
+  session,
+  rfds,
+  ...,
+  .exclude = NULL,
+  .reactive = TRUE
+)
 
 assayFeatureSelectUI(id, label = NULL, multiple = TRUE, ...)
 }

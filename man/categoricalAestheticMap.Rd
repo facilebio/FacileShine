@@ -6,22 +6,41 @@
 \alias{categoricalAestheticMapUI}
 \title{Provides customizable widget bar to map data to aesthetics.}
 \usage{
-categoricalAestheticMap(input, output, session, rfds, color = FALSE,
-  facet = FALSE, group = FALSE, hover = FALSE, shape = FALSE, ...,
-  .with_none = TRUE, .exclude = NULL, .reactive = TRUE)
+categoricalAestheticMap(
+  input,
+  output,
+  session,
+  rfds,
+  color = FALSE,
+  facet = FALSE,
+  group = FALSE,
+  hover = FALSE,
+  shape = FALSE,
+  ...,
+  .with_none = TRUE,
+  .exclude = NULL,
+  .reactive = TRUE
+)
 
 \method{with_aesthetics}{reactive_facile_frame}(dat, aes_mod, ...)
 
-categoricalAestheticMapUI(id, color = FALSE, facet = FALSE,
-  group = FALSE, hover = FALSE, shape = FALSE, horizontal = TRUE,
-  ...)
+categoricalAestheticMapUI(
+  id,
+  color = FALSE,
+  shape = FALSE,
+  group = FALSE,
+  facet = FALSE,
+  hover = FALSE,
+  horizontal = TRUE,
+  ...
+)
 }
 \description{
 A widget-bar that provides selectize dropdowns that list the categorical
 covariates available for the current set of \code{active_samples(rfds)} and can be
 assocaited to color, facet, group, hover, and shape aesthetics.
 }
-\section{Response to Cohott Selection}{
+\section{Response to Cohort Selection}{
 
 Due to the possibility that the set of underlying samples (and, therefore,
 covariates) can change from "underneath" the user's feet, based on cohort
@@ -30,16 +49,16 @@ selection, the categorical aesthetic maps are "reactive" at a higher priority
 are "removed from play" due to narrowhing of a cohort, the values for these
 aesthetic will be set to "---" before any default reactivity fires. This
 should prevent some of the crashing behavior that may happen when decorating
-data in downstream modules using the following pattern:\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
+data in downstream modules using the following pattern:\if{html}{\out{<div class="r">}}\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
                   color = TRUE, facet = TRUE, hover = TRUE,
                   ..., .reactive = .reactive)
-dat <- reactive({
+dat <- reactive(\{
   # ... retrieve `core.data` from somewhere
   aes.covs <- aes$map()
   with_sample_covariates(core.data, aes$map())
 
-})
-}
+\})
+}\if{html}{\out{</div>}}
 }
 
 \section{with_aesthetics}{
@@ -47,25 +66,25 @@ dat <- reactive({
 \strong{Experimental} We override the FacileViz::with_aesthetics method to make
 programming with this module "more natural".
 
-Explicit coding might look like:\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
+Explicit coding might look like:\if{html}{\out{<div class="r">}}\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
                   color = TRUE, facet = TRUE, hover = TRUE,
                   ..., .reactive = .reactive)
-dat <- reactive({
+dat <- reactive(\{
   # ... retrieve `core.data` from somewhere
   aes.covs <- aes$map()
   with_sample_covariates(core.data, aes$map())
 
-})
-}
+\})
+}\if{html}{\out{</div>}}
 
-But it may look more natural to do something like:\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
+But it may look more natural to do something like:\if{html}{\out{<div class="r">}}\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
                   color = TRUE, facet = TRUE, hover = TRUE,
                   ..., .reactive = .reactive)
-dat <- reactive({
+dat <- reactive(\{
   # ... retrieve `core.data` from somewhere
   # aes.covs <- aes$map()
   with_aesthetics(core.data, aes)
-})
-}
+\})
+}\if{html}{\out{</div>}}
 }
 

@@ -9,8 +9,17 @@
 \alias{facileScatterPlotUI}
 \title{An interactive scatterplot module (2-3 dimensions).}
 \usage{
-facileBoxPlot(input, output, session, rfds, ..., x = NULL, y = NULL,
-  event_source = session$ns("selection"), .reactive = TRUE)
+facileBoxPlot(
+  input,
+  output,
+  session,
+  rfds,
+  ...,
+  x = NULL,
+  y = NULL,
+  event_source = session$ns("selection"),
+  .reactive = TRUE
+)
 
 facileBoxPlotUI(id, ...)
 
@@ -18,21 +27,23 @@ facileFrameScatterPlot(id, ...)
 
 facileFrameScatterPlot(id, ...)
 
-facileScatterPlot(input, output, session, rfds, ..., ndim = 3,
-  x = NULL, y = NULL, z = NULL,
-  event_source = session$ns("selection"), .reactive = TRUE)
+facileScatterPlot(
+  input,
+  output,
+  session,
+  rfds,
+  ...,
+  ndim = 3,
+  x = NULL,
+  y = NULL,
+  z = NULL,
+  event_source = session$ns("selection"),
+  .reactive = TRUE
+)
 
 facileScatterPlotUI(id, with_download = TRUE, ...)
 }
 \arguments{
-\item{ndim}{Defaults to 3. When any two dimensions are provided, a plot will
-be drawn, so provides both 2d and 3d functionality. If set to 2, then only
-2d functionality would be enabled.}
-
-\item{ndim}{Defaults to 3. When any two dimensions are provided, a plot will
-be drawn, so provides both 2d and 3d functionality. If set to 2, then only
-2d functionality would be enabled.}
-
 \item{ndim}{Defaults to 3. When any two dimensions are provided, a plot will
 be drawn, so provides both 2d and 3d functionality. If set to 2, then only
 2d functionality would be enabled.}

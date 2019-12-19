@@ -5,8 +5,15 @@
 \alias{quantitativeTraitSelectUI}
 \title{Provides a widget to select quantitative traits from samples}
 \usage{
-quantitativeTraitSelect(input, output, session, rfds, ...,
-  .exclude = NULL, .reactive = TRUE)
+quantitativeTraitSelect(
+  input,
+  output,
+  session,
+  rfds,
+  ...,
+  .exclude = NULL,
+  .reactive = TRUE
+)
 
 quantitativeTraitSelectUI(id, ...)
 }

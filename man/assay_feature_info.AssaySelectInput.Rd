@@ -4,8 +4,7 @@
 \alias{assay_feature_info.AssaySelectInput}
 \title{Retrieve the features assocaitd with an assay}
 \usage{
-\method{assay_feature_info}{AssaySelectInput}(x, assay_name,
-  feature_ids = NULL, ...)
+\method{assay_feature_info}{AssaySelectInput}(x, assay_name, feature_ids = NULL, ...)
 }
 \arguments{
 \item{x}{An \code{AssaySelect} object, returned fom \code{\link[=assaySelect]{assaySelect()}}}

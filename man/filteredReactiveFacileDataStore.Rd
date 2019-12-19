@@ -4,8 +4,15 @@
 \alias{filteredReactiveFacileDataStore}
 \title{Composition of modules to provide a filtering schema over a FaclieDataStore.}
 \usage{
-filteredReactiveFacileDataStore(input, output, session, path,
-  user = Sys.getenv("USER"), ..., debug = FALSE)
+filteredReactiveFacileDataStore(
+  input,
+  output,
+  session,
+  path,
+  user = Sys.getenv("USER"),
+  ...,
+  debug = FALSE
+)
 }
 \description{
 We compose the \code{\link[=reactiveFacileDataStore]{reactiveFacileDataStore()}} and a list of

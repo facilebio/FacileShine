@@ -13,9 +13,16 @@ active_covariates(x, ...)
 
 active_samples(x, ...)
 
-reactiveFacileDataStore(intput, output, session, path,
-  user = Sys.getenv("USER"), ..., restrict_samples. = NULL,
-  debug = FALSE)
+reactiveFacileDataStore(
+  intput,
+  output,
+  session,
+  path,
+  user = Sys.getenv("USER"),
+  ...,
+  restrict_samples. = NULL,
+  debug = FALSE
+)
 }
 \arguments{
 \item{path}{A "reactive string" that points to the url/directory to

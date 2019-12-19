@@ -5,10 +5,21 @@
 \title{Creates arbitrary n-level selects from a single categorical covariate whose
 options are mutually exclusive of each other.}
 \usage{
-categoricalSampleCovariateLevelsMutex(input, output, session, rfds,
-  covariate, label1 = "Value 1", label2 = "Value 2",
-  multiple1 = TRUE, multiple2 = TRUE, ..., .exclude = NULL,
-  .reactive = TRUE, debug = FALSE)
+categoricalSampleCovariateLevelsMutex(
+  input,
+  output,
+  session,
+  rfds,
+  covariate,
+  label1 = "Value 1",
+  label2 = "Value 2",
+  multiple1 = TRUE,
+  multiple2 = TRUE,
+  ...,
+  .exclude = NULL,
+  .reactive = TRUE,
+  debug = FALSE
+)
 }
 \arguments{
 \item{covariate}{a \code{\link[=categoricalSampleCovariateSelect]{categoricalSampleCovariateSelect()}} module.}

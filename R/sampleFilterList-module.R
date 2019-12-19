@@ -38,7 +38,8 @@
 #' @importFrom shinyjs toggleState
 #' @return A `"FacileSampleFilterList"`. Use `active_samples(this)` to retrieve
 #'   the currently specified cohort of samples.
-sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
+sampleFilterList <- function(input, output, session, rfds,
+                             default_covariate = NULL, ..., debug = FALSE) {
   ns <- session$ns
   setBookmarkExclude(c("add_filter_btn"))
 
@@ -151,7 +152,8 @@ sampleFilterList <- function(input, output, session, rfds, ..., debug = FALSE) {
     # Setting `immediate = TRUE` is imperative for this to work, otherwise
     # the UI elements could not be populated by its corresponding sampleFilter
     # module.
-    state$filters[[id]] <- callModule(sampleFilter, id, rfds, universe)
+    state$filters[[id]] <- callModule(sampleFilter, id, rfds, universe,
+                                      default_covariate = default_covariate)
     insertUI(
       selector = paste0("#", ns("filter_container")),
       where = "beforeEnd",

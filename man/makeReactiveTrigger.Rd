@@ -7,7 +7,7 @@
 makeReactiveTrigger()
 }
 \value{
-a list with \code{$depend()} and \code{$trigger()} to be used in reactive
+a list with \verb{$depend()} and \verb{$trigger()} to be used in reactive
 expressions across your app.
 }
 \description{

@@ -4,11 +4,25 @@
 \alias{categoricalSampleCovariateSelect}
 \title{A categoricalSampleCovariate selector}
 \usage{
-categoricalSampleCovariateSelect(input, output, session, rfds,
-  universe = NULL, include1 = TRUE, ..., .with_none = TRUE,
-  .exclude = NULL, .reactive = TRUE, debug = FALSE)
+categoricalSampleCovariateSelect(
+  input,
+  output,
+  session,
+  rfds,
+  universe = NULL,
+  include1 = TRUE,
+  default_covariate = NULL,
+  ...,
+  .with_none = TRUE,
+  .exclude = NULL,
+  .reactive = TRUE,
+  debug = FALSE
+)
 }
 \arguments{
+\item{default_covariate}{the name of a covariate to use as the default
+one that is selected here, if available}
+
 \item{a}{reactive character vector, which specifies the covariates to ignore
 or a tibble with "variable" (and optional "value") columns. If a character
 vector, or tibble with just has a "variable" column are provide, then

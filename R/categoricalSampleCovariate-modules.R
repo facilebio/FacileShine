@@ -20,6 +20,8 @@
 #'   reactiveValues
 #'   req
 #'   updateSelectInput
+#' @param default_covariate the name of a covariate to use as the default
+#'   one that is selected here, if available
 #' @param a reactive character vector, which specifies the covariates to ignore
 #'   or a tibble with "variable" (and optional "value") columns. If a character
 #'   vector, or tibble with just has a "variable" column are provide, then
@@ -28,7 +30,7 @@
 #'   specific levels of a covariate are ignored.
 categoricalSampleCovariateSelect <- function(input, output, session, rfds,
                                              universe = NULL, include1 = TRUE,
-                                             ...,
+                                             default_covariate = NULL, ...,
                                              .with_none = TRUE,
                                              .exclude = NULL,
                                              .reactive = TRUE,
@@ -136,7 +138,8 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
     }
 
     selected <- input$covariate
-    if (unselected(selected)) selected <- ""
+    if (unselected(selected)) selected <- default_covariate
+
     overlap <- intersect(selected, choices)
     if (length(overlap)) {
       if (!setequal(state$covariate, overlap)) state$covariate <- overlap
