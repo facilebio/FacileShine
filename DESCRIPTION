@@ -35,8 +35,8 @@ Suggests:
     knitr,
     testthat
 Remotes:
-    facileverse/FacileData,
-    facileverse/FacileViz
+    facilebio/FacileData,
+    facilebio/FacileViz
 License: Apache Version 2.0
 Encoding: UTF-8
 LazyData: true
