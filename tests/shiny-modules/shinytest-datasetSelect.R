@@ -1,19 +1,18 @@
 library(FacileData)
-library(shiny)
-
-devtools::load_all(".")
+library(FacileShine)
+# devtools::load_all(".")
 
 options(facile.log.level.fshine = "trace")
 
-shinyApp(
-  ui = fluidPage(
+shiny::shinyApp(
+  ui = shiny::fluidPage(
     shinyjs::useShinyjs(),
     datasetSelectUI("dataselect"),
     filteredReactiveFacileDataStoreUI("rfds")),
   server = function(input, output) {
-    ds <- callModule(datasetSelect, "dataselect")
-    rfds <- callModule(filteredReactiveFacileDataStore, "rfds", ds$path,
-                       user = Sys.getenv("USER"))
+    ds <- shiny::callModule(datasetSelect, "dataselect")
+    rfds <- shiny::callModule(filteredReactiveFacileDataStore, "rfds", ds$path,
+                              user = Sys.getenv("USER"))
   }
 )
 

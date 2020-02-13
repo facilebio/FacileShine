@@ -4,6 +4,7 @@
 #' @importFrom shiny
 #'   updateSelectizeInput
 datasetSelect <- function(input, output, session, config = NULL,
+                          default_dataset = NULL,
                           user = Sys.getenv("USER"), with_upload = TRUE, ...) {
   config <- load_config(config)
   datasets <- datastores_info(config)
@@ -16,7 +17,7 @@ datasetSelect <- function(input, output, session, config = NULL,
   }
 
   updateSelectizeInput(session, "dataset", choices = choices, server = TRUE,
-                       selected = "dnli_mouse")
+                       selected = default_dataset)
 
   fdskey <- reactive({
     key. <- req(input$dataset)
