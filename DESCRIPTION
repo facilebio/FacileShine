@@ -9,6 +9,8 @@ Authors@R: c(
 Description: Provides shiny "primitives" to enable GUI driven interaction over
     FacileData and FacileViz objects. These are provided in the form of shiny
     modules and gadgets.
+URL: https://github.com/facilebio/FacileShine
+BugReports: https://github.com/facilebio/FacileShine/issues
 Depends:
     R (>= 3.5)
 Imports:

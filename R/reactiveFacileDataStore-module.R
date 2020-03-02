@@ -220,7 +220,7 @@ ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
 
   if (is.character(x)) {
     path <- reactive(x[1L])
-  } else if (is(x, "FacileDataSet")) {
+  } else if (is(x, "FacileDataStore")) {
     path <- reactive(x[["parent.dir"]])
   } else if (is(x, "facile_frame")) {
     path <- reactive(fds(x)[["parent.dir"]])
