@@ -233,11 +233,6 @@ ReactiveFacileDataStore <- function(x, id, user = Sys.getenv("USER"),
     stop("You are passing an illegal type of argument")
   }
 
-  # out <- eval({
-  #   callModule(reactiveFacileDataStore, id, path, user = user, ...,
-  #              restrict_samples. = samples, debug = debug)
-  # }, envir = pf)
-
   out <- eval({
     callModule(filteredReactiveFacileDataStore, id, path, user = user, ...,
                restrict_samples. = samples, debug = debug)
