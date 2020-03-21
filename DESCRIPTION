@@ -19,7 +19,7 @@ Imports:
     crayon,
     dplyr,
     FacileData (>= 0.11.0),
-    FacileViz,
+    FacileViz (>= 0.1.10),
     glue,               
     miniUI,
     plotly,

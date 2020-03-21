@@ -34,6 +34,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
                                              .with_none = TRUE,
                                              .exclude = NULL,
                                              .reactive = TRUE,
+                                             ignoreNULL = TRUE,
                                              debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   if (!is.null(universe)) assert_class(universe, "reactive")
@@ -145,7 +146,9 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
       if (!setequal(state$covariate, overlap)) state$covariate <- overlap
       selected <- overlap
     } else {
-      selected <- NULL
+      # selected <- NULL
+      # state$covariate <- ""
+      selected <- if (.with_none) "---" else NULL
       state$covariate <- ""
     }
 
@@ -155,7 +158,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
 
   observeEvent(input$covariate, {
     cov <- input$covariate
-    # req(!is.null(cov)) # NULLflasha
+    # req(!is.null(cov)) # NULL
     current <- state$covariate
     if (unselected(cov)) cov <- ""
     if (!setequal(cov, current)) {
@@ -163,7 +166,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
              current = current, cov = cov)
       state$covariate <- cov
     }
-  })
+  }, ignoreNULL = ignoreNULL)
 
   covariate <- reactive(state$covariate)
 
@@ -589,12 +592,12 @@ update_exclude <- function(x, exclude, type, ...) {
         out <- collect(exclude., n = Inf)
       }
     }
-    out <- filter(out, !variable %in% c("", "__initializing__"))
+    out <- filter(out, !variable %in% c("", "__initializing__", "---"))
   } else if (type == "covariate_levels") {
     # exclude is a character vector
     out <- character()
     if (!is.null(exclude)) {
-      out <- setdiff(exclude(), c("", "__initializing__"))
+      out <- setdiff(exclude(), c("", "__initializing__", "---"))
     }
   } else {
     stop("update_exclude not implemented for: ", type)
