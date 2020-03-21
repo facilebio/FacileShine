@@ -132,7 +132,7 @@ categoricalAestheticMap <- function(input, output, session, rfds,
 
   observeEvent(input$hover, {
     if (!hover) return(invisible(NULL))
-    selected <- input$hover
+    selected <- setdiff(input$hover, "---")
     if (unselected(selected)) selected <- ""
     if (!is.null(selected) && !setequal(selected, state$hover)) {
       state$hover <- selected
