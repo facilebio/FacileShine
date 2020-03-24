@@ -10,12 +10,11 @@ shiny::shinyApp(
   ui = shiny::fluidPage(
     shinyjs::useShinyjs(),
     datasetSelectUI("dataselect"),
-    singleFilteredReactiveFacileDataStoreUI("rfds"),
+    filteredReactiveFacileDataStoreUI("rfds"),
     shiny::tags$h2("facileBoxPlot"),
     facileBoxPlotUI("box")),
   server = function(input, output) {
     ds <- shiny::callModule(datasetSelect, "dataselect")
-    # rfds <- shiny::callModule(filteredReactiveFacileDataStore, "rfds", ds$path)
     rfds <- ReactiveFacileDataStore(ds$path, "rfds", user = user)
     boxplot <- shiny::callModule(facileBoxPlot, "box", rfds)
   }

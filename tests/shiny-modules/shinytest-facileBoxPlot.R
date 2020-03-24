@@ -9,7 +9,6 @@ efds <- FacileData::exampleFacileDataSet()
 shiny::shinyApp(
   ui = shiny::fluidPage(
     shinyjs::useShinyjs(),
-    # singleFilteredReactiveFacileDataStoreUI("rfds"),
     filteredReactiveFacileDataStoreUI("rfds"),
     shiny::tags$h3("facileBoxPlot"),
     facileBoxPlotUI("box")),

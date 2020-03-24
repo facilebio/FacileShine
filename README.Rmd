@@ -20,18 +20,17 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Lifecycle: Maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
+<!--
 [![Travis build status](https://travis-ci.org/facileverse/FacileShine.svg?branch=master)](https://travis-ci.org/facileverse/FacileShine)
 [![Codecov test coverage](https://codecov.io/gh/facileverse/FacileShine/branch/master/graph/badge.svg)](https://codecov.io/gh/facileverse/FacileShine?branch=master)
+-->
 <!-- badges: end -->
 
 The FacileShine package provides shiny modules to interactively query and
 visualize data in a FacileDataStore object.
 
-**A note on the experimental lifecycle**: This package is tagged as
-"experimental" due to its limited use by a broader audience, and not as
-a sign of the commitment to its development or how long it has been in
-(internal) use. As we find the edge cases and pain points in the APIs through
-broader adoption, we expect to soon move to "maturing" (and eventually "stable")
-[lifecycle][lifecycle].
+Documentation and a coherent user stories for the modules within this package
+are on their way. To get an idea of how they are used, look to the shiny bits
+within the [FacileAnalysis] package.
 
-[lifecycle]: https://www.tidyverse.org/lifecycle/
+[FacileAnalysis]: https://facilebio.github.io/FacileAnalysis

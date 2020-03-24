@@ -16,6 +16,7 @@ categoricalSampleCovariateSelect(
   .with_none = TRUE,
   .exclude = NULL,
   .reactive = TRUE,
+  ignoreNULL = TRUE,
   debug = FALSE
 )
 }
