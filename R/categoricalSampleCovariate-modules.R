@@ -30,7 +30,8 @@
 #'   specific levels of a covariate are ignored.
 categoricalSampleCovariateSelect <- function(input, output, session, rfds,
                                              universe = NULL, include1 = TRUE,
-                                             default_covariate = NULL, ...,
+                                             default_covariate = NULL,
+                                             ...,
                                              .with_none = TRUE,
                                              .exclude = NULL,
                                              .reactive = TRUE,
@@ -266,13 +267,22 @@ label.CategoricalCovariateSelect <- function(x, ...) {
 #' @export
 #' @rdname categoricalSampleCovariateLevels
 #' @param covaraite the `categoricalSampleCovariateSelect` module.
+#' @param missing_sentinel This is a reactive (string). When it's NULL, no
+#'   missing sentinel is added. The parent covariate selector can pass in a
+#'   value here to show to indicate a level that's not included in the
+#'   covariate's level.
 #' @importFrom shiny updateSelectizeInput
 categoricalSampleCovariateLevels <- function(input, output, session, rfds,
-                                             covariate, ...,
-                                             .exclude = NULL,
-                                             .reactive = TRUE,
-                                             debug = FALSE) {
+                                             covariate, missing_sentinel = NULL,
+                                             ..., .exclude = NULL,
+                                             .reactive = TRUE, debug = FALSE) {
   isolate. <- if (.reactive) base::identity else shiny::isolate
+  if (!is.null(missing_sentinel)) {
+    # This should be a reactive string
+    if (!is(missing_sentinel, "reactive")) {
+      fwarn("missing_sentinal is not a reactive")
+    }
+  }
 
   assert_class(rfds, "ReactiveFacileDataStore")
   state <- reactiveValues(
@@ -289,6 +299,10 @@ categoricalSampleCovariateLevels <- function(input, output, session, rfds,
   observe({
     req(initialized(rfds))
     levels. <- req(covariate$levels())
+    if (!is.null(missing_sentinel)) {
+      levels. <- unique(c(levels., missing_sentinel()))
+    }
+
     ignore <- exclude.()
     newlevels <- setdiff(levels., ignore)
     if (!setequal(state$levels, newlevels)) {

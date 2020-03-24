@@ -10,6 +10,7 @@ categoricalSampleCovariateLevels(
   session,
   rfds,
   covariate,
+  missing_sentinel = NULL,
   ...,
   .exclude = NULL,
   .reactive = TRUE,
@@ -17,6 +18,11 @@ categoricalSampleCovariateLevels(
 )
 }
 \arguments{
+\item{missing_sentinel}{This is a reactive (string). When it's NULL, no
+missing sentinel is added. The parent covariate selector can pass in a
+value here to show to indicate a level that's not included in the
+covariate's level.}
+
 \item{covaraite}{the \code{categoricalSampleCovariateSelect} module.}
 }
 \description{

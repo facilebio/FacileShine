@@ -10,6 +10,7 @@ efds <- exampleFacileDataSet()
 # With filter
 single <- shinyApp(
   ui = fluidPage(
+    shinyjs::useShinyjs(),
     filteredReactiveFacileDataStoreUI("rfds", debug = TRUE)),
   server = function(input, output) {
     path <- reactive(efds$parent.dir)

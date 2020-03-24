@@ -10,8 +10,8 @@ efds <- exampleFacileDataSet()
 
 # With filter
 single <- shinyApp(
-  shinyjs::useShinyjs(),
   ui = fluidPage(
+    shinyjs::useShinyjs(),
     reactiveFacileDataStoreUI("rfds"),
     tags$h3("Sample filter with no preset universe"),
     sampleFilterUI("sf", debug = debug),
