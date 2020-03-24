@@ -195,7 +195,7 @@ sampleFilterList <- function(input, output, session, rfds,
   observe({
     filters. <- filters()
     flen <- length(filters.)
-    if (flen == 0) {
+    if (flen == 0L) {
       enabled <- TRUE
     } else {
       f <- filters.[[flen]]
