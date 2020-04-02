@@ -18,7 +18,7 @@
 #'  * `label`: a "human readable" summary of the features selected within this
 #'     module
 #'  * `name`: a "computerfriendly" version of `label`
-assayFeatureSelect <- function(input, output, session, rfds, ...,
+assayFeatureSelect <- function(input, output, session, rfds, gdb = NULL, ...,
                                .exclude = NULL, .reactive = TRUE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   isolate. <- if (.reactive) base::identity else shiny::isolate

@@ -18,7 +18,7 @@
 #' @param ndim Defaults to 3. When any two dimensions are provided, a plot will
 #'   be drawn, so provides both 2d and 3d functionality. If set to 2, then only
 #'   2d functionality would be enabled.
-facileScatterPlot <- function(input, output, session, rfds, ...,
+facileScatterPlot <- function(input, output, session, rfds, gdb = NULL, ...,
                               ndim = 3, x = NULL, y = NULL, z = NULL,
                               event_source = session$ns("selection"),
                               .reactive = TRUE) {
@@ -32,9 +32,9 @@ facileScatterPlot <- function(input, output, session, rfds, ...,
                     color = TRUE, shape = TRUE, facet = TRUE, hover = TRUE,
                     group = FALSE, ..., .reactive = .reactive)
 
-  xaxis <- callModule(assayFeatureSelect, "xaxis", rfds)
-  yaxis <- callModule(assayFeatureSelect, "yaxis", rfds)
-  zaxis <- callModule(assayFeatureSelect, "zaxis", rfds)
+  xaxis <- callModule(assayFeatureSelect, "xaxis", rfds, gdb)
+  yaxis <- callModule(assayFeatureSelect, "yaxis", rfds, gdb)
+  zaxis <- callModule(assayFeatureSelect, "zaxis", rfds, gdb)
 
   features <- reactive({
     list(x = xaxis$selected(), y = yaxis$selected(), z = zaxis$selected())

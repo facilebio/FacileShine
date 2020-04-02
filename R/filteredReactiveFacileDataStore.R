@@ -11,7 +11,7 @@ filteredReactiveFacileDataStore <- function(input, output, session, path,
                                             debug = FALSE) {
   state <- reactiveValues(nsamples = "__initializing__")
 
-  rfds <- callModule(reactiveFacileDataStore, "rfds", path, user, ...,
+  rfds <- callModule(reactiveFacileDataStore, "rfds", path, user = user, ...,
                      debug = debug)
   class(rfds) <- c("FilteredReactiveFacileDataStore", class(rfds))
 

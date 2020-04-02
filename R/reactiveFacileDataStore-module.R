@@ -54,7 +54,8 @@
 #' @param path A "reactive string" that points to the url/directory to
 #'   instantiate the ReactiveFacileDataStore from.
 reactiveFacileDataStore <- function(intput, output, session, path,
-                                    user = Sys.getenv("USER"), ...,
+                                    user = Sys.getenv("USER"),
+                                    annotation_path = NULL, ...,
                                     restrict_samples. = NULL, debug = FALSE) {
   if (!is.null(restrict_samples.)) {
     assert_sample_subset(restrict_samples.)
@@ -96,7 +97,14 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     assert_directory_exists(path., "r")
     ftrace("{bold}{red}Updating RFDS to: {blue}", path., "{reset}")
 
-    fds. <- FacileDataSet(path.)
+    anno.dir <- try(annotation_path(), silent = TRUE)
+    if (!test_string(anno.dir) || unselected(anno.dir)) anno.dir <- NULL
+    if (test_string(anno.dir) && !test_directory_exists(anno.dir, "rw")) {
+      warning("Annotation directory not writable: ", anno.dir)
+      anno.dir <- NULL
+    }
+
+    fds. <- FacileDataSet(path., anno.dir = anno.dir)
 
     # Setting this to __initializing__ so that things "reacting" on an
     # initialized(rfds) wait until the first pass of
