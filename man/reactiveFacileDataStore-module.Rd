@@ -19,6 +19,7 @@ reactiveFacileDataStore(
   session,
   path,
   user = Sys.getenv("USER"),
+  annotation_path = NULL,
   ...,
   restrict_samples. = NULL,
   debug = FALSE

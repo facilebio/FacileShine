@@ -1,4 +1,4 @@
-library(FacileDenaliDataSets)
+# library(FacileDenaliDataSets)
 # library(FacileShine)
 devtools::load_all(".")
 
@@ -8,6 +8,7 @@ debug <- TRUE
 efds <- FacileData::exampleFacileDataSet()
 # efds <- FacileDenaliDataSet("mouse")
 user <- Sys.getenv("USER")
+gdb <- multiGSEA::exampleGeneSetDb()
 
 options(facile.log.level.fshine = "trace")
 
@@ -20,7 +21,9 @@ shiny::shinyApp(
 
   server = function(input, output) {
     rfds <- ReactiveFacileDataStore(efds, "rfds")
-    scatter <- callModule(facileScatterPlot, "scatter", rfds, ndim = 3)
+    scatter <- callModule(facileScatterPlot, "scatter", rfds,
+                          gdb = gdb,
+                          ndim = 3)
   }
 )
 

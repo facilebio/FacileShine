@@ -1,6 +1,8 @@
-#' Retrieves assay features from a FacileDataStore for a given assay type.
+#' assayFeatureSelect with genesetdb support
 #'
 #' @export
+#' @noRd
+#' @importFrom multiGSEA.shiny reactiveGeneSetSelect
 #' @importFrom shiny
 #'   callModule
 #'   isolate
@@ -18,8 +20,8 @@
 #'  * `label`: a "human readable" summary of the features selected within this
 #'     module
 #'  * `name`: a "computerfriendly" version of `label`
-assayFeatureSelect <- function(input, output, session, rfds, gdb = NULL, ...,
-                               .exclude = NULL, .reactive = TRUE) {
+assayFeatureSelect2 <- function(input, output, session, rfds, gdb = NULL, ...,
+                                .exclude = NULL, .reactive = TRUE) {
   assert_class(rfds, "ReactiveFacileDataStore")
 
   isolate. <- if (.reactive) base::identity else shiny::isolate
@@ -45,29 +47,42 @@ assayFeatureSelect <- function(input, output, session, rfds, gdb = NULL, ...,
                          selected = NULL, server = TRUE)
   })
 
-  selected <- reactive({
+  observeEvent(input$features, {
     req(initialized(rfds))
-    current <- isolate(state$selected)
-    selected_ids <- input$features
-    # Putting req(!is.null(selected_ids)) kills the output
-    # req(!is.null(selected_ids)) # NULLFlash?
-    universe <- assay_select$features()
-
-    is.unselected <- unselected(selected_ids)
-    bad.ids <- setdiff(selected_ids, universe[["feature_id"]])
-
-    if (is.unselected || length(bad.ids)) {
-      selected <- .no_features()
+    ifeatures <- input$features
+    if (unselected(ifeatures)) {
+      out <- .no_features()
     } else {
-      selected <- filter(universe, feature_id %in% selected_ids)
+      universe <- assay_select$features()
+      out <- filter(universe, .data$feature_id %in% ifeatures)
     }
 
-    if (!setequal(current$feature_id, selected$feature_id)) {
-      state$selected <- selected
+    if (!setequal(out$feature_id, state$selected$feature_id)) {
+      state$selected <- out
     }
+  }, ignoreNULL = FALSE)
 
-    state$selected
+  selected <- reactive(state$selected)
+
+  # ................................................................... genesets
+  observe({
+    # Only show the UI element if a GeneSetDb was passed in.
+    shinyjs::toggleElement("genesetbox", condition = !is.null(gdb))
   })
+
+  geneset <- callModule(reactiveGeneSetSelect, "geneset", gdb, ...)
+  observeEvent(geneset$membership(), {
+    gfeatures <- geneset$membership()
+    universe <- assay_select$features()
+    out <- semi_join(universe, gfeatures, by = "feature_id")
+
+    if (!setequal(out$feature_id, state$selected$feature_id)) {
+      # state$selected <- out
+      choices <- setNames(universe[["feature_id"]], universe[["name"]])
+      updateSelectizeInput(session, "features", selected = out$feature_id,
+                           choices = choices, server = TRUE)
+    }
+  }, ignoreNULL = TRUE)
 
   vals <- list(
     selected = selected,
@@ -80,10 +95,11 @@ assayFeatureSelect <- function(input, output, session, rfds, gdb = NULL, ...,
 }
 
 #' @export
+#' @importFrom multiGSEA.shiny reactiveGeneSetSelectUI
 #' @importFrom shiny selectInput selectizeInput
 #' @rdname assayFeatureSelect
 #' @param multiple,... passed into the `"features"` `selectizeInput`
-assayFeatureSelectUI <- function(id, label = NULL, multiple = TRUE, ...) {
+assayFeatureSelect2UI <- function(id, label = NULL, multiple = TRUE, ...) {
   ns <- NS(id)
 
   if (is.null(label)) {
@@ -96,20 +112,16 @@ assayFeatureSelectUI <- function(id, label = NULL, multiple = TRUE, ...) {
     fluidRow(
       column(9, selectizeInput(ns("features"), label = label, choices = NULL,
                                multiple = multiple, ...)),
-      # column(3, selectInput(ns("assay"), label = NULL, choices = NULL))),
       column(
         3,
         tags$div(style = assay.style,
-                 assaySelectUI(ns("assay"), label = NULL, choices = NULL)))))
-  if (FALSE) {
-    # add genesets
-    out <- tagList(
-      out,
-      fluidRow(
-        column(12,
-               selectInput(ns("fset"), label = NULL,
-                           choices = "GeneSetDb for assay"))))
-  }
+                 assaySelectUI(ns("assay"), label = NULL, choices = NULL)))),
+    shinyjs::hidden(
+      tags$div(
+      id = ns("genesetbox"),
+      reactiveGeneSetSelectUI(ns("geneset"))))
+  )
+
   out
 }
 
@@ -137,8 +149,10 @@ label.AssayFeatureSelect <- function(x, ...) {
     "nothing"
   } else if (nrow(xf) == 1) {
     xf$name
-  } else {
+  } else if (nrow(xf) < 10) {
     paste(xf$name, collapse = ",")
+  } else {
+    "score"
   }
 }
 

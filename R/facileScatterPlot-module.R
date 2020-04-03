@@ -32,9 +32,9 @@ facileScatterPlot <- function(input, output, session, rfds, gdb = NULL, ...,
                     color = TRUE, shape = TRUE, facet = TRUE, hover = TRUE,
                     group = FALSE, ..., .reactive = .reactive)
 
-  xaxis <- callModule(assayFeatureSelect, "xaxis", rfds, gdb)
-  yaxis <- callModule(assayFeatureSelect, "yaxis", rfds, gdb)
-  zaxis <- callModule(assayFeatureSelect, "zaxis", rfds, gdb)
+  xaxis <- callModule(assayFeatureSelect2, "xaxis", rfds, gdb)
+  yaxis <- callModule(assayFeatureSelect2, "yaxis", rfds, gdb)
+  zaxis <- callModule(assayFeatureSelect2, "zaxis", rfds, gdb)
 
   features <- reactive({
     list(x = xaxis$selected(), y = yaxis$selected(), z = zaxis$selected())
@@ -165,9 +165,9 @@ facileScatterPlotUI <- function(id, with_download = TRUE, ...) {
   ns <- NS(id)
   tagList(
     fluidRow(
-      column(4, wellPanel(assayFeatureSelectUI(ns("xaxis")))),
-      column(4, wellPanel(assayFeatureSelectUI(ns("yaxis")))),
-      column(4, wellPanel(assayFeatureSelectUI(ns("zaxis"))))),
+      column(4, wellPanel(assayFeatureSelect2UI(ns("xaxis"), "X axis"))),
+      column(4, wellPanel(assayFeatureSelect2UI(ns("yaxis"), "Y axis"))),
+      column(4, wellPanel(assayFeatureSelect2UI(ns("zaxis"), "Z axis")))),
     fluidRow(
       column(
         12,

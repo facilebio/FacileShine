@@ -19,7 +19,7 @@
 #' @param ndim Defaults to 3. When any two dimensions are provided, a plot will
 #'   be drawn, so provides both 2d and 3d functionality. If set to 2, then only
 #'   2d functionality would be enabled.
-facileBoxPlot <- function(input, output, session, rfds, ...,
+facileBoxPlot <- function(input, output, session, rfds, gdb = NULL, ...,
                           x = NULL, y = NULL,
                           event_source = session$ns("selection"),
                           .reactive = TRUE) {
@@ -34,7 +34,7 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
 
   xaxis <- callModule(categoricalSampleCovariateSelect, "xaxis", rfds,
                       .with_none = FALSE)
-  yaxis <- callModule(assayFeatureSelect, "yaxis", rfds)
+  yaxis <- callModule(assayFeatureSelect2, "yaxis", rfds, gdb = gdb, ...)
 
   yvals <- reactive({
     out <- yaxis$selected()
@@ -49,7 +49,11 @@ facileBoxPlot <- function(input, output, session, rfds, ...,
   # "Individual" checkbox is only active when multiple genes are entered
   # in the y-axis selector
   observe({
-    toggleState("individual", condition = nrow(yvals()) > 1)
+    nvals <- nrow(yvals())
+    toggleState("individual", condition = nvals > 1)
+    if (nvals > 20) {
+      updateCheckboxInput(session, "individual", value = FALSE)
+    }
   })
 
   # Due to the limitations of the curent boxplot implementation, if the user
@@ -179,8 +183,12 @@ facileBoxPlotUI <- function(id, ...) {
   tagList(
     fluidRow(
       column(4, wellPanel(categoricalSampleCovariateSelectUI(ns("xaxis"), "X Axis"))),
-      column(4, wellPanel(assayFeatureSelectUI(ns("yaxis"), "Y Axis"))),
-      column(1, checkboxInput(ns("individual"), label = "Individually", value = FALSE))),
+      column(4, wellPanel(assayFeatureSelect2UI(ns("yaxis"), "Y Axis"))),
+      column(
+        4,
+        checkboxInput(ns("individual"),
+                      label = "Plot Genes Individually",
+                      value = TRUE))),
     fluidRow(
       column(
         12,
