@@ -16,8 +16,8 @@ datasetSelect <- function(input, output, session, config = NULL,
       choices)
   }
 
-  updateSelectizeInput(session, "dataset", choices = choices, server = TRUE,
-                       selected = default_dataset)
+  # updateSelectizeInput(session, "dataset", choices = choices, server = TRUE,
+  #                      selected = default_dataset)
 
   fdskey <- reactive({
     key. <- req(input$dataset)
@@ -54,9 +54,10 @@ datasetSelect <- function(input, output, session, config = NULL,
 #'   selectizeInput
 #'   tagList
 #'   wellPanel
-datasetSelectUI <- function(id, ...) {
+datasetSelectUI <- function(id, choices = NULL, selected = NULL, ...) {
   ns <- NS(id)
   out <- tagList(
-    selectizeInput(ns("dataset"), label = "Datasets", choices = NULL))
+    selectizeInput(ns("dataset"), label = "Datasets", choices = choices,
+                   selected = selected))
   out
 }
