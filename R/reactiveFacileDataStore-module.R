@@ -97,11 +97,14 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     assert_directory_exists(path., "r")
     ftrace("{bold}{red}Updating RFDS to: {blue}", path., "{reset}")
 
-    anno.dir <- try(annotation_path(), silent = TRUE)
-    if (!test_string(anno.dir) || unselected(anno.dir)) anno.dir <- NULL
-    if (test_string(anno.dir) && !test_directory_exists(anno.dir, "rw")) {
-      warning("Annotation directory not writable: ", anno.dir)
-      anno.dir <- NULL
+    anno.dir <- NULL
+    if (!is.null(annotation_path)) {
+      anno.dir <- try(annotation_path(), silent = TRUE)
+      if (!test_string(anno.dir) || unselected(anno.dir)) anno.dir <- NULL
+      if (test_string(anno.dir) && !test_directory_exists(anno.dir, "rw")) {
+        warning("Annotation directory not writable: ", anno.dir)
+        anno.dir <- NULL
+      }
     }
 
     fds. <- FacileDataSet(path., anno.dir = anno.dir)
