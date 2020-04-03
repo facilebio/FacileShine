@@ -1,52 +1,13 @@
-# wtf -------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------------
-
+#' The initialized generics are a facile thing, so this function can't be
+#' officially exported as an S3 generic from multiGSEA.shiny.
+#'
+#' multiGSEA.shiny defines initialized as an internal S3 generic, and we
+#' grab its implementation from there and exported it here.
+#'
 #' @noRd
 #' @export
 initialized.ReactiveGeneSetDb <- function(x, ...) {
   # is(x$gdb(), "GeneSetDb") && nrow(x$geneSets()) > 0
   multiGSEA.shiny:::initialized.ReactiveGeneSetDb
-}
-
-#' Create GeneSetDb objects from different inputs
-#'
-#' @export
-GeneSetDb <- function(x, ...) {
-  UseMethod("GeneSetDb", x)
-}
-
-#' @noRd
-#' @export
-GeneSetDb.default <- function(x, ...) {
-  args <- list(...)
-  multiGSEA::GeneSetDb(x, featureIdMap = args[["featureIdMap"]],
-                       collectionName = args[["collectionName"]], ...)
-}
-
-#' Returns the filtered unreactive GeneSetDb from the reactiveGeneSetDb module.
-#'
-#' The user can choose to include subsets of collections, as well as
-#' genesets of a certain size.
-#'
-#' This can only be run within a reactive context.
-#'
-#' @noRd
-#' @export
-#' @importFrom multiGSEA geneSets
-GeneSetDb.ReactiveGeneSetDb <- function(x, ...) {
-  gdb <- x$gdb()
-  gsets.all <- geneSets(gdb)
-  gsets.selected <- x$geneSets()
-
-  keep <- is.element(
-    paste(gsets.all$collection, gsets.all$name),
-    paste(gsets.selected$collection, gsets.selected$name))
-
-  if (!all(keep)) {
-    gdb <- gdb[keep]
-  }
-
-  gdb
 }
 
