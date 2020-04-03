@@ -6,8 +6,5 @@
 #'
 #' @noRd
 #' @export
-initialized.ReactiveGeneSetDb <- function(x, ...) {
-  # is(x$gdb(), "GeneSetDb") && nrow(x$geneSets()) > 0
-  multiGSEA.shiny:::initialized.ReactiveGeneSetDb
-}
+initialized.ReactiveGeneSetDb <- multiGSEA.shiny:::initialized.ReactiveGeneSetDb
 
