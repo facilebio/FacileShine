@@ -3,21 +3,37 @@
 #' @family workbench functions
 #' @importFrom shiny
 #'   updateSelectizeInput
-datasetSelect <- function(input, output, session, config = NULL,
-                          default_dataset = NULL,
-                          user = Sys.getenv("USER"), with_upload = TRUE, ...) {
-  config <- load_config(config)
-  datasets <- datastores_info(config)
-  choices <- datastores_info(config, as_selectize_list = TRUE)
+datasetSelect <- function(input, output, session, config,
+                          default_dataset = NULL, user = Sys.getenv("USER"),
+                          with_upload = TRUE, ...) {
+  stop("Don't use this right now ...")
+  rconfig <- reactive({
+    rc <- if (is(config, "reactive")) config() else config
+    load_config(rc)
+  })
 
-  if (with_upload) {
-    choices <- c(
-      list(`Upload Dataset` = c("Custom Dataset" = "upload")),
-      choices)
-  }
+  datastores <- reactive({
+    rc <- rconfig()
+    datastores_info(rc)
+  })
 
-  # updateSelectizeInput(session, "dataset", choices = choices, server = TRUE,
-  #                      selected = default_dataset)
+  observeEvent(datastores(), {
+    dstores <- datastores()
+    choices <- datastores_info(rconfig(), as_selectize_list = TRUE)
+    if (with_upload) {
+      choices <- c(
+        list(`Upload Dataset` = c("Custom Dataset" = "upload")),
+        choices)
+    }
+    if (test_string(default_dataset)) {
+      sel <- if (default_dataset %in% dstores$key) default_dataset else NULL
+    } else {
+      sel <- NULL
+    }
+
+    updateSelectizeInput(session, "dataset", choices = choices, server = TRUE,
+                         selected = sel)
+  })
 
   fdskey <- reactive({
     key. <- req(input$dataset)
@@ -26,7 +42,7 @@ datasetSelect <- function(input, output, session, config = NULL,
 
   fdsinfo <- reactive({
     key. <- req(fdskey())
-    info <- filter(datasets, key == key.)
+    info <- filter(datastores(), key == key.)
     req(nrow(info) == 1L)
     info
   })
@@ -42,7 +58,7 @@ datasetSelect <- function(input, output, session, config = NULL,
     selected = fdskey,
     info = fdsinfo,
     path = fdspath,
-    datasets = datasets)
+    datastores = datastores)
 
   return(vals)
 }
@@ -57,7 +73,7 @@ datasetSelect <- function(input, output, session, config = NULL,
 datasetSelectUI <- function(id, choices = NULL, selected = NULL, ...) {
   ns <- NS(id)
   out <- tagList(
-    selectizeInput(ns("dataset"), label = "Datasets", choices = choices,
-                   selected = selected))
+    selectizeInput(ns("dataset"), label = "Datasets",
+                   choices = choices, selected = selected))
   out
 }

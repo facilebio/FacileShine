@@ -3,17 +3,13 @@
 #' @family workbench functions
 #' @importFrom yaml yaml.load_file
 #' @export
-load_config <- function(config = NULL) {
-  if (is.null(config)) {
-    config <- system.file("extdata", "eyrie-config.yaml",
-                          package = "DenaliEyrie")
-  }
+load_config <- function(config) {
   if (test_string(config)) {
     assert_file_exists(config, access = "r", extension = c("yaml", "yml"))
     config <- yaml.load_file(config)
   }
   assert_list(config)
-  assert_subset(c("datastores", "modules"), names(config))
+  assert_subset(c("datastores", "genesets"), names(config))
   config
 }
 
@@ -26,8 +22,11 @@ datastores_info <- function(config = NULL, as_selectize_list = FALSE) {
 
   ds.config <- config[["datastores"]]
   datasets <- lapply(names(ds.config[["datastores"]]), function(key) {
-    mutate(as_tibble(ds.config[["datastores"]][[key]]), key = key)
+    out <- mutate(as_tibble(ds.config[["datastores"]][[key]]), key = key)
+    assert_directory_exists(out$path, "r")
+    out
   })
+
   datasets <- bind_rows(datasets)
   datasets <- select(datasets, group, key, name, everything())
 
