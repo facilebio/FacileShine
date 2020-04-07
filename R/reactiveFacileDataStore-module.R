@@ -135,7 +135,7 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     state[["esample_annotation"]] <- .empty_sample_annotation_tbl()
     state[["efeature_annotation"]] <- .empty_feature_annotation_tbl()
     state[["efacets"]] <- .empty_facet_tbl()
-  })
+  }, priority = 100)
 
   observeEvent(state$active_samples, {
     fds. <- state[["fds"]]
@@ -169,7 +169,7 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     if (state[["name"]] != name(fds.)) {
       state[["name"]] <- name(fds.)
     }
-  }, priority = 10)
+  }, priority = 50)
 
   output$fdsname <- shiny::renderText({
     state$name

@@ -6,7 +6,6 @@
 datasetSelect <- function(input, output, session, config,
                           default_dataset = NULL, user = Sys.getenv("USER"),
                           with_upload = TRUE, ...) {
-  stop("Don't use this right now ...")
   rconfig <- reactive({
     rc <- if (is(config, "reactive")) config() else config
     load_config(rc)
