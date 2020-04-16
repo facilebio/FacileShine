@@ -74,7 +74,7 @@ facileScatterPlot <- function(input, output, session, rfds, gdb = NULL, ...,
     out <- active_samples(rfds)
     for (f in f.all) {
       if (nrow(f)) {
-        out <- with_assay_data(out, f, aggregate = TRUE)
+        out <- req(with_assay_data(out, f, aggregate = TRUE))
       }
     }
     out <- collect(out, n = Inf)
