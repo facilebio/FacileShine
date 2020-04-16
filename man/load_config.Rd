@@ -4,7 +4,7 @@
 \alias{load_config}
 \title{Returns a config object for the workbench}
 \usage{
-load_config(config = NULL)
+load_config(config)
 }
 \description{
 Returns a config object for the workbench
