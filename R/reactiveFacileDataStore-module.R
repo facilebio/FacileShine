@@ -430,15 +430,17 @@ facet_frame.ReactiveFacileDataStore <- function(x, name = "default", ...) {
 
 #' @noRd
 #' @export
-fetch_assay_data.ReactiveFacileDataStore <- function(x, features, samples=NULL,
-                                                     assay_name=default_assay(x),
-                                                     normalized=FALSE,
-                                                     as.matrix=FALSE, ...,
+fetch_assay_data.ReactiveFacileDataStore <- function(x, features, samples = NULL,
+                                                     assay_name = default_assay(x),
+                                                     normalized = FALSE,
+                                                     batch = NULL, main = NULL,
+                                                     as.matrix = FALSE, ...,
                                                      aggregate = FALSE,
                                                      aggregate.by = "ewm") {
   req(initialized(x))
   fetch_assay_data(fds(x), features = features, samples = samples,
                    assay_name = assay_name, normalized = normalized,
+                   batch = batch, main = main,
                    as.matrix = as.matrix, aggregate = aggregate,
                    aggregate.by = aggregate.by, ...)
 }
