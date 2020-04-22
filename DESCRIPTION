@@ -40,7 +40,7 @@ Remotes:
     facilebio/FacileData,
     facilebio/FacileViz,
     lianos/multiGSEA.shiny@develop
-License: Apache Version 2.0
+License: Apache License (>= 2.0)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
