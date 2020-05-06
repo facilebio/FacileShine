@@ -116,7 +116,7 @@ sampleFilterUI <- function(id, covariate_label = "Covariate",
       categoricalSampleCovariateSelectUI(ns("covariate"),
                                          label = covariate_label)),
     column(
-      4,
+      8,
       categoricalSampleCovariateLevelsUI(ns("values"),
                                          label = value_label,
                                          multiple = TRUE)))

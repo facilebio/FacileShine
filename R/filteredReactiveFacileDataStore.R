@@ -49,7 +49,6 @@ filteredReactiveFacileDataStoreUI <- function(id, ..., debug = FALSE) {
   ns <- NS(id)
 
   out <- tagList(
-    tags$h3("Cohort Selection"),
     tags$p("Status: ", textOutput(ns("infotext"), inline = TRUE)),
     sampleFilterListUI(ns("filters"), debug = debug))
 
