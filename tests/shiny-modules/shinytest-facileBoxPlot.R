@@ -1,5 +1,5 @@
-# devtools::load_all(".")
-library(FacileShine)
+devtools::load_all(".")
+# library(FacileShine)
 
 user <- Sys.getenv("USER")
 debug <- TRUE

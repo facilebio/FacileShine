@@ -36,6 +36,8 @@ facileScatterPlot <- function(input, output, session, rfds, gdb = NULL, ...,
   yaxis <- callModule(assayFeatureSelect2, "yaxis", rfds, gdb)
   zaxis <- callModule(assayFeatureSelect2, "zaxis", rfds, gdb)
 
+  batch <- callModule(batchCorrectConfig, "batch", rfds)
+
   features <- reactive({
     list(x = xaxis$selected(), y = yaxis$selected(), z = zaxis$selected())
   })
@@ -48,10 +50,6 @@ facileScatterPlot <- function(input, output, session, rfds, gdb = NULL, ...,
     out
   })
 
-  # aes.covs <- reactive({
-  #   ftrace("aes$covariates() fires in facileScatterPlot")
-  #   aes$covariates()
-  # })
 
   qcolnames <- reactive({
     out <- c(x = name(xaxis), y = name(yaxis), z = name(zaxis))
@@ -67,14 +65,19 @@ facileScatterPlot <- function(input, output, session, rfds, gdb = NULL, ...,
   rdat.core <- reactive({
     xdim <- .ndim()
     req(xdim >= 2L)
-    f.all <- features()
+    features. <- features()
 
     ftrace("Retrieving assay data for scatterplot")
 
     out <- active_samples(rfds)
-    for (f in f.all) {
+    batch. <- name(batch$batch)
+    main. <- name(batch$main)
+
+    for (f in features.) {
       if (nrow(f)) {
-        out <- req(with_assay_data(out, f, aggregate = TRUE))
+        out <- req(with_assay_data(out, f, aggregate = TRUE,
+                                   normalize = TRUE, batch = batch.,
+                                   main = main.))
       }
     }
     out <- collect(out, n = Inf)
@@ -168,6 +171,7 @@ facileScatterPlotUI <- function(id, with_download = TRUE, ...) {
       column(4, wellPanel(assayFeatureSelect2UI(ns("xaxis"), "X axis"))),
       column(4, wellPanel(assayFeatureSelect2UI(ns("yaxis"), "Y axis"))),
       column(4, wellPanel(assayFeatureSelect2UI(ns("zaxis"), "Z axis")))),
+    wellPanel(batchCorrectConfigUI(ns("batch"), direction = "horizontal")),
     fluidRow(
       column(
         12,

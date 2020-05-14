@@ -35,6 +35,7 @@ facileBoxPlot <- function(input, output, session, rfds, gdb = NULL, ...,
   xaxis <- callModule(categoricalSampleCovariateSelect, "xaxis", rfds,
                       .with_none = FALSE)
   yaxis <- callModule(assayFeatureSelect2, "yaxis", rfds, gdb = gdb, ...)
+  batch <- callModule(batchCorrectConfig, "batch", rfds)
 
   yvals <- reactive({
     out <- yaxis$selected()
@@ -79,9 +80,12 @@ facileBoxPlot <- function(input, output, session, rfds, gdb = NULL, ...,
     ftrace("Retrieving assay data for boxplot")
     # agg.by <- if (!indiv.) "ewm" else NULL
     agg. <- !indiv.
+    batch. <- name(batch$batch)
+    main. <- name(batch$main)
 
     out <- fetch_assay_data(rfds, yvals., samples., normalized = TRUE,
-                            prior.count = 0.25, aggregate = agg.)
+                            prior.count = 0.25, aggregate = agg.,
+                            batch = batch., main = main.)
     out <- with_sample_covariates(out, xaxis.)
     out
   })
@@ -188,7 +192,8 @@ facileBoxPlotUI <- function(id, ...) {
         4,
         checkboxInput(ns("individual"),
                       label = "Plot Genes Individually",
-                      value = TRUE))),
+                      value = TRUE),
+        batchCorrectConfigUI(ns("batch"), direction = "vertical"))),
     fluidRow(
       column(
         12,

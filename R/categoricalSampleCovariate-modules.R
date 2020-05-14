@@ -249,7 +249,8 @@ update_selected <- function(x, covariate, ...) {
 #' @noRd
 #' @export
 name.CategoricalCovariateSelect <- function(x, ...) {
-  x[["covariate"]]()
+  out <- x[["covariate"]]()
+  if (unselected(out)) NULL else out
 }
 
 #' @noRd
