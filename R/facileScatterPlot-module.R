@@ -77,7 +77,7 @@ facileScatterPlot <- function(input, output, session, rfds, gdb = NULL, ...,
       if (nrow(f)) {
         out <- req(with_assay_data(out, f, aggregate = TRUE,
                                    normalize = TRUE, batch = batch.,
-                                   main = main.))
+                                   main = main., prior.count = 0.1))
       }
     }
     out <- collect(out, n = Inf)

@@ -84,7 +84,7 @@ facileBoxPlot <- function(input, output, session, rfds, gdb = NULL, ...,
     main. <- name(batch$main)
 
     out <- fetch_assay_data(rfds, yvals., samples., normalized = TRUE,
-                            prior.count = 0.25, aggregate = agg.,
+                            prior.count = 0.1, aggregate = agg.,
                             batch = batch., main = main.)
     out <- with_sample_covariates(out, xaxis.)
     out
