@@ -62,7 +62,7 @@ supports downstream modules to add sample annoations via the use of the
 \code{\link[=update_reactive_covaraites]{update_reactive_covaraites()}} function.
 
 These annotations are stored in an eav table that looks a lot like the
-eav_covariates table returned from \code{\link[FacileData:fetch_sample_covaraites]{FacileData::fetch_sample_covaraites()}}.
+eav_covariates table returned from \code{\link[FacileData:sample-covariates]{FacileData::fetch_sample_covariates()}}.
 The columns are:
 \itemize{
 \item \code{dataset}; \code{sample_id}: the primary key of the sample

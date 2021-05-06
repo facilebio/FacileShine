@@ -35,7 +35,7 @@ samples <- reactive(active_samples(sfl))
 
 This is implemented by dynammicaly materializing \code{sampleFilter} modules
 and inserting them into the application using \code{\link[shiny:insertUI]{shiny::insertUI()}} and
-\code{\link[shiny:removeUI]{shiny::removeUI()}}.
+\code{\link[shiny:insertUI]{shiny::removeUI()}}.
 
 This implementation largely inspired from the \code{filter_module.R} file in Joe
 Cheng's rpharma-demo shiny app and a post from Barret Schloerke in the

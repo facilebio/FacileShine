@@ -2,7 +2,6 @@
 #'
 #' @export
 #' @noRd
-#' @importFrom multiGSEA.shiny reactiveGeneSetSelect
 #' @importFrom shiny
 #'   callModule
 #'   isolate
@@ -70,7 +69,8 @@ assayFeatureSelect2 <- function(input, output, session, rfds, gdb = NULL, ...,
     shinyjs::toggleElement("genesetbox", condition = !is.null(gdb))
   })
 
-  geneset <- callModule(reactiveGeneSetSelect, "geneset", gdb, ...)
+  geneset <- callModule(
+    sparrow.shiny::reactiveGeneSetSelect, "geneset", gdb, ...)
   observeEvent(geneset$membership(), {
     gfeatures <- geneset$membership()
     universe <- assay_select$features()
@@ -95,7 +95,6 @@ assayFeatureSelect2 <- function(input, output, session, rfds, gdb = NULL, ...,
 }
 
 #' @export
-#' @importFrom multiGSEA.shiny reactiveGeneSetSelectUI
 #' @importFrom shiny selectInput selectizeInput
 #' @rdname assayFeatureSelect
 #' @param multiple,... passed into the `"features"` `selectizeInput`
@@ -119,7 +118,7 @@ assayFeatureSelect2UI <- function(id, label = NULL, multiple = TRUE, ...) {
     shinyjs::hidden(
       tags$div(
       id = ns("genesetbox"),
-      reactiveGeneSetSelectUI(ns("geneset"))))
+      sparrow.shiny::reactiveGeneSetSelectUI(ns("geneset"))))
   )
 
   out

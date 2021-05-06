@@ -31,7 +31,7 @@
 #' [update_reactive_covaraites()] function.
 #'
 #' These annotations are stored in an eav table that looks a lot like the
-#' eav_covariates table returned from [FacileData::fetch_sample_covaraites()].
+#' eav_covariates table returned from [FacileData::fetch_sample_covariates()].
 #' The columns are:
 #' * `dataset`; `sample_id`: the primary key of the sample
 #' * `variable`: the name of the variable -- users create this during brushin
