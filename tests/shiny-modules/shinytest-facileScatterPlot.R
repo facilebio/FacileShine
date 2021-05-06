@@ -8,7 +8,7 @@ debug <- TRUE
 efds <- FacileData::exampleFacileDataSet()
 # efds <- FacileDenaliDataSet("mouse")
 user <- Sys.getenv("USER")
-gdb <- multiGSEA::exampleGeneSetDb()
+gdb <- sparrow::exampleGeneSetDb()
 
 options(facile.log.level.fshine = "trace")
 

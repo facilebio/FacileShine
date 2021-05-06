@@ -6,7 +6,7 @@ debug <- TRUE
 options(facile.log.level.fshine = "trace")
 
 efds <- FacileData::exampleFacileDataSet()
-gdb <- multiGSEA::exampleGeneSetDb()
+gdb <- sparrow::exampleGeneSetDb()
 
 shiny::shinyApp(
   ui = shiny::fluidPage(
