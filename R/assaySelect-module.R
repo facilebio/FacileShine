@@ -21,9 +21,11 @@ assaySelect <- function(input, output, session, rfds, ...,
       assay_type = "__initializing__",
       feature_type = "__initializing__"),
     universe = tibble(
+      assay = character(),
       feature_type = character(),
       feature_id = character(),
-      name = character()))
+      name = character(),
+      meta = character()))
 
   # The names of the assays available over the current samples
   assay.names <- reactive({
@@ -109,7 +111,8 @@ assaySelect <- function(input, output, session, rfds, ...,
       out <- collect(arrange(out, name), n = Inf)
     }
     out <- filter(out, grepl("^[a-zA-Z]", name))
-    out <- select(out, assay, feature_type, feature_id, name)
+    out <- select(out, .data$assay, .data$feature_type, .data$feature_id,
+                  .data$name, .data$meta)
     ftrace("updating available features")
     out
   })
