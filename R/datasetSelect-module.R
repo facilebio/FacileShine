@@ -47,7 +47,7 @@ datasetSelect <- function(input, output, session, config,
   })
 
   fdspath <- reactive({
-    path <- req(fdsinfo()) %>%
+    path <- req(fdsinfo()) |>
       pull(path)
     req(dir.exists(path))
     path

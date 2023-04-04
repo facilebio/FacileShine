@@ -72,8 +72,8 @@ categoricalAestheticMap <- function(input, output, session, rfds,
   # in the ones that are available after the underlying set of active_samples
   # and nactive_covariates shifts.
   observe({
-    choices <- req(active.covariates()) %>%
-      filter(nlevels > 1) %>%
+    choices <- req(active.covariates()) |>
+      filter(nlevels > 1) |>
       pull(variable)
 
     ftrace("Updating available covariates for aesthetic  map")

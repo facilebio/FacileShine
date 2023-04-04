@@ -49,7 +49,9 @@ selection, the categorical aesthetic maps are "reactive" at a higher priority
 are "removed from play" due to narrowhing of a cohort, the values for these
 aesthetic will be set to "---" before any default reactivity fires. This
 should prevent some of the crashing behavior that may happen when decorating
-data in downstream modules using the following pattern:\if{html}{\out{<div class="r">}}\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
+data in downstream modules using the following pattern:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
                   color = TRUE, facet = TRUE, hover = TRUE,
                   ..., .reactive = .reactive)
 dat <- reactive(\{
@@ -66,7 +68,9 @@ dat <- reactive(\{
 \strong{Experimental} We override the FacileViz::with_aesthetics method to make
 programming with this module "more natural".
 
-Explicit coding might look like:\if{html}{\out{<div class="r">}}\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
+Explicit coding might look like:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
                   color = TRUE, facet = TRUE, hover = TRUE,
                   ..., .reactive = .reactive)
 dat <- reactive(\{
@@ -77,7 +81,9 @@ dat <- reactive(\{
 \})
 }\if{html}{\out{</div>}}
 
-But it may look more natural to do something like:\if{html}{\out{<div class="r">}}\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
+But it may look more natural to do something like:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{aes <- callModule(categoricalAestheticMap, "aes", rfds,
                   color = TRUE, facet = TRUE, hover = TRUE,
                   ..., .reactive = .reactive)
 dat <- reactive(\{

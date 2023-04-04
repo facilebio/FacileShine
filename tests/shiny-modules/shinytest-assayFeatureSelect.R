@@ -25,15 +25,15 @@ shiny::shinyApp(
     yaxis <- callModule(assayFeatureSelect, "yaxis", rfds)
 
     rdat <- reactive({
-      xf <- xaxis$features()
-      yf <- yaxis$features()
+      xf <- xaxis$selected()
+      yf <- yaxis$selected()
       req(nrow(xf) > 0, nrow(yf) > 0)
 
       xs <- active_samples(rfds)
 
-      out <- xs %>%
-        with_assay_data(xf, aggregate.by = "ewm") %>%
-        with_assay_data(yf, aggregate.by = "ewm") %>%
+      out <- xs |>
+        with_assay_data(xf, aggregate.by = "ewm") |>
+        with_assay_data(yf, aggregate.by = "ewm") |>
         collect(n = Inf)
       colnames(out)[3:4] <- c(name(xaxis), name(yaxis))
       out

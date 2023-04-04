@@ -160,8 +160,8 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     state$active_covariates <- acovs
 
     # Update assay info over samples
-    state$active_assays <- fds. %>%
-      assay_info_over_samples(samples.) %>%
+    state$active_assays <- fds. |>
+      assay_info_over_samples(samples.) |>
       collect(n = Inf)
 
     # This should trigger reactives in other modules waiting on
@@ -607,9 +607,9 @@ update_reactive_samples.ReactiveFacileDataStore <- function(x, active_samples,
                                                             criterion = NULL,
                                                             ...) {
   req(initialized(x))
-  .as <- active_samples %>%
-    assert_sample_subset() %>%
-    distinct(dataset, sample_id) %>%
+  .as <- active_samples |>
+    assert_sample_subset() |>
+    distinct(dataset, sample_id) |>
     collect(n = Inf)
 
   current <- collect(active_samples(x), n = Inf)
