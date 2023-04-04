@@ -33,8 +33,8 @@ sampleFilter <- function(input, output, session, rfds, sample_universe = NULL,
   # The samples in the universe are not annotated with the given covariate
   unannotated_samples <- reactive({
     annotated <- req(annotated_samples())
-    sample_universe() %>%
-      anti_join(annotated, by = c("dataset", "sample_id")) %>%
+    sample_universe() |>
+      anti_join(annotated, by = c("dataset", "sample_id")) |>
       distinct(dataset, sample_id)
   })
 
@@ -65,12 +65,12 @@ sampleFilter <- function(input, output, session, rfds, sample_universe = NULL,
     restrict.samples <- !unselected(cov.vals)
 
     if (restrict.samples) {
-      selected.samples <- annotated_samples() %>%
+      selected.samples <- annotated_samples() |>
         filter(value %in% !!cov.vals)
       add.unanno <- nrow(unanno) && isTRUE(missing_sentinel %in% cov.vals)
       if (add.unanno) {
-        selected.samples <- selected.samples %>%
-          bind_rows(unanno) %>%
+        selected.samples <- selected.samples |>
+          bind_rows(unanno) |>
           set_fds(rfds)
       }
       if (nrow(selected.samples) == 0) {

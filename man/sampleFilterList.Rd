@@ -27,9 +27,11 @@ of samples to focus analysis on. Sample filters can only be manipulated
 \details{
 The \verb{dataset,sample_id} sample selector that has been narrowed within the
 returned \code{SampleFilterList} can be retrieved using the \code{active_samples()}
-function, ie.\preformatted{sfl <- callModule(sampleFilterList, rfds)
+function, ie.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{sfl <- callModule(sampleFilterList, rfds)
 samples <- reactive(active_samples(sfl))
-}
+}\if{html}{\out{</div>}}
 }
 \section{Implementation Notes}{
 

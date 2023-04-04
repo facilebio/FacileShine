@@ -1,7 +1,7 @@
 Package: FacileShine
 Type: Package
 Title: Shiny primitives to interact with FacileData and FacileViz objects.
-Version: 0.98.1
+Version: 0.98.2
 Authors@R: c(
     person("Steve", "Lianoglou", , "lianoglou@dnli.com", c("aut", "cre"),
       comment = c(ORCID = "0000-0002-0924-1754")),
@@ -44,4 +44,4 @@ License: Apache License (>= 2.0)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3

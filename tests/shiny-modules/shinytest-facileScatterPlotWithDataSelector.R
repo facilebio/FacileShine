@@ -1,4 +1,4 @@
-library(FacileDenaliDataSets)
+# library(FacileDenaliDataSets)
 # library(FacileShine)
 devtools::load_all(".")
 

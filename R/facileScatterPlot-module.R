@@ -98,8 +98,8 @@ facileScatterPlot <- function(input, output, session, rfds, gdb = NULL, ...,
   output$dldata <- downloadHandler(
     filename = function() "scatterplot-data.csv",
     content = function(file) {
-      req(rdat.core()) %>%
-        with_sample_covariates() %>%
+      req(rdat.core()) |>
+        with_sample_covariates() |>
         write.csv(file, row.names = FALSE)
     }
   )
