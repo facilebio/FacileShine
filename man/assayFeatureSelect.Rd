@@ -29,13 +29,8 @@ assayFeatureSelect2UI(id, label = NULL, multiple = TRUE, ...)
 a list with the following elements:
 \itemize{
 \item \code{assay_info}: one row assay,assay_type,feature_type tibble
-\item \code{features}: n-row feature_info_tbl() like tbl enumerating the assay
+\item \code{selected}: n-row feature_info_tbl() like tbl enumerating the assay
 features selected in this module
-\item \code{features_all}: a tibble of all of the fdatures of this \code{feature_type}
-(we can possible axe this, but ...)
-\item \code{label}: a "human readable" summary of the features selected within this
-module
-\item \code{name}: a "computerfriendly" version of \code{label}
 }
 }
 \description{

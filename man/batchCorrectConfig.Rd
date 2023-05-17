@@ -33,7 +33,7 @@ batchCorrectConfigUI(ns("batch"), direction = "horizontal")
 # server code
 batch <- callModule(batchCorrectConfig, "batch", rfds)
 dat <- reactive({
-  these_samples() \%>\%
+  these_samples() |>
     with_assay_data(these_features(), normalized = TRUE,
                     batch = name(batch$batch),
                     main = name(batch$main))

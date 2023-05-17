@@ -356,6 +356,12 @@ user.ReactiveFacileDataStore <- function(x, ...) {
 
 # Facile API ===================================================================
 
+#' @export
+#' @noRd
+assay_sample_info_tbl.ReactiveFacileDataStore <- function(x) {
+  assay_sample_info_tbl(fds(x))
+}
+
 # This is partially an exercise to ensure that we have a well defined facile
 # api. We could have all FacileShine modules just extract the fds from the
 # ReactiveFDS first then move on with life, but ... this is correct.
