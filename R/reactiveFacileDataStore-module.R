@@ -358,8 +358,9 @@ user.ReactiveFacileDataStore <- function(x, ...) {
 
 #' @export
 #' @noRd
-assay_sample_info_tbl.ReactiveFacileDataStore <- function(x) {
-  assay_sample_info_tbl(fds(x))
+assay_sample_info.ReactiveFacileDataStore <- function(x, assay_name, 
+                                                      samples = NULL, ...) {
+  assay_sample_info(fds(x), assay_name, samples, ...)
 }
 
 # This is partially an exercise to ensure that we have a well defined facile
