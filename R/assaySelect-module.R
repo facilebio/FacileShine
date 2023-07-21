@@ -139,13 +139,12 @@ assaySelectUI <- function(id, label = "Assay", choices = NULL, selected = NULL,
               selectize = selectize, width = width, size = size)
 }
 
-#' Retrieve the features assocaitd with an assay
+#' Retrieve the features associatd with an assay
 #'
 #' @export
 #' @param x An `AssaySelect` object, returned fom [assaySelect()]
 #' @return a tibble of features
-assay_feature_info.AssaySelectInput <- function(x, assay_name,
-                                                feature_ids = NULL, ...) {
+features.AssaySelectInput <- function(x, assay_name, feature_ids = NULL, ...) {
   # assert_reacting()
   if (!missing(assay_name)) warning("`assay_name` parameter ignored")
   out <- x[["features"]]()
