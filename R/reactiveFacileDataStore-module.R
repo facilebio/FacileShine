@@ -161,7 +161,7 @@ reactiveFacileDataStore <- function(intput, output, session, path,
 
     # Update assay info over samples
     state$active_assays <- fds. |>
-      assay_info_over_samples(samples.) |>
+      assay_summary(samples.) |>
       collect(n = Inf)
 
     # This should trigger reactives in other modules waiting on

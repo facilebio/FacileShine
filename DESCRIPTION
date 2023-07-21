@@ -1,7 +1,7 @@
 Package: FacileShine
 Type: Package
 Title: Shiny primitives to interact with FacileData and FacileViz objects.
-Version: 0.98.4
+Version: 0.98.5
 Authors@R: c(
     person("Steve", "Lianoglou", , "lianoglou@dnli.com", c("aut", "cre"),
       comment = c(ORCID = "0000-0002-0924-1754")),
@@ -18,7 +18,7 @@ Imports:
     checkmate,
     crayon,
     dplyr,
-    FacileData (>= 0.11.0),
+    FacileData (>= 0.98.91),
     FacileViz (>= 0.1.10),
     glue,               
     miniUI,
