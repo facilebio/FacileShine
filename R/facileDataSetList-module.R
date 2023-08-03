@@ -73,7 +73,7 @@ facileDataSetSelectServer <- function(id, datadir, metafn = "meta.yaml", ...) {
 
 #' @noRd
 #' @export
-facileDataSetSelectInput <- function(id, label = "Dataset",
+facileDataSetSelectInput <- function(id, label = "Select Dataset",
                                      choices = NULL, selected = NULL,
                                      multiple = FALSE,
                                      selectize = TRUE, width = NULL,

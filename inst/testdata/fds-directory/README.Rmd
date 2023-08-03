@@ -47,7 +47,7 @@ serialized on disk. Two other special files exists:
 
 ## meta.yaml
 
-And the contents of the `meta.yaml` directory may look like:
+And the contents of the `meta.yaml` file in the data directory may look like:
 
 ```yaml
 datasets:
@@ -64,10 +64,9 @@ datasets:
           - SomeConsortiumSingleCellDataSet
 ```
 
-This is meant to be able to be part of a larger `meta.yaml` that configures
-an entire application, so all the settings relevant information related to
-the dataset listing must be embedded underneath a `dataset` section, as is
-shown above. Only the attributes underneat there are used.
+The attributes are nested under a parent `datasets` attribute so that these
+can be part of a larger yaml file that might be used to configure a broader
+application that these datasets are a part of.
 
 A brief description of those attributes are:
 
@@ -76,4 +75,19 @@ A brief description of those attributes are:
     attribute!
 * `groups`: A nested list that describes how the datasets should be groups
    together (or not?) for presentation in a nested selectizeList
+
+When this yaml is combined with the dataset directory structure above, the
+`facileDataSetList` module will produce a selectizeInput that looks like:
+
+```{r, include=FALSE, eval=FALSE}
+ddir <- system.file("testdata", "fds-directory", package = "FacileShine")
+shiny::shinyApp(
+  ui = shiny::fluidPage(
+    FacileShine::facileDataSetSelectInput("fdslist")),
+  server = function(input, output) {
+    FacileShine::facileDataSetSelectServer("fdslist", shiny::reactive(ddir))
+  })
 ```
+
+![Example Dataset List](datasetlist.png)
+
