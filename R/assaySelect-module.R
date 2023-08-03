@@ -98,7 +98,10 @@ assaySelect <- function(input, output, session, rfds, ...,
     }
   })
 
-  assay_info <- reactive(state$assay_info)
+  assay_info <- reactive({
+    ftrace("retrieving assay_info()")
+    state$assay_info
+  })
 
   features. <- reactive({
     assay_info. <- assay_info()

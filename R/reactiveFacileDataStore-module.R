@@ -80,6 +80,7 @@ reactiveFacileDataStore <- function(intput, output, session, path,
       trigger = list(
         dataset = makeReactiveTrigger(),
         samples = makeReactiveTrigger(),
+        assays = makeReactiveTrigger(),
         covariates = makeReactiveTrigger()),
       .state = state,
       .ns = session$ns)
@@ -310,6 +311,7 @@ trigger <- function(x, name = "covariates", trigger. = TRUE, ...) {
   # trgr <- assert_class(reactives(x, "trigger")[[name]], "ReactiveTrigger")
   trgr <- assert_class(x[["trigger"]][[name]], "ReactiveTrigger")
   if (trigger.) {
+    ftrace("Firing `", name, "` trigger")
     trgr$trigger()
   }
   invisible(trgr)
@@ -327,6 +329,7 @@ triggered <- function(x, name = "covariates", ...) {
 #' @export
 active_assays.ReactiveFacileDataStore <- function(x, ...) {
   req(initialized(x))
+  depend(x, "assays")
   x[[".state"]][["active_assays"]]
 }
 
@@ -335,6 +338,7 @@ active_assays.ReactiveFacileDataStore <- function(x, ...) {
 active_covariates.ReactiveFacileDataStore <- function(x, active_only = TRUE,
                                                       ...) {
   req(initialized(x))
+  depend(x, "covariates")
   as_facile_frame(x[[".state"]][["active_covariates"]], x,
                   .valid_sample_check = FALSE)
 }
@@ -343,6 +347,7 @@ active_covariates.ReactiveFacileDataStore <- function(x, active_only = TRUE,
 #' @export
 active_samples.ReactiveFacileDataStore <- function(x, ...) {
   req(initialized(x))
+  depend(x, "samples")
   as_facile_frame(x[[".state"]][["active_samples"]], x,
                   .valid_sample_check = FALSE)
 }

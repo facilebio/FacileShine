@@ -86,14 +86,11 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
   })
 
   observe({
-    depend(rfds, "covariates")
     req(initialized(rfds))
     univ <- universe.()
     req(is.data.frame(univ))
 
     ftrace("Updating {bold}{red}state$active_covariates{reset}")
-    # acovs <- try(fetch_sample_covariates(rfds, univ), silent = TRUE)
-    # if (is(acovs, "try-error")) browser()
 
     acovs <- fetch_sample_covariates(rfds, univ)
     acovs <- filter(acovs, class %in% c("categorical", "logical"))
@@ -108,6 +105,7 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
 
   active.covariates <- reactive({
     req(initialized(rfds))
+    depend(rfds, "covariates")
     covs <- state$active_covariates
     req(is.data.frame(covs))
     covs
@@ -132,7 +130,9 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
   observeEvent(categorical.covariates(), {
     choices <- categorical.covariates()
 
-    ftrace("Updating available covariates to select from")
+    ftrace(
+      "Updating available covariates to select from:\n  ",
+      paste(choices, collapse = ";;"))
 
     choices <- sort(choices)
     if (.with_none) {
@@ -176,8 +176,6 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
     allcovs. <- active.covariates()
     notselected <- unselected(covariate.) ||
       !covariate. %in% allcovs.[["variable"]]
-
-    # if (grepl("human", name(rfds), ignore.case = TRUE)) browser()
 
     ftrace("Calculating covariate({red}", covariate., "{reset}) summary")
 

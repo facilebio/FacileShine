@@ -1,0 +1,12 @@
+datasets:
+    default: InternalHumanDataSet
+    groups:
+        Public:
+          - PublicHumanDataSet
+          - PublicMouseDataSet
+        Internal:
+          - InternalHumanDataSet
+          - InternalMouseDataSet
+        "Some Consortium":
+          - SomeConsortiumBulkDataSet
+          - SomeConsortiumSingleCellDataSet
