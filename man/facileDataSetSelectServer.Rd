@@ -4,7 +4,7 @@
 \alias{facileDataSetSelectServer}
 \title{Lists the FacileDataSet objects in a parent directory for a user to choose.}
 \usage{
-facileDataSetSelectServer(id, datadir, metafn = "meta.yaml", ...)
+facileDataSetSelectServer(id, datadir, metafn = NULL, ...)
 }
 \arguments{
 \item{id}{the ID of the module}

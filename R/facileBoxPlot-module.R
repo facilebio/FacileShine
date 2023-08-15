@@ -52,9 +52,9 @@ facileBoxPlot <- function(input, output, session, rfds, gdb = NULL, ...,
   observe({
     nvals <- nrow(yvals())
     toggleState("individual", condition = nvals > 1)
-    if (nvals > 20) {
-      updateCheckboxInput(session, "individual", value = FALSE)
-    }
+    # if (nvals > 20) {
+    #   updateCheckboxInput(session, "individual", value = FALSE)
+    # }
   })
 
   # Due to the limitations of the curent boxplot implementation, if the user
@@ -192,7 +192,7 @@ facileBoxPlotUI <- function(id, ...) {
         4,
         checkboxInput(ns("individual"),
                       label = "Plot Genes Individually",
-                      value = TRUE),
+                      value = FALSE),
         batchCorrectConfigUI(ns("batch"), direction = "vertical"))),
     fluidRow(
       column(

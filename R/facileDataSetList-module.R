@@ -19,8 +19,7 @@
 #' @return A list with reactive components:
 #' 1. `$path()`: The path to the FacileDataSet
 #' 2. `$gdb()`: A GeneSetDb object to match the organism of the FDS at `$path`.
-facileDataSetSelectServer <- function(id, datadir, metafn = "meta.yaml", ...) {
-  
+facileDataSetSelectServer <- function(id, datadir, metafn = NULL, ...) {
   shiny::moduleServer(id, function(input, output, session) {
     state <- shiny::reactiveValues(
       organism = "__initializing__")
@@ -55,11 +54,7 @@ facileDataSetSelectServer <- function(id, datadir, metafn = "meta.yaml", ...) {
       org <- state$organism
       req(org != "__initializing__")
       gspath <- file.path(datadir(), "_metadata", org, "genesets.qs")
-      if (file.exists(gspath)) {
-        qs::qread(gspath)
-      } else {
-        NULL
-      }
+      if (file.exists(gspath)) qs::qread(gspath) else NULL
     })
     
     list(
@@ -117,10 +112,12 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
 #' @param datadir the parent directory that holds the FacileDataSet directories
 #' @param metafn an optional argument that identifies the yaml file that holds
 #'   metadata about the datasets in `datadir`
-.parse_dataset_directory <- function(datadir, metafn = "meta.yaml", ...) {
+.parse_dataset_directory <- function(datadir, 
+                                     metafn = file.path(datadir, "meta.yaml"),
+                                     ...) {
   if (FALSE) {
     datadir <- system.file("testdata", "fds-directory", package = "FacileShine")
-    metafn <- "meta.yaml"
+    metafn <- file.path(datadir, "meta.yaml")
   }
   checkmate::assert_directory_exists(datadir, "r")
   paths <- dir(datadir, "^[a-zA-Z0-9]", full.names = TRUE)
@@ -142,7 +139,8 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
     meta = ds.meta,
     default = FALSE)
   
-  meta.fn <- file.path(datadir, metafn)
+  # meta.fn <- file.path(datadir, metafn)
+  meta.fn <- metafn
   if (file.exists(meta.fn)) {
     meta <- yaml::read_yaml(meta.fn)[["datasets"]]
     if (is.list(meta)) {

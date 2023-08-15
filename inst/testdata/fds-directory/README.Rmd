@@ -81,11 +81,15 @@ When this yaml is combined with the dataset directory structure above, the
 
 ```{r, include=FALSE, eval=FALSE}
 ddir <- system.file("testdata", "fds-directory", package = "FacileShine")
+meta.fn <- file.path(ddir, "meta.yaml")
 shiny::shinyApp(
   ui = shiny::fluidPage(
     FacileShine::facileDataSetSelectInput("fdslist")),
   server = function(input, output) {
-    FacileShine::facileDataSetSelectServer("fdslist", shiny::reactive(ddir))
+    FacileShine::facileDataSetSelectServer(
+      "fdslist",
+      datadir = shiny::reactive(ddir),
+      metafn = meta.fn)
   })
 ```
 
