@@ -1,8 +1,8 @@
 #' Module server for scatter plots
 #' 
 #' @export
-fscatterPlotServer <- function(id, rfds, ..., gdb = NULL, ndim = 3,
-                               x = NULL, y = NULL, z = NULL,
+fscatterPlotServer <- function(id, rfds, ..., gdb = shiny::reactive(NULL),
+                               ndim = 3, x = NULL, y = NULL, z = NULL,
                                event_source = session$ns("selection"),
                                .reactive = TRUE, debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")

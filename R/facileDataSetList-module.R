@@ -52,9 +52,14 @@ facileDataSetSelectServer <- function(id, datadir, metafn = NULL, ...) {
     
     gdb <- reactive({
       org <- state$organism
-      req(org != "__initializing__")
-      gspath <- file.path(datadir(), "_metadata", org, "genesets.qs")
-      if (file.exists(gspath)) qs::qread(gspath) else NULL
+      # req(org != "__initializing__")
+      if (org == "__initializing__") {
+        out <- NULL
+      } else {
+        gspath <- file.path(datadir(), "_metadata", org, "genesets.qs")
+        out <- if (file.exists(gspath)) qs::qread(gspath) else NULL
+      }
+      out
     })
     
     list(

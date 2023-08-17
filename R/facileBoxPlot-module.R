@@ -51,18 +51,15 @@ facileBoxPlot <- function(input, output, session, rfds, gdb = NULL, ...,
   # in the y-axis selector
   observe({
     nvals <- nrow(yvals())
-    toggleState("individual", condition = nvals > 1)
-    # if (nvals > 20) {
-    #   updateCheckboxInput(session, "individual", value = FALSE)
-    # }
+    shinyjs::toggleState("individual", condition = nvals > 1)
   })
 
   # Due to the limitations of the curent boxplot implementation, if the user
   # wants to show multiple genes at once, faceting is disabled, ie. multiple
   # genes are selected in y-axis and "Individual" box is checked
   observe({
-    toggleState("aes-facet",
-                condition = !input$individual || nrow(yvals()) <= 1)
+    disabled <- isFALSE(input$individual) || nrow(yvals()) <= 1
+    shinyjs::toggleState("aes-facet", condition = disabled)
   })
 
   # The quantitative data to plot, without aesthetic mappings

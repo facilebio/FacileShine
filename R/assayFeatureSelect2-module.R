@@ -19,7 +19,8 @@
 #'  * `label`: a "human readable" summary of the features selected within this
 #'     module
 #'  * `name`: a "computerfriendly" version of `label`
-assayFeatureSelect2 <- function(input, output, session, rfds, gdb = NULL, ...,
+assayFeatureSelect2 <- function(input, output, session, rfds, 
+                                gdb = shiny::reactive(NULL), ...,
                                 .exclude = NULL, .reactive = TRUE) {
   assert_class(rfds, "ReactiveFacileDataStore")
 
@@ -66,7 +67,7 @@ assayFeatureSelect2 <- function(input, output, session, rfds, gdb = NULL, ...,
   # ................................................................... genesets
   observe({
     # Only show the UI element if a GeneSetDb was passed in.
-    shinyjs::toggleElement("genesetbox", condition = !is.null(gdb))
+    shinyjs::toggleElement("genesetbox", condition = !is.null(gdb()))
   })
 
   geneset <- callModule(

@@ -1,28 +1,46 @@
 # TODO: delete this
 # library(FacileShine)
+
 library(FacileData)
 library(FacileViz)
 library(shiny)
 
-fds <- FacileData::exampleFacileDataSet()
 user <- Sys.getenv("USER")
+fds <- FacileData::exampleFacileDataSet()
+
+gdbs <- list(
+  hallmark = sparrow::getMSigGeneSetDb("H", id.type = "entrez"),
+  kegg = sparrow::getKeggGeneSetDb("human", "entrez"),
+  null = NULL)
 
 devtools::load_all(".")
 
 shiny::shinyApp(
   ui = shiny::fluidPage(
+    shinyjs::useShinyjs(),
     shiny::wellPanel(filteredReactiveFacileDataStoreUI("ds")),
-    shiny::tags$h2("assayFeatureSelect"),
+    
+    shiny::tags$h2("assayFeatureSelect2"),
+    shiny::selectInput("gdb", "GeneSetDb", c("hallmark", "kegg", "null")),
+    
     fluidRow(
-      column(6, shiny::wellPanel(assayFeatureSelectUI("xaxis"))),
-      column(6, shiny::wellPanel(assayFeatureSelectUI("yaxis")))),
+      column(6, shiny::wellPanel(assayFeatureSelect2UI("xaxis"))),
+      column(6, shiny::wellPanel(assayFeatureSelect2UI("yaxis")))),
     shiny::tags$h2("Scatter Plot"),
     plotlyOutput("scatter")),
 
-  server = function(input, output) {
-    rfds <- callModule(filteredReactiveFacileDataStore, "ds", fds, user = user)
-    xaxis <- callModule(assayFeatureSelect, "xaxis", rfds)
-    yaxis <- callModule(assayFeatureSelect, "yaxis", rfds)
+  server = function(input, output, session) {
+    rfds <- callModule(
+      filteredReactiveFacileDataStore, "ds", 
+      reactive(fds$parent.dir),
+      user = user)
+    
+    gdb <- reactive({
+      gdbs[[input$gdb]]
+    })
+    
+    xaxis <- callModule(assayFeatureSelect2, "xaxis", rfds, gdb = gdb)
+    yaxis <- callModule(assayFeatureSelect2, "yaxis", rfds, gdb = gdb)
 
     rdat <- reactive({
       xf <- xaxis$selected()

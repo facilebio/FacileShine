@@ -1,7 +1,9 @@
 #' Module server for boxplots
 #' 
 #' @export
-fboxPlotServer <- function(id, rfds, ..., gdb = NULL, x = NULL, y = NULL,
+fboxPlotServer <- function(id, rfds, ..., 
+                           gdb = shiny::reactive(NULL), 
+                           x = NULL, y = NULL,
                            event_source = session$ns("selection"),
                            .reactive = TRUE, debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")

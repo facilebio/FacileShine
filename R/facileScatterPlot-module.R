@@ -18,7 +18,8 @@
 #' @param ndim Defaults to 3. When any two dimensions are provided, a plot will
 #'   be drawn, so provides both 2d and 3d functionality. If set to 2, then only
 #'   2d functionality would be enabled.
-facileScatterPlot <- function(input, output, session, rfds, gdb = NULL, ...,
+facileScatterPlot <- function(input, output, session, rfds, 
+                              gdb = shiny::reactive(NULL), ...,
                               ndim = 3, x = NULL, y = NULL, z = NULL,
                               event_source = session$ns("selection"),
                               .reactive = TRUE) {
