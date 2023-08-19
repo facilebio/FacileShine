@@ -19,7 +19,8 @@
 #' @param ndim Defaults to 3. When any two dimensions are provided, a plot will
 #'   be drawn, so provides both 2d and 3d functionality. If set to 2, then only
 #'   2d functionality would be enabled.
-facileBoxPlot <- function(input, output, session, rfds, gdb = NULL, ...,
+facileBoxPlot <- function(input, output, session, rfds,
+                          gdb = shiny::reactive(NULL), ...,
                           x = NULL, y = NULL,
                           event_source = session$ns("selection"),
                           .reactive = TRUE) {

@@ -142,7 +142,7 @@ sampleFilterList <- function(input, output, session, rfds,
     id <- paste0("sample_filter_", index)
     rmid <- paste0("remove_", id)
 
-    if (flen == 0) {
+    if (flen == 0L) {
       universe <- fds.universe
     } else {
       universe <- reactive(isolate(filters.[[flen]]$active_samples()))
@@ -152,6 +152,7 @@ sampleFilterList <- function(input, output, session, rfds,
     # Setting `immediate = TRUE` is imperative for this to work, otherwise
     # the UI elements could not be populated by its corresponding sampleFilter
     # module.
+    ftrace("{bold}{green}Adding filter: ", id)
     state$filters[[id]] <- callModule(sampleFilter, id, rfds, universe,
                                       default_covariate = default_covariate)
     insertUI(

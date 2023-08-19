@@ -37,27 +37,28 @@ facileDataSetSelectServer <- function(id, datadir, metafn = NULL, ...) {
                         selected = selected)
     })
     
-    fds.path <- shiny::reactive({
-      dinfo. <- shiny::req(dinfo())
+    dataset_info <- shiny::reactive({
       chosen <- shiny::req(input$dataselect)
-      selected <- dplyr::filter(dinfo., .data$name == .env$chosen)
-      
-      path <- selected$path
-      if (state$organism != selected$organism) {
-        state$organism <- selected$organism
+      ftrace("updating selected dataset: ", chosen)
+      info <- dplyr::filter(shiny::isolate(dinfo()), .data$name == .env$chosen)
+      if (shiny::isolate(state$organism) != info$organism) {
+        ftrace("updating organism: ", info$organism)
+        state$organism <- info$organism
       }
-      
-      path
+      info
     })
     
+    fds.path <- reactive(dataset_info()$path)
+    
     gdb <- reactive({
+      out <- NULL
       org <- state$organism
-      # req(org != "__initializing__")
-      if (org == "__initializing__") {
-        out <- NULL
-      } else {
+      if (!unselected(org)) {
         gspath <- file.path(datadir(), "_metadata", org, "genesets.qs")
-        out <- if (file.exists(gspath)) qs::qread(gspath) else NULL
+        if (file.exists(gspath)) {
+          ftrace("Updating GeneSetDb: ", gspath)
+          out <- qs::qread(gspath)
+        }
       }
       out
     })
@@ -117,9 +118,7 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
 #' @param datadir the parent directory that holds the FacileDataSet directories
 #' @param metafn an optional argument that identifies the yaml file that holds
 #'   metadata about the datasets in `datadir`
-.parse_dataset_directory <- function(datadir, 
-                                     metafn = file.path(datadir, "meta.yaml"),
-                                     ...) {
+.parse_dataset_directory <- function(datadir, metafn = NULL, ...) {
   if (FALSE) {
     datadir <- system.file("testdata", "fds-directory", package = "FacileShine")
     metafn <- file.path(datadir, "meta.yaml")
@@ -145,9 +144,9 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
     default = FALSE)
   
   # meta.fn <- file.path(datadir, metafn)
-  meta.fn <- metafn
-  if (file.exists(meta.fn)) {
-    meta <- yaml::read_yaml(meta.fn)[["datasets"]]
+  if (is.null(metafn)) metafn <- file.path(datadir, "meta.yaml")
+  if (file.exists(metafn)) {
+    meta <- yaml::read_yaml(metafn)[["datasets"]]
     if (is.list(meta)) {
       # 1. Identify default dataset, if specified
       if (checkmate::test_string(meta$default)) {

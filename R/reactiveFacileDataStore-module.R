@@ -68,10 +68,17 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     active_samples = "__initializing__",
     active_assays = "__initializing__",
     active_covariates = "__initializing__",
+    
     # ephemeral annotations provided by user during interactive exploration
     esample_annotation = .empty_sample_annotation_tbl(),
     efeature_annotation = .empty_feature_annotation_tbl(),
-    efacets = .empty_facet_tbl())
+    
+    efacets = .empty_facet_tbl(),
+    
+    # added this for the filteredReactiveFacileDataStore2 datamod impl
+    sample_covariate_universe = tibble(
+      dataset = character(), sample_id = character())
+    )
 
   vals <- local({
     v <- list(
@@ -122,17 +129,19 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     state[["fds"]] <- fds.
 
     # Reset the ephemeral stuff
+    tstart <- Sys.time()
     state[["active_samples"]] <- local({
       asamples <- collect(samples(fds.), n = Inf)
       if (!is.null(restrict_samples.)) {
         # restrict_samples. is here for convenience to enable launching an
         # gadget over a restricted set of samples.
         assert_sample_subset(restrict_samples.)
-        asamples <- semi_join(asamples, restrict_samples.,
-                              by = c("dataset", "sample_id"))
+        asamples <- asamples |> 
+          semi_join(restrict_samples., by = c("dataset", "sample_id"))
       }
       as_facile_frame(asamples, fds., "reactive_facile_frame")
     })
+    ftrace("sample load time: ", format(Sys.time() - tstart))
     state[["esample_annotation"]] <- .empty_sample_annotation_tbl()
     state[["efeature_annotation"]] <- .empty_feature_annotation_tbl()
     state[["efacets"]] <- .empty_facet_tbl()
@@ -151,11 +160,15 @@ reactiveFacileDataStore <- function(intput, output, session, path,
     # 1. state$active_covariates
     # 2. state$active_assays
     # Update active covariates
+    tstart <- Sys.time()
     acovs <- fetch_sample_covariates(fds., samples = samples.,
                                      custom_key = user, with_source = TRUE,
                                      extra_covariates = ecovs)
+    tend1 <- Sys.time()
     acovs <- summary(acovs)
-
+    tend2 <- Sys.time()
+    ftrace("covariate load time: ", format(tend1 - tstart))
+    ftrace("covariate summary time: ", format(tend2 - tend1))
     # Test if available covariates have changed
     # we are crashing on dataset switches because samples. is empty
     state$active_covariates <- acovs

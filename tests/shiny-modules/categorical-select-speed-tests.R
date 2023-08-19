@@ -33,6 +33,8 @@ system.time(acovs <- fetch_sample_covariates(xfds, samples.all))
 #  user  system elapsed 
 # 2.530   0.098   2.635 
 
+system.time(wcovs <- spread_covariates(acovs))
+
 # Writing a new function to make covariate summarization quick
 # I could have sworn I've done this before :-/
 # 
