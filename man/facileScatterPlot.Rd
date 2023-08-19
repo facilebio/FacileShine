@@ -14,7 +14,7 @@ facileBoxPlot(
   output,
   session,
   rfds,
-  gdb = NULL,
+  gdb = shiny::reactive(NULL),
   ...,
   x = NULL,
   y = NULL,
