@@ -8,7 +8,7 @@ fboxPlotServer(
   id,
   rfds,
   ...,
-  gdb = NULL,
+  gdb = shiny::reactive(NULL),
   x = NULL,
   y = NULL,
   event_source = session$ns("selection"),

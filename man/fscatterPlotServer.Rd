@@ -8,7 +8,7 @@ fscatterPlotServer(
   id,
   rfds,
   ...,
-  gdb = NULL,
+  gdb = shiny::reactive(NULL),
   ndim = 3,
   x = NULL,
   y = NULL,

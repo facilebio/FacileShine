@@ -81,6 +81,8 @@ categoricalSampleCovariateSelect <- function(input, output, session, rfds,
   }, priority = 10)
 
   universe. <- reactive({
+    # since this doesn't match against a faciledataset, this just tests that
+    # the `universe` frame looks like a facile_frame with the right columns
     req(test_sample_subset(state$universe))
     state$universe
   })

@@ -33,7 +33,7 @@ facileScatterPlot(
   output,
   session,
   rfds,
-  gdb = NULL,
+  gdb = shiny::reactive(NULL),
   ...,
   ndim = 3,
   x = NULL,
