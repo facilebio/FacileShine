@@ -295,7 +295,7 @@ initialized.ReactiveFacileDataStore <- function(x, ...) {
 #' @noRd
 #' @export
 initialized.BoxedFacileDataStore <- function(x, ...) {
-  TRUE
+  is(x, "FacileDataStore")
 }
 
 #' @noRd

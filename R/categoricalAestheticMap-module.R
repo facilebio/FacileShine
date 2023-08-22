@@ -59,7 +59,8 @@ categoricalAestheticMap <- function(input, output, session, rfds,
 
   active.covariates <- reactive({
     req(initialized(rfds))
-    all.covs <- isolate.(active_covariates(rfds))
+    # all.covs <- isolate.(active_covariates(rfds))
+    all.covs <- rfds$active_covariates()
     cat.covs <- filter(all.covs, class %in% c("categorical", "logical"))
     cat.covs
   })

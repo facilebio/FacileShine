@@ -20,12 +20,12 @@
 #' 1. `$path()`: The path to the FacileDataSet
 #' 2. `$gdb()`: A GeneSetDb object to match the organism of the FDS at `$path`.
 facileDataSetSelectServer <- function(id, datadir, metafn = NULL, ...) {
-  shiny::moduleServer(id, function(input, output, session) {
-    state <- shiny::reactiveValues(
+  moduleServer(id, function(input, output, session) {
+    state <- reactiveValues(
       organism = "__initializing__")
     
     # Initialize the selectUI on startup
-    dinfo <- shiny::reactive({
+    dinfo <- reactive({
       .parse_dataset_directory(datadir(), metafn)
     })
     
@@ -33,15 +33,15 @@ facileDataSetSelectServer <- function(id, datadir, metafn = NULL, ...) {
       dinfo. <- req(dinfo())
       choices <- .parse_dataset_choices(dinfo.)
       selected <- attr(choices, "selected")
-      updateSelectInput(session, "dataselect", choices = choices,
-                        selected = selected)
+      shiny::updateSelectInput(session, "dataselect", choices = choices,
+                               selected = selected)
     })
     
-    dataset_info <- shiny::reactive({
-      chosen <- shiny::req(input$dataselect)
+    dataset_info <- reactive({
+      chosen <- req(input$dataselect)
       ftrace("updating selected dataset: ", chosen)
-      info <- dplyr::filter(shiny::isolate(dinfo()), .data$name == .env$chosen)
-      if (shiny::isolate(state$organism) != info$organism) {
+      info <- filter(isolate(dinfo()), .data$name == .env$chosen)
+      if (isolate(state$organism) != info$organism) {
         ftrace("updating organism: ", info$organism)
         state$organism <- info$organism
       }
@@ -57,7 +57,10 @@ facileDataSetSelectServer <- function(id, datadir, metafn = NULL, ...) {
         gspath <- file.path(datadir(), "_metadata", org, "genesets.qs")
         if (file.exists(gspath)) {
           ftrace("Updating GeneSetDb: ", gspath)
+          tic()
           out <- qs::qread(gspath)
+          tt <- toq()
+          ftrace("GeneSetDb load: ", tt$ss)
         }
       }
       out
@@ -98,13 +101,13 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
 #'   `choices` for [shiny::selectizeInput()]
 .parse_dataset_choices <- function(dinfo, selectizeInput = NULL) {
   choices <- sapply(unique(dinfo$group), function(grp) {
-    xc <- dplyr::filter(dinfo, .data$group == .env$grp)
+    xc <- filter(dinfo, .data$group == .env$grp)
     stats::setNames(xc$name, xc$label)
   }, simplify = FALSE)
   if (length(choices) == 1L) {
     choices <- choices[[1L]]
   }
-  attr(choices, "selected") <- dplyr::filter(dinfo, default)[["name"]]
+  attr(choices, "selected") <- filter(dinfo, default)[["name"]]
   choices
 }
 
@@ -123,7 +126,7 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
     datadir <- system.file("testdata", "fds-directory", package = "FacileShine")
     metafn <- file.path(datadir, "meta.yaml")
   }
-  checkmate::assert_directory_exists(datadir, "r")
+  assert_directory_exists(datadir, "r")
   paths <- dir(datadir, "^[a-zA-Z0-9]", full.names = TRUE)
   paths <- paths[file.info(paths)$isdir]
   if (length(paths) == 0) {
@@ -135,7 +138,7 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
     yaml::read_yaml(file.path(datadir, fname, "meta.yaml"))
   }, simplify = FALSE)
   
-  info <- dplyr::tibble(
+  info <- tibble(
     name = basename(paths),
     label = sapply(ds.meta, "[[", "name"),
     path = paths,
@@ -160,8 +163,8 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
         })
         group.xref <- dplyr::bind_rows(group.xref)
         info <- info |> 
-          dplyr::left_join(group.xref, by = "name") |> 
-          dplyr::mutate(group = ifelse(is.na(group), "ungrouped", group))
+          left_join(group.xref, by = "name") |> 
+          mutate(group = ifelse(is.na(group), "ungrouped", group))
         # We will arrange the outgoing tibble to be in the same order as was
         # listed in the meta.yaml file
         dorder <- unique(group.xref$name, info$name)

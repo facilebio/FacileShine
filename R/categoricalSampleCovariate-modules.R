@@ -28,7 +28,7 @@
 #'   the variable names enumerated there will not be included in this dropdown.
 #'   A tibble with "variable" and "value" columns can be used so that only
 #'   specific levels of a covariate are ignored.
-categoricalSampleCovariateSelect <- function(input, output, session, rfds,
+categoricalSampleCovariateSelect.mod <- function(input, output, session, rfds,
                                              universe = NULL, include1 = TRUE,
                                              default_covariate = NULL,
                                              ...,
@@ -273,7 +273,7 @@ label.CategoricalCovariateSelect <- function(x, ...) {
 #'   value here to show to indicate a level that's not included in the
 #'   covariate's level.
 #' @importFrom shiny updateSelectizeInput
-categoricalSampleCovariateLevels <- function(input, output, session, rfds,
+categoricalSampleCovariateLevels.mod <- function(input, output, session, rfds,
                                              covariate, missing_sentinel = NULL,
                                              ..., .exclude = NULL,
                                              .reactive = TRUE, debug = FALSE) {

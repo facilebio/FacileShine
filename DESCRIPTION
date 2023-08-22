@@ -30,6 +30,7 @@ Imports:
     shinycssloaders,
     shinyjs,
     tidyr,
+    tictoc,
     V8,
     viridis,
     yaml

@@ -12,3 +12,12 @@ reqpkg <- function(pkg, quietly = TRUE, ...) {
     }
   }
 }
+
+#' Convenience funciton for tictoc::tic(..., quiet = TRUE)
+toq <- function(log = FALSE, quiet = TRUE, func.toc = tictoc::toc.outmsg, ...,
+                digits = 3) {
+  out <- tictoc::toc(log = log, quiet = quiet, func.toc = func.toc, ...)
+  out$seconds <- round(out$toc - out$tic, digits)
+  out$ss <- paste0(out$seconds, "s")
+  invisible(out)
+}

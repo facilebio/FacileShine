@@ -8,8 +8,9 @@ datamodFacileDataStoreServer(
   id,
   x,
   ...,
-  ignore_vars = shiny::reactive(NULL),
-  samples_subset = shiny::reactive(NULL),
+  ignore_sample_covariates = reactive(NULL),
+  samples_subset = reactive(NULL),
+  samples_filter_init = reactive(NULL),
   user = Sys.getenv("USER"),
   debug = FALSE
 )
