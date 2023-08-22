@@ -40,9 +40,9 @@ shiny::shinyApp(
         assayFeatureSelectInput("features", label = "Features", debug = debug),
         
         # Categorical Select ---------------------------------------------------
-        # shiny::tags$h2("Categorical Select"),
-        # categoricalSampleCovariateSelectInput("cov1"),
-        # categoricalSampleCovariateLevelsSelectInput("cov1levels"),
+        shiny::tags$h2("Categorical Select"),
+        categoricalSampleCovariateSelectInput("cov1"),
+        categoricalSampleCovariateLevelsSelectInput("cov1levels"),
 
         
         # Box Plot -------------------------------------------------------------
@@ -73,11 +73,11 @@ shiny::shinyApp(
     afeatures <- assayFeatureSelectServer(
       "features", rfds, gdb = fdslist$gdb, debug = debug)
     
-    # cov1 <- categoricalSampleCovariateSelectServer(
-    #   "cov1", rfds, default_covariate = "hardy_scale")
-    # 
-    # clevels <- categoricalSampleCovariateLevelsSelectServer(
-    #   "cov1levels", cov1)
+    cov1 <- categoricalSampleCovariateSelectServer(
+      "cov1", rfds, default_covariate = "hardy_scale")
+
+    clevels <- categoricalSampleCovariateLevelsSelectServer(
+      "cov1levels", cov1)
     
     # boxplot <- fboxPlotServer("boxplot", rfds)
   }
