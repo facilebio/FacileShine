@@ -33,10 +33,12 @@ shiny::shinyApp(
     categoricalSampleCovariateLevelsSelectInput("cov1levels"),
     
     # Assay Select -------------------------------------------------------------
-    assaySelectInput("assay", debug = debug),
+    shiny::tags$h2("Assay Select"),
+    assaySelectInput("assay", label = "Assay", debug = debug),
     
     # Assay Feature Select -----------------------------------------------------
-    assayFeatureSelectInput("features", debug = debug),
+    shiny::tags$h2("Assay Feature Select"),
+    assayFeatureSelectInput("features", label = "Features", debug = debug),
 
     # Box Plot -----------------------------------------------------------------
     # shiny::tags$h2("fboxPlot"),
@@ -67,7 +69,9 @@ shiny::shinyApp(
       "cov1levels", cov1)
     
     assay <- assaySelectServer("assay", rfds, debug = debug)
-    afeatures <- assayFeatureSelectServer("afeatures", rfds, gdb = debug = debug)
+    afeatures <- assayFeatureSelectServer(
+      "features", rfds, gdb = fdslist$gdb, debug = debug)
+    
     # boxplot <- fboxPlotServer("boxplot", rfds)
     # covariate <- shiny::callModule(
     #   categoricalSampleCovariateSelect, "categorical", rfds)

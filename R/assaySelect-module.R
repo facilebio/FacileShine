@@ -42,7 +42,6 @@ assaySelectServer <- function(id, rfds, ..., debug = FALSE) {
     # in the underlying samples. Note that when the samples shift, the assay
     # that was previously selected can dissaper.
     observeEvent(assay_names(), {
-      # browser()
       anames <- assay_names()
       ainfo <- state$assay_info
       
@@ -79,6 +78,18 @@ assaySelectServer <- function(id, rfds, ..., debug = FALSE) {
           filter(.data$assay == selected)
       }
     })
+    
+    assay_name <- reactive({
+      if (unselected(state$assay_info)) "" else state$assay_info$assay
+    })
+    
+    vals <- list(
+      assay_name = assay_name,
+      assay_names = assay_names,
+      .state = state,
+      .ns = session$ns)
+    class(vals) <- c("AssaySelectModule", "Labeled")
+    vals
   })
 }
 
@@ -91,30 +102,18 @@ assaySelectInput <- function(id, label = "Assay", choices = NULL, selected = NUL
   selectInput(ns("assay"), label = label,
               choices = choices, selected = selected, multiple = multiple,
               selectize = selectize, width = width, size = size)
-  
 }
-#' Retrieve the features associatd with an assay
-#'
-#' @export
-#' @param x An `AssaySelect` object, returned fom [assaySelect()]
-#' @return a tibble of features
-features.AssaySelectInput <- function(x, assay_name, feature_ids = NULL, ...) {
-  # assert_reacting()
-  if (!missing(assay_name)) warning("`assay_name` parameter ignored")
-  out <- x[["features"]]()
-  if (!is.null(feature_ids)) {
-    out <- filter(out, feature_id %in% feature_ids)
-  }
-  out
-}
+
 
 #' @noRd
 #' @export
-initialized.AssaySelectInput <- function(x, ...) {
-  ainfo <- x$assay_info()
-  !(unselected(ainfo$assay) ||
-      unselected(ainfo$assay_type) ||
-      unselected(ainfo$feature_type))
+initialized.AssaySelectModule <- function(x, ...) {
+  check <- c("rfds_name", "assay_names", "assay_info")
+  ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
+  congruent <- x$assay_name() %in% x$assay_names()
+  # when the underlying fds is swapped, sometimes the selected assay does not
+  # match the available assays
+  all(ready) && !unselected(x$assay_name()) && congruent
 }
 
 

@@ -1,3 +1,116 @@
+#' A module to pull out features from an assay with optional GeneSetDb support.
+#' 
+#' @export
+assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
+                                     exclude = NULL, debug = FALSE) {
+  assert_class(rfds, "ReactiveFacileDataStore")
+  moduleServer(id, function(input, output, session) {
+    state <- reactiveValues(
+      selected = .no_features(),
+      # "labeled" API
+      name = "__initializing__",
+      label = "__initializing__")
+    
+    assay <- assaySelectServer("assay", rfds, debug = FALSE, ...)
+    features_all <- reactive({
+      req(initialized(assay))
+      rfds$fds() |> 
+        features(assay_name = assay$assay_name())
+    })
+    
+    observeEvent(features_all(), {
+      shiny::updateSelectizeInput(
+        session, "features", 
+        choices = setNames(features_all()$feature_id, features_all()$name),
+        selected = NULL, server = TRUE)
+    })
+    
+    observeEvent(input$features, {
+      req(nrow(features_all()))
+      ifeatures <- input$features
+      if (unselected(ifeatures)) {
+        out <- .no_features()
+      } else {
+        out <- filter(features_all(), .data$feature_id %in% ifeatures)
+      }
+      
+      if (!setequal(out$feature_id, state$selected$feature_id)) {
+        state$selected <- out
+      }
+    }, ignoreNULL = FALSE)
+    
+    selected <- reactive(state$selected)
+    
+    # ................................................................... genesets
+    observe({
+      # Only show the UI element if a GeneSetDb was passed in.
+      shinyjs::toggleElement("genesetbox", condition = !is.null(gdb()))
+    })
+    
+    geneset <- callModule(
+      sparrow.shiny::reactiveGeneSetSelect, "geneset", gdb, ...)
+    observeEvent(geneset$membership(), {
+      req(nrow(features_all()))
+      
+      gfeatures <- geneset$membership()
+      out <- semi_join(features_all(), gfeatures, by = "feature_id")
+      
+      if (!setequal(out$feature_id, state$selected$feature_id)) {
+        # state$selected <- out
+        choices <- setNames(features_all()$feature_id, features_all()$name)
+        updateSelectizeInput(session, "features", selected = out$feature_id,
+                             choices = choices, server = TRUE)
+      }
+    }, ignoreNULL = TRUE)
+    
+    vals <- list(
+      selected = selected,
+      features_all = features_all,
+      assay = assay,
+      .state = state,
+      .ns = session$ns)
+    class(vals) <- c("AssayFeatureSelectModule", "FacileDataAPI", "Labeled")    
+  })
+}
+
+#' @noRd
+#' @export
+initialized.AssayFeatureSelectModule <- function(x, ...) {
+  check <- c("assay_names", "assay_info")
+  ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
+  initialized(x$assay) && all(ready) && is(x$features_all(), "tbl")
+}
+
+#' @export
+#' @importFrom shiny selectInput selectizeInput
+#' @rdname assayFeatureSelect
+#' @param multiple,... passed into the `"features"` `selectizeInput`
+assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE, ...) {
+  ns <- NS(id)
+  
+  if (is.null(label)) {
+    assay.style <- ""
+  } else {
+    assay.style <- "padding-top: 1.7em"
+  }
+  
+  out <- tagList(
+    fluidRow(
+      column(9, selectizeInput(ns("features"), label = label, choices = NULL,
+                               multiple = multiple)),
+      column(
+        3,
+        tags$div(style = assay.style,
+                 assaySelectInput(ns("assay"), label = NULL, choices = NULL)))),
+    shinyjs::hidden(
+      tags$div(
+        id = ns("genesetbox"),
+        sparrow.shiny::reactiveGeneSetSelectUI(ns("geneset"))))
+  )
+  
+  out
+}
+
 #' assayFeatureSelect with genesetdb support
 #'
 #' @export

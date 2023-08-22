@@ -166,7 +166,7 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       catcovs = categorical_covariates,
       .state = state,
       .ns = session$ns)
-    class(vals) <- c("CategoricalCovariateSelect",
+    class(vals) <- c("CategoricalCovariateSelectModule",
                      "CovariateSelect",
                      "FacileDataAPI",
                      "Labeled")
@@ -192,6 +192,14 @@ categoricalSampleCovariateSelectInput <- function(
     selectInput(ns("covariate"), label = label, choices = choices,
                 selected = selected, multiple = multiple, selectize = selectize,
                 width = width, size = size))
+}
+
+#' @export
+#' @noRd
+initialized.CategoricalCovariateSelectModule <- function(x, ...) {
+  check <- c("covariate", "levels")
+  ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
+  all(ready)
 }
 
 #' @noRd
@@ -222,7 +230,7 @@ label.CategoricalCovariateSelect <- function(x, ...) {
 categoricalSampleCovariateLevelsSelectServer <- function(
     id, covariate, ..., missing_sentinel = NULL, .exclude = NULL, 
     debug = FALSE) {
-  assert_class(covariate, "CategoricalCovariateSelect")
+  assert_class(covariate, "CategoricalCovariateSelectModule")
   
   if (!is.null(missing_sentinel)) {
     # This should be a reactive string

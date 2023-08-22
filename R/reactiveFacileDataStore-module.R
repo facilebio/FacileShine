@@ -412,7 +412,6 @@ features.ReactiveFacileDataStore <- function(x, assay_name = NULL,
 #' @importFrom shiny req
 assay_info.ReactiveFacileDataStore <- function(x, assay_name = NULL, ...) {
   req(initialized(x))
-  req(initialized(x))
   assay_info(fds(x), assay_name = assay_name, ...)
 }
 

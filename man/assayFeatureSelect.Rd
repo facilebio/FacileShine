@@ -4,6 +4,7 @@
 \name{assayFeatureSelect}
 \alias{assayFeatureSelect}
 \alias{assayFeatureSelectUI}
+\alias{assayFeatureSelectInput}
 \alias{assayFeatureSelect2UI}
 \title{Retrieves assay features from a FacileDataStore for a given assay type.}
 \usage{
@@ -19,6 +20,8 @@ assayFeatureSelect(
 )
 
 assayFeatureSelectUI(id, label = NULL, multiple = TRUE, ...)
+
+assayFeatureSelectInput(id, label = NULL, multiple = TRUE, ...)
 
 assayFeatureSelect2UI(id, label = NULL, multiple = TRUE, ...)
 }
