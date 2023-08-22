@@ -17,7 +17,7 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
     features_all <- eventReactive(assay$assay_name(), {
       req(from_fds(assay, rfds))
       if (name(rfds) != state$rfds_name) {
-        state$fds_name <- name(rfds)
+        state$rfds_name <- name(rfds)
       }
       rfds$fds() |> 
         features(assay_name = assay$assay_name())
@@ -40,6 +40,8 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
       }
       
       if (!setequal(out$feature_id, state$selected$feature_id)) {
+        ftrace("updating selected features: ", 
+               paste(out$feature_id, collapse = ","))
         state$selected <- out
       }
     }, ignoreNULL = FALSE)

@@ -4,10 +4,14 @@
 fboxPlotServer <- function(id, rfds, ..., 
                            gdb = shiny::reactive(NULL), 
                            x = NULL, y = NULL,
-                           event_source = session$ns("selection"),
+                           event_source = NULL,
                            .reactive = TRUE, debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   shiny::moduleServer(id, function(input, output, session) {
+    if (is.null(event_source)) {
+      event_source <- session$ns("selection")
+    }
+    
     # aes <- callModule(categoricalAestheticMap, "aes", rfds,
     #                   color = TRUE, facet = TRUE, hover = TRUE,
     #                   ..., .reactive = .reactive)
@@ -18,22 +22,10 @@ fboxPlotServer <- function(id, rfds, ...,
     yaxis <- assayFeatureSelectServer("yaxis", rfds, gdb = gdb, ...)
     # batch <- callModule(batchCorrectConfig, "batch", rfds)
     
-    yvals <- reactive({
-      out <- yaxis$selected()
-      if (unselected(out)) {
-        ftrace("No features selected for yaxis")
-      } else {
-        ftrace(
-          "yaxis$selected() features updated:",
-          paste(out$feature_id, collapse = ","))
-      }
-      out
-    })
-    
     # "Individual" checkbox is only active when multiple genes are entered
     # in the y-axis selector
     observe({
-      nvals <- nrow(yvals())
+      nvals <- nrow(yaxis$selected())
       shinyjs::toggleState("individual", condition = nvals > 1)
     })
     
@@ -41,21 +33,20 @@ fboxPlotServer <- function(id, rfds, ...,
     # wants to show multiple genes at once, faceting is disabled, ie. multiple
     # genes are selected in y-axis and "Individual" box is checked
     observe({
-      disabled <- isFALSE(input$individual) || nrow(yvals()) <= 1
+      disabled <- isFALSE(input$individual) || nrow(yaxis$selected()) <= 1
       shinyjs::toggleState("aes-facet", condition = disabled)
     })
     
     # The quantitative data to plot, without aesthetic mappings
     rdat.core <- reactive({
-      req(from_fds(yaxis, rfds))
       indiv. <- input$individual
       
-      yvals. <- yvals()
-      req(!unselected(yvals.))
+      yvals. <- yaxis$selected()
+      req(!unselected(yvals.), from_fds(yaxis, rfds))
       
       xsum <- xaxis$summary()
       xaxis. <- xaxis$covariate()
-      req(!unselected(xaxis.))
+      req(!unselected(xaxis.), from_fds(xaxis, rfds))
       
       samples. <- active_samples(rfds)
       ftrace("Retrieving assay data for boxplot")
@@ -63,7 +54,8 @@ fboxPlotServer <- function(id, rfds, ...,
       agg. <- !indiv.
       # batch. <- name(batch$batch)
       # main. <- name(batch$main)
-      batch. <- main. <- NULL      
+      batch. <- main. <- NULL
+
       out <- rfds$fds() |> 
         fetch_assay_data(
           yvals., samples., normalized = TRUE,
@@ -94,7 +86,7 @@ fboxPlotServer <- function(id, rfds, ...,
         out <- NULL
       } else {
         aname <- yf$assay[1L]
-        out <- assay_units(rfds, aname, normalized = TRUE)
+        out <- assay_units(rfds$fds(), aname, normalized = TRUE)
       }
       out
     })
@@ -106,9 +98,10 @@ fboxPlotServer <- function(id, rfds, ...,
     
     fbox <- eventReactive(rdat(), {
       dat <- req(rdat())
-      yvals. <- yvals()
+      yvals. <- yaxis$selected()
       xaxis. <- xaxis$covariate()
-      aes. <- aes$map()
+      # aes. <- aes$map()
+      aes. <- NULL
       indiv. <- input$individual
       
       hover. <- unique(c(xaxis., "feature_name", unlist(unname(aes.), recursive = TRUE)))
@@ -116,7 +109,7 @@ fboxPlotServer <- function(id, rfds, ...,
       
       if (length(hover.) == 0) hover. <- NULL
       ftrace("drawing boxplot")
-      
+
       if (nrow(yvals.) > 1 && indiv.) {
         # We want to draw multiple boxplots per x-value. For now we leverage
         # faceting for this
@@ -132,7 +125,7 @@ fboxPlotServer <- function(id, rfds, ...,
                         event_source = event_source)
       }
       plt
-    })
+    }, label = "fbox")
     
     plotsize <- reactive({
       plot. <- fbox()

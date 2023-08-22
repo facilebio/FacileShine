@@ -48,7 +48,7 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       universe = "__initializing__",
       exclude = tibble(variable = character(), value = character()))
     
-    categorical_covariates <- reactive({
+    categorical_covariates <- eventReactive(active_covariates(rfds), {
       req(initialized(rfds))
       out <- rfds |>
         active_covariates() |>
@@ -60,8 +60,12 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
           dplyr::filter(nlevels == 1L)
         out <- anti_join(out, single_level_covariates, by = "variable")
       }
+      if (state$rfds_name != name(rfds)) {
+        state$rfds_name <- name(rfds)
+      }
+      
       out
-    })
+    }, label = "categorical_covariates")
     
     # Updating the covariate select dropdown is a little tricky because we want
     # to support the situation where the current active.covariates change in
@@ -112,7 +116,10 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       }
     })
     
-    covariate <- reactive(state$covariate)
+    covariate <- reactive({
+      ftrace("covariate selection updated: ", state$covariate)
+      state$covariate
+    })
     
     covariate.summary <- reactive({
       covariate. <- covariate()
@@ -203,8 +210,7 @@ initialized.CategoricalCovariateSelectModule <- function(x, ...) {
 #' @export
 #' @noRd
 from_fds.CategoricalCovariateSelectModule <- function(x, rfds, ...) {
-  req(initialized())
-  name(fds(x)) == name(rfds)
+  isolate(x[[".state"]]$rfds_name == name(rfds))
 }
 
 #' @noRd

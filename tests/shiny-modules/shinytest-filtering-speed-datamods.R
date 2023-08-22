@@ -46,8 +46,8 @@ shiny::shinyApp(
 
         
         # Box Plot -------------------------------------------------------------
-        # shiny::tags$h2("fboxPlot"),
-        # fboxPlotUI("boxplot"),
+        shiny::tags$h2("fboxPlot"),
+        fboxPlotUI("boxplot"),
         
         shiny::tags$h2("End")
       ))
@@ -79,7 +79,7 @@ shiny::shinyApp(
     clevels <- categoricalSampleCovariateLevelsSelectServer(
       "cov1levels", cov1)
     
-    # boxplot <- fboxPlotServer("boxplot", rfds)
+    boxplot <- fboxPlotServer("boxplot", rfds)
   }
 )
 
