@@ -12,12 +12,10 @@ fboxPlotServer <- function(id, rfds, ...,
     #                   color = TRUE, facet = TRUE, hover = TRUE,
     #                   ..., .reactive = .reactive)
     
-    # xaxis <- callModule(categoricalSampleCovariateSelect, "xaxis", rfds,
-    #                     .with_none = FALSE)
     xaxis <- categoricalSampleCovariateSelectServer(
       "xaxis", rfds, .with_none = FALSE)
     
-    yaxis <- callModule(assayFeatureSelect2, "yaxis", rfds, gdb = gdb, ...)
+    yaxis <- assayFeatureSelectServer("yaxis", rfds, gdb = gdb, ...)
     # batch <- callModule(batchCorrectConfig, "batch", rfds)
     
     yvals <- reactive({
@@ -25,7 +23,9 @@ fboxPlotServer <- function(id, rfds, ...,
       if (unselected(out)) {
         ftrace("No features selected for yaxis")
       } else {
-        ftrace("yaxis$selected() features updated:", paste(out$feature_id, collapse = ","))
+        ftrace(
+          "yaxis$selected() features updated:",
+          paste(out$feature_id, collapse = ","))
       }
       out
     })
@@ -47,6 +47,7 @@ fboxPlotServer <- function(id, rfds, ...,
     
     # The quantitative data to plot, without aesthetic mappings
     rdat.core <- reactive({
+      req(from_fds(yaxis, rfds))
       indiv. <- input$individual
       
       yvals. <- yvals()
@@ -63,9 +64,11 @@ fboxPlotServer <- function(id, rfds, ...,
       # batch. <- name(batch$batch)
       # main. <- name(batch$main)
       batch. <- main. <- NULL      
-      out <- fetch_assay_data(rfds, yvals., samples., normalized = TRUE,
-                              prior.count = 0.1, aggregate = agg.,
-                              batch = batch., main = main.)
+      out <- rfds$fds() |> 
+        fetch_assay_data(
+          yvals., samples., normalized = TRUE,
+          prior.count = 0.1, aggregate = agg.,
+          batch = batch., main = main.)
       out <- with_sample_covariates(out, xaxis.)
       out
     })
@@ -166,8 +169,8 @@ fboxPlotUI <- function(id, ..., debug = FALSE) {
   tagList(
     fluidRow(
       # column(4, wellPanel(categoricalSampleCovariateSelectUI(ns("xaxis"), "X Axis"))),
-      column(4, categoricalSampleCovariateSelect("xaxis", "X Axis")),
-      column(4, wellPanel(assayFeatureSelect2UI(ns("yaxis"), "Y Axis"))),
+      column(4, categoricalSampleCovariateSelectInput(ns("xaxis"), "X Axis")),
+      column(4, wellPanel(assayFeatureSelectInput(ns("yaxis"), "Y Axis"))),
       column(
         4,
         checkboxInput(ns("individual"),

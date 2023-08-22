@@ -40,6 +40,7 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
 
   moduleServer(id, function(input, output, session) {
     state <- reactiveValues(
+      rfds_name = "__initializing__",
       covariate = "__initializing__",
       levels = "__initializing__",
       summary = .empty_covariate_summary(),
@@ -97,7 +98,6 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       
       updateSelectInput(session, "covariate", choices = choices,
                         selected = selected)
-    # }, priority = 10)
     })
     
     observeEvent(input$covariate, {
@@ -110,7 +110,6 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
                current = current, cov = cov)
         state$covariate <- cov
       }
-    # }, ignoreNULL = ignoreNULL)
     })
     
     covariate <- reactive(state$covariate)
@@ -148,7 +147,6 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
         ftrace("Resetting available levels for {red}", covariate(), "{reset}")
         state$levels <- lvls
       }
-    # }, priority = 10)
     })
     
     cov.levels <- reactive({
@@ -200,6 +198,13 @@ initialized.CategoricalCovariateSelectModule <- function(x, ...) {
   check <- c("covariate", "levels")
   ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
   all(ready)
+}
+
+#' @export
+#' @noRd
+from_fds.CategoricalCovariateSelectModule <- function(x, rfds, ...) {
+  req(initialized())
+  name(fds(x)) == name(rfds)
 }
 
 #' @noRd

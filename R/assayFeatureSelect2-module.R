@@ -6,18 +6,23 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
   assert_class(rfds, "ReactiveFacileDataStore")
   moduleServer(id, function(input, output, session) {
     state <- reactiveValues(
+      rfds_name = "__initializing__",
       selected = .no_features(),
       # "labeled" API
       name = "__initializing__",
       label = "__initializing__")
     
     assay <- assaySelectServer("assay", rfds, debug = FALSE, ...)
-    features_all <- reactive({
-      req(initialized(assay))
+    
+    features_all <- eventReactive(assay$assay_name(), {
+      req(from_fds(assay, rfds))
+      if (name(rfds) != state$rfds_name) {
+        state$fds_name <- name(rfds)
+      }
       rfds$fds() |> 
         features(assay_name = assay$assay_name())
     })
-    
+
     observeEvent(features_all(), {
       shiny::updateSelectizeInput(
         session, "features", 
@@ -50,6 +55,7 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
     geneset <- callModule(
       sparrow.shiny::reactiveGeneSetSelect, "geneset", gdb, ...)
     observeEvent(geneset$membership(), {
+      req(initialized(assay))
       req(nrow(features_all()))
       
       gfeatures <- geneset$membership()
@@ -70,6 +76,7 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
       .state = state,
       .ns = session$ns)
     class(vals) <- c("AssayFeatureSelectModule", "FacileDataAPI", "Labeled")    
+    vals
   })
 }
 
@@ -79,6 +86,13 @@ initialized.AssayFeatureSelectModule <- function(x, ...) {
   check <- c("assay_names", "assay_info")
   ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
   initialized(x$assay) && all(ready) && is(x$features_all(), "tbl")
+}
+
+#' @noRd
+#' @export
+from_fds.AssayFeatureSelectModule <- function(x, rfds, ...) {
+  if (!from_fds(x$assay, rfds)) return(FALSE)
+  isolate(x[[".state"]]$rfds_name == name(rfds))
 }
 
 #' @export

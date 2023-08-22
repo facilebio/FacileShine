@@ -19,32 +19,39 @@ if (FALSE) {
 shiny::shinyApp(
   ui = shiny::fluidPage(
     shinyjs::useShinyjs(),
-    
-    FacileShine::facileDataSetSelectInput("fdslist"),
-    FacileShine::datamodFacileDataStoreUI("rfds", debug = debug),
-    
-    shiny::tags$h2("Debugg Module"),
-    shiny::verbatimTextOutput("rfdsdebug"),
-    
-    # Categorical Select -------------------------------------------------------
-    shiny::tags$h2("Categorical Select"),
-    # categoricalSampleCovariateSelectUI("categorical"),
-    categoricalSampleCovariateSelectInput("cov1"),
-    categoricalSampleCovariateLevelsSelectInput("cov1levels"),
-    
-    # Assay Select -------------------------------------------------------------
-    shiny::tags$h2("Assay Select"),
-    assaySelectInput("assay", label = "Assay", debug = debug),
-    
-    # Assay Feature Select -----------------------------------------------------
-    shiny::tags$h2("Assay Feature Select"),
-    assayFeatureSelectInput("features", label = "Features", debug = debug),
+    shiny::fluidRow(
+      shiny::column(
+        width = 3,
+        FacileShine::facileDataSetSelectInput("fdslist"),
+        FacileShine::facileSampleFiltersSelectInput("rfds", debug = debug),
+        
+      shiny::tags$h2("Debug Module"),
+      shiny::verbatimTextOutput("rfdsdebug")),
+      
+      shiny::column(
+        width = 9,
 
-    # Box Plot -----------------------------------------------------------------
-    # shiny::tags$h2("fboxPlot"),
-    # fboxPlotUI("boxplot"),
-    
-    shiny::tags$h2("End")),
+        # Assay Select ----------------------------------------------------------
+        shiny::tags$h2("Assay Select"),
+        assaySelectInput("assay", label = "Assay", debug = debug),
+
+        # Assay Feature Select -------------------------------------------------
+        shiny::tags$h2("Assay Feature Select"),
+        assayFeatureSelectInput("features", label = "Features", debug = debug),
+        
+        # Categorical Select ---------------------------------------------------
+        # shiny::tags$h2("Categorical Select"),
+        # categoricalSampleCovariateSelectInput("cov1"),
+        # categoricalSampleCovariateLevelsSelectInput("cov1levels"),
+
+        
+        # Box Plot -------------------------------------------------------------
+        # shiny::tags$h2("fboxPlot"),
+        # fboxPlotUI("boxplot"),
+        
+        shiny::tags$h2("End")
+      ))
+  ),
   
   server = function(input, output) {
     fdslist <- FacileShine::facileDataSetSelectServer(
@@ -55,28 +62,24 @@ shiny::shinyApp(
     
     output$rfdsdebug <- shiny::renderText({
       output <- "not initialized"
-      wtf <- try(req(initialized(rfds)))
+      wtf <- try(req(initialized(rfds)), silent = TRUE)
       if (isTRUE(wtf)) {
         output <- paste("nsamples:", nrow(active_samples(rfds)))
       }
       output
     })
-    
-    cov1 <- categoricalSampleCovariateSelectServer(
-      "cov1", rfds, default_covariate = "hardy_scale")
-    
-    clevels <- categoricalSampleCovariateLevelsSelectServer(
-      "cov1levels", cov1)
-    
+
     assay <- assaySelectServer("assay", rfds, debug = debug)
     afeatures <- assayFeatureSelectServer(
       "features", rfds, gdb = fdslist$gdb, debug = debug)
     
-    # boxplot <- fboxPlotServer("boxplot", rfds)
-    # covariate <- shiny::callModule(
-    #   categoricalSampleCovariateSelect, "categorical", rfds)
+    # cov1 <- categoricalSampleCovariateSelectServer(
+    #   "cov1", rfds, default_covariate = "hardy_scale")
     # 
-    # boxplot <- shiny::callModule(facileBoxPlot, "box", rfds)
+    # clevels <- categoricalSampleCovariateLevelsSelectServer(
+    #   "cov1levels", cov1)
+    
+    # boxplot <- fboxPlotServer("boxplot", rfds)
   }
 )
 

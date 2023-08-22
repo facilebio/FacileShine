@@ -23,8 +23,57 @@ datamodFacileDataStoreServer(
 \item{user}{the user using it}
 }
 \value{
-a DatamodFacileDataStore,ReactiveFacileDataStore, ...,
+a DatamodFacileDataStore module with the following named elemets:
+\itemize{
+\item \code{fds}: the \code{BoxedFacileDataStore}
+\item \code{filters}: \code{\link[datamods:filter-data]{datamods::filter_data_server()}}
+\item \code{active_samples}: the \verb{dataset,sample_id} facile_frame of the samples
+that match the current filters.
+\item \code{active_assays}: \code{\link[FacileData:assay_summary]{FacileData::assay_summary()}} over the current samples
+\item \code{active_pdata}: A wide data.frame of all the covariates (ugh)
+\item \code{active_covariates}: A \code{FacileData::summary(active_pdata, expanded = TRUE)}
+\item \code{user}: the name of the current user
+\item \code{trigger}: reactive triggers over samples, assays, covariates. I don't
+think we need to use these now ...
+}
 }
 \description{
 A filterable ReactiveFacileDataStore based on the datamods mojo
 }
+\section{active_samples}{
+
+The samples that are currently selected
+}
+
+\section{active_assays}{
+
+A \code{\link[FacileData:assay_summary]{FacileData::assay_summary()}} tibble over the \code{active_samples(x)}:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{assay      ndatasets nsamples assay_type feature_type nfeatures
+<chr>          <int>    <int> <chr>      <chr>            <int>
+rnaseq             1       66 rnaseq     ensgid           23487
+proteomics         1       22 lognorm    ensgid            4350
+}\if{html}{\out{</div>}}
+}
+
+\section{active_pdata}{
+
+The subset of the pdata universe of the samples
+}
+
+\section{active_covariates}{
+
+The \code{FacileData::summary.wide_covariates(active_pdata, expanded = TRUE)}
+that describes the covariates available over the samples
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{variable      class       nsamples level                          ninlevel
+<chr>         <chr>          <int> <chr>                             <dbl>
+structure     categorical       74 proximal tubules                      9
+structure     categorical       74 thick ascending limb                  9
+structure     categorical       74 tubolointerstitium                   11
+tissue_source categorical       74 KPMP Pilot                           48
+tissue_source categorical       74 KPMP Tissue Interrogation Site       20
+tissue_source categorical       74 unknown                               6
+}\if{html}{\out{</div>}}
+}
+

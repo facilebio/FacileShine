@@ -67,6 +67,15 @@ reset <- function(x, ...) {
   UseMethod("reset", x)
 }
 
+#' Check that the data of a module comes from the expected fds.
+#' 
+#' @export
+#' @param x the moduleServer
+#' @param fds the ReactivFacileDataStore to test
+from_fds <- function(x, rfds, ...) {
+  UseMethod("from_fds", x)
+}
+
 # Labeled API ==================================================================
 # name and label generic definitions come from FacileData
 

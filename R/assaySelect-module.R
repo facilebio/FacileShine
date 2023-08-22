@@ -116,6 +116,16 @@ initialized.AssaySelectModule <- function(x, ...) {
   all(ready) && !unselected(x$assay_name()) && congruent
 }
 
+#' @noRd
+#' @export
+from_fds.AssaySelectModule <- function(x, rfds, ...) {
+  isolate({
+    initialized(x) &&
+      initialized(rfds) &&
+      x$.state$rfds_name == name(rfds) &&
+      x$assay_name() %in% active_assays(rfds)$assay
+  })
+}
 
 # Original =====================================================================
 
