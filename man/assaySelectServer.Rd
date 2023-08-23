@@ -2,10 +2,10 @@
 % Please edit documentation in R/assaySelect-module.R
 \name{assaySelectServer}
 \alias{assaySelectServer}
-\title{Dropdown widget to select assays over the set of active_samples}
+\title{Dropdown widget to select assays over the set of active_samples.}
 \usage{
 assaySelectServer(id, rfds, ..., debug = FALSE)
 }
 \description{
-Dropdown widget to select assays over the set of active_samples
+Dropdown widget to select assays over the set of active_samples.
 }

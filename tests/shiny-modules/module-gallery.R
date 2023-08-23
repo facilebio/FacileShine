@@ -5,6 +5,12 @@ datadir <- "~/workspace/facilebio/data/"
 debug <- TRUE
 options(facile.log.level.fshine = "trace")
 
+aes_color <- TRUE
+aes_shape <- TRUE
+aes_facet <- TRUE
+aes_hover <- TRUE
+aes_group <- TRUE
+
 kfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/BulkKPMPDataSet")
 nfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/FacileNightingaleDataSet")
 
@@ -44,6 +50,12 @@ shiny::shinyApp(
         categoricalSampleCovariateSelectInput("cov1"),
         categoricalSampleCovariateLevelsSelectInput("cov1levels"),
 
+        # Categorical AES Map Select -------------------------------------------
+        shiny::tags$h2("Categorical aes map"),
+        categoricalAestheticMapInput("aes", color = aes_color,
+                                     shape = aes_shape, facet = aes_facet,
+                                     hover = aes_hover, group = aes_group,
+                                     debug = debug),
         
         # Box Plot -------------------------------------------------------------
         shiny::tags$h2("fboxPlot"),
@@ -68,16 +80,20 @@ shiny::shinyApp(
       }
       output
     })
-
+    
+    
     assay <- assaySelectServer("assay", rfds, debug = debug)
     afeatures <- assayFeatureSelectServer(
       "features", rfds, gdb = fdslist$gdb, debug = debug)
     
     cov1 <- categoricalSampleCovariateSelectServer(
       "cov1", rfds, default_covariate = "hardy_scale")
-
     clevels <- categoricalSampleCovariateLevelsSelectServer(
       "cov1levels", cov1)
+    
+    aes <- categoricalAestheticMapServer(
+      "aes", rfds, color = aes_color, shape = aes_shape, facet = aes_facet,
+      hover = aes_hover, group = aes_group, debug = debug)
     
     boxplot <- fboxPlotServer("boxplot", rfds)
   }

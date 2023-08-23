@@ -175,7 +175,8 @@ datamodFacileDataStoreServer <- function(id, x, ...,
         !setequal(fsamples$sample_id, state$active_samples$sample_id)
       if (update) {
         flog("updating state$active_samples")
-        state$active_samples <- fsamples
+        state$active_samples <- fsamples |> 
+          as_facile_frame(classes = "reactive_facile_frame")
         
         shinyWidgets::updateProgressBar(
           session = session, id = "pbar",

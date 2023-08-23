@@ -102,6 +102,7 @@ from_fds.AssayFeatureSelectModule <- function(x, rfds, ...) {
 }
 
 #' @export
+#' @noRd
 #' @importFrom shiny selectInput selectizeInput
 #' @rdname assayFeatureSelect
 #' @param multiple,... passed into the `"features"` `selectizeInput`

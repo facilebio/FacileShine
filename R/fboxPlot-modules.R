@@ -12,9 +12,8 @@ fboxPlotServer <- function(id, rfds, ...,
       event_source <- session$ns("selection")
     }
     
-    # aes <- callModule(categoricalAestheticMap, "aes", rfds,
-    #                   color = TRUE, facet = TRUE, hover = TRUE,
-    #                   ..., .reactive = .reactive)
+    aes <- categoricalAestheticMapServer(
+      "aes", rfds, color = TRUE, facet = TRUE, hover = TRUE, ...)
     
     xaxis <- categoricalSampleCovariateSelectServer(
       "xaxis", rfds, .with_none = FALSE)
@@ -92,19 +91,28 @@ fboxPlotServer <- function(id, rfds, ...,
     })
     
     rdat <- reactive({
-      # with_aesthetics(rdat.core(), aes)
-      rdat.core()
+      adata <- req(rdat.core())
+      req(is(adata, "facile_frame"))
+      amap <- aes$map()
+      fetch <- setdiff(unlist(amap), colnames(adata))
+      if (length(fetch)) {
+        adata <- with_sample_covariates(adata, fetch)
+      }
+      adata
     })
     
     fbox <- eventReactive(rdat(), {
       dat <- req(rdat())
       yvals. <- yaxis$selected()
       xaxis. <- xaxis$covariate()
-      # aes. <- aes$map()
-      aes. <- NULL
+      aes. <- aes$map()
       indiv. <- input$individual
       
-      hover. <- unique(c(xaxis., "feature_name", unlist(unname(aes.), recursive = TRUE)))
+      hover. <- c(
+        xaxis.,
+        "feature_name",
+        unlist(unname(aes.), recursive = TRUE)) |> 
+        unique()
       
       
       if (length(hover.) == 0) hover. <- NULL
@@ -161,7 +169,6 @@ fboxPlotUI <- function(id, ..., debug = FALSE) {
   ns <- NS(id)
   tagList(
     fluidRow(
-      # column(4, wellPanel(categoricalSampleCovariateSelectUI(ns("xaxis"), "X Axis"))),
       column(4, categoricalSampleCovariateSelectInput(ns("xaxis"), "X Axis")),
       column(4, wellPanel(assayFeatureSelectInput(ns("yaxis"), "Y Axis"))),
       column(
@@ -174,7 +181,7 @@ fboxPlotUI <- function(id, ..., debug = FALSE) {
       column(
         12,
         wellPanel(
-          categoricalAestheticMapUI(
+          categoricalAestheticMapInput(
             ns("aes"), color = TRUE, facet = TRUE, hover = TRUE)))),
     shinyjs::disabled(downloadButton(ns("dldata"), "Download Data")),
     fluidRow(

@@ -42,6 +42,7 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
     state <- reactiveValues(
       rfds_name = "__initializing__",
       covariate = "__initializing__",
+      multiple = "__initializing__",
       levels = "__initializing__",
       summary = .empty_covariate_summary(),
       active_covariates = "__initializing__",
@@ -100,6 +101,11 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
         state$covariate <- ""
       }
       
+      if (length(state$covariate) > 1) {
+        if (isFALSE(state$multiple)) state$multiple <- TRUE
+      } else {
+        if (isTRUE(state$multiple)) state$multiple <- FALSE
+      }
       updateSelectInput(session, "covariate", choices = choices,
                         selected = selected)
     })
@@ -125,9 +131,12 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       covariate. <- covariate()
       allcovs. <- categorical_covariates()
       notselected <- unselected(covariate.) ||
-        !covariate. %in% allcovs.[["variable"]]
+        !(all(covariate. %in% allcovs.[["variable"]]))
       
-      ftrace("Calculating covariate({red}", covariate., "{reset}) summary")
+      ftrace(
+        "Calculating covariate({red}", 
+        paste(covariate., collapse = ","),
+        "{reset}) summary")
       
       if (notselected) {
         out <- .empty_covariate_summary()
@@ -142,7 +151,8 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
         # req(!is(scovs, "try-error"))
         # out <- summary(scovs, expanded = TRUE)
         out <- allcovs. |> 
-          filter(.data$variable == covariate.)
+          # could be multiple so we test with %in% not ==
+          filter(.data$variable %in% covariate.)
       }
       out
     })
@@ -165,10 +175,11 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
     })
     
     vals <- list(
+      multiple = reactive(state$multiple),
       covariate = covariate,
       summary = covariate.summary,
       levels = cov.levels,
-      catcovs = categorical_covariates,
+      covariates_all = categorical_covariates,
       .state = state,
       .ns = session$ns)
     class(vals) <- c("CategoricalCovariateSelectModule",
@@ -356,15 +367,15 @@ categoricalSampleCovariateLevelsSelectServer <- function(
 #' @rdname categoricalSampleCovariateLevels
 #' @importFrom shiny NS selectizeInput tagList textOutput
 categoricalSampleCovariateLevelsSelectInput <- function(
-    id, ..., 
-    label = NULL, choices = NULL,
-    options = NULL, width = NULL,
-    debug = FALSE) {
+    id, label = NULL, choices = NULL, selected = NULL, 
+    multiple = FALSE, width = NULL, size = NULL,
+    options = NULL, ..., debug = FALSE) {
   ns <- NS(id)
   
   out <- tagList(
     selectizeInput(ns("values"), label = label, choices = choices,
-                   options = options, width = width))
+                   selected = selected, multiple = multiple, width = width,
+                   size = size, options = options))
   if (debug) {
     out <- tagList(
       out,

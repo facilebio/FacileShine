@@ -1,4 +1,4 @@
-#' Dropdown widget to select assays over the set of active_samples
+#' Dropdown widget to select assays over the set of active_samples.
 #' 
 #' @export
 assaySelectServer <- function(id, rfds, ..., debug = FALSE) {
