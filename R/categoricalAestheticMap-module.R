@@ -4,8 +4,8 @@
 categoricalAestheticMapServer <- function(id, rfds, color = FALSE, 
                                           shape = FALSE, facet = FALSE,
                                           hover = FALSE,  group = FALSE, ...,
-                                          .with_none = TRUE, 
-                                          .exclude = reactive(NULL),
+                                          with_none = TRUE, 
+                                          exclude = reactive(NULL),
                                           debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   
@@ -16,7 +16,7 @@ categoricalAestheticMapServer <- function(id, rfds, color = FALSE,
     
     aes_mods <- sapply(names(aes_covs), function(aes_name) {
       categoricalSampleCovariateSelectServer(
-        aes_name, rfds, .with_none = aes_name != "hover")
+        aes_name, rfds, with_none = aes_name != "hover")
     }, simplify = FALSE)
     
     aes_values <- reactive({

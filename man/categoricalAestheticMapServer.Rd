@@ -13,8 +13,8 @@ categoricalAestheticMapServer(
   hover = FALSE,
   group = FALSE,
   ...,
-  .with_none = TRUE,
-  .exclude = reactive(NULL),
+  with_none = TRUE,
+  exclude = reactive(NULL),
   debug = FALSE
 )
 }

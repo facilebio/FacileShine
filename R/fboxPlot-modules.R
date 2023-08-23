@@ -17,7 +17,7 @@ fboxPlotServer <- function(id, rfds, ...,
       "aes", rfds, color = TRUE, facet = TRUE, hover = TRUE, ...)
     
     xaxis <- categoricalSampleCovariateSelectServer(
-      "xaxis", rfds, .with_none = FALSE)
+      "xaxis", rfds, with_none = FALSE)
     
     yaxis <- assayFeatureSelectServer("yaxis", rfds, gdb = gdb, ...)
     # batch <- callModule(batchCorrectConfig, "batch", rfds)

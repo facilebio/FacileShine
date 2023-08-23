@@ -15,8 +15,8 @@ batchCorrectConfig(
   hover = FALSE,
   shape = FALSE,
   ...,
-  .with_none = TRUE,
-  .exclude = NULL,
+  with_none = TRUE,
+  exclude = NULL,
   .reactive = TRUE
 )
 }

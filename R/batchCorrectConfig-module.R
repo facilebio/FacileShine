@@ -24,7 +24,7 @@
 batchCorrectConfig <- function(input, output, session, rfds,
                                     color = FALSE, facet = FALSE, group = FALSE,
                                     hover = FALSE, shape = FALSE, ...,
-                                    .with_none = TRUE, .exclude = NULL,
+                                    with_none = TRUE, exclude = NULL,
                                     .reactive = TRUE) {
   state <- reactiveValues(
     # Do we want to put the batch/main stuff in here?
@@ -34,13 +34,13 @@ batchCorrectConfig <- function(input, output, session, rfds,
   # covariates. the entry selected in the testcov is removed from the
   # available elemetns to select from here
   batch <- callModule(categoricalSampleCovariateSelect, "batchcov",
-                      rfds, include1 = FALSE, ..., .with_none = FALSE,
-                      .exclude = NULL, reactive = .reactive,
+                      rfds, include1 = FALSE, ..., with_none = FALSE,
+                      exclude = NULL, reactive = .reactive,
                       ignoreNULL = FALSE)
 
   main <- callModule(categoricalSampleCovariateSelect, "batchmain",
-                     rfds, include1 = FALSE, ..., .with_none = TRUE,
-                     .exclude = batch$covariate, reactive = .reactive)
+                     rfds, include1 = FALSE, ..., with_none = TRUE,
+                     exclude = batch$covariate, reactive = .reactive)
 
   vals <- list(
     batch = batch,

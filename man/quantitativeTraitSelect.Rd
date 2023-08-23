@@ -11,7 +11,7 @@ quantitativeTraitSelect(
   session,
   rfds,
   ...,
-  .exclude = NULL,
+  exclude = NULL,
   .reactive = TRUE
 )
 

@@ -14,7 +14,7 @@ categoricalSampleCovariateLevels.mod(
   covariate,
   missing_sentinel = NULL,
   ...,
-  .exclude = NULL,
+  exclude = NULL,
   .reactive = TRUE,
   debug = FALSE
 )
@@ -24,7 +24,7 @@ categoricalSampleCovariateLevelsSelectServer(
   covariate,
   ...,
   missing_sentinel = NULL,
-  .exclude = NULL,
+  exclude = NULL,
   debug = FALSE
 )
 }

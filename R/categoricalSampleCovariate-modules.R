@@ -32,8 +32,8 @@ categoricalSampleCovariateSelect.mod <- function(input, output, session, rfds,
                                              universe = NULL, include1 = TRUE,
                                              default_covariate = NULL,
                                              ...,
-                                             .with_none = TRUE,
-                                             .exclude = NULL,
+                                             with_none = TRUE,
+                                             exclude = NULL,
                                              .reactive = TRUE,
                                              ignoreNULL = TRUE,
                                              debug = FALSE) {
@@ -50,13 +50,13 @@ categoricalSampleCovariateSelect.mod <- function(input, output, session, rfds,
     universe = "__initializing__",
     exclude = tibble(variable = character(), value = character()))
 
-  if (!is.null(.exclude)) {
-    assert_class(.exclude, "reactive")
+  if (!is.null(exclude)) {
+    assert_class(exclude, "reactive")
   }
 
   observe({
     req(initialized(rfds))
-    update_exclude(state, .exclude, type = "covariate_select")
+    update_exclude(state, exclude, type = "covariate_select")
   }, priority = 10)
   exclude. <- reactive(state$exclude)
 
@@ -137,7 +137,7 @@ categoricalSampleCovariateSelect.mod <- function(input, output, session, rfds,
       paste(choices, collapse = ";;"))
 
     choices <- sort(choices)
-    if (.with_none) {
+    if (with_none) {
       choices <- c("---", choices)
     }
 
@@ -151,7 +151,7 @@ categoricalSampleCovariateSelect.mod <- function(input, output, session, rfds,
     } else {
       # selected <- NULL
       # state$covariate <- ""
-      selected <- if (.with_none) "---" else NULL
+      selected <- if (with_none) "---" else NULL
       state$covariate <- ""
     }
 
@@ -275,7 +275,7 @@ label.CategoricalCovariateSelect <- function(x, ...) {
 #' @importFrom shiny updateSelectizeInput
 categoricalSampleCovariateLevels.mod <- function(input, output, session, rfds,
                                              covariate, missing_sentinel = NULL,
-                                             ..., .exclude = NULL,
+                                             ..., exclude = NULL,
                                              .reactive = TRUE, debug = FALSE) {
   isolate. <- if (.reactive) base::identity else shiny::isolate
   if (!is.null(missing_sentinel)) {
@@ -293,7 +293,7 @@ categoricalSampleCovariateLevels.mod <- function(input, output, session, rfds,
 
   observe({
     req(initialized(rfds))
-    update_exclude(state, isolate(.exclude), type = "covariate_levels")
+    update_exclude(state, isolate(exclude), type = "covariate_levels")
   })
   exclude. <- reactive(state$exclude)
 
@@ -344,7 +344,7 @@ categoricalSampleCovariateLevels.mod <- function(input, output, session, rfds,
     #
     # The latter situation hit me when I was trying to make "mutually
     # exclusive" categoricalSampleCovariateLevels that are populated
-    # from the same categoricalCovariateSelect by using the .exclude
+    # from the same categoricalCovariateSelect by using the exclude
     # mojo
 
     # THIS IS SO CLOSE: I need to put the req(!is.null()) here for the
@@ -420,7 +420,7 @@ categoricalSampleCovariateLevelsMutex <- function(
     input, output, session, rfds,
     covariate, label1 = "Value 1", label2 = "Value 2",
     multiple1 = TRUE, multiple2 = TRUE, ...,
-    .exclude = NULL,
+    exclude = NULL,
     .reactive = TRUE,
     debug = FALSE) {
   ns <- session$ns
@@ -437,7 +437,7 @@ categoricalSampleCovariateLevelsMutex <- function(
     exclude = character())
 
   exclude. <- reactive({
-    if (is.null(.exclude)) NULL else .exclude()
+    if (is.null(exclude)) NULL else exclude()
   })
 
   observe({
@@ -489,7 +489,7 @@ categoricalSampleCovariateLevelsMutex <- function(
     #
     # The latter situation hit me when I was trying to make "mutually
     # exclusive" categoricalSampleCovariateLevels that are populated
-    # from the same categoricalCovariateSelect by using the .exclude
+    # from the same categoricalCovariateSelect by using the exclude
     # mojo
     if (unselected(selected.)) {
       selected. <- ""

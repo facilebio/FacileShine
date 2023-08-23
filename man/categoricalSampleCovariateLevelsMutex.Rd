@@ -16,7 +16,7 @@ categoricalSampleCovariateLevelsMutex(
   multiple1 = TRUE,
   multiple2 = TRUE,
   ...,
-  .exclude = NULL,
+  exclude = NULL,
   .reactive = TRUE,
   debug = FALSE
 )

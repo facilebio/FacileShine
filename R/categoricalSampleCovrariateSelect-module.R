@@ -31,8 +31,8 @@
 categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
                                              default_covariate = NULL,
                                              ...,
-                                             .with_none = TRUE,
-                                             .exclude = NULL,
+                                             with_none = TRUE,
+                                             exclude = NULL,
                                              ignoreNULL = TRUE,
                                              debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
@@ -83,7 +83,7 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
         "Updating available covariates to select from:\n  ",
         paste(choices, collapse = ";;"))
       
-      if (.with_none) {
+      if (with_none) {
         choices <- c("---", choices)
       }
       
@@ -97,7 +97,7 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
         }
         selected <- overlap
       } else {
-        selected <- if (.with_none) "---" else NULL
+        selected <- if (with_none) "---" else NULL
         state$covariate <- ""
       }
       
@@ -250,7 +250,7 @@ label.CategoricalCovariateSelect <- function(x, ...) {
 #'   covariate's level.
 #' @importFrom shiny updateSelectizeInput
 categoricalSampleCovariateLevelsSelectServer <- function(
-    id, covariate, ..., missing_sentinel = NULL, .exclude = NULL, 
+    id, covariate, ..., missing_sentinel = NULL, exclude = NULL, 
     debug = FALSE) {
   assert_class(covariate, "CategoricalCovariateSelectModule")
   
@@ -269,7 +269,7 @@ categoricalSampleCovariateLevelsSelectServer <- function(
     
     # observe({
     #   req(initialized(rfds))
-    #   update_exclude(state, isolate(.exclude), type = "covariate_levels")
+    #   update_exclude(state, isolate(exclude), type = "covariate_levels")
     # })
     
     exclude. <- reactive(state$exclude)
@@ -321,7 +321,7 @@ categoricalSampleCovariateLevelsSelectServer <- function(
       #
       # The latter situation hit me when I was trying to make "mutually
       # exclusive" categoricalSampleCovariateLevels that are populated
-      # from the same categoricalCovariateSelect by using the .exclude
+      # from the same categoricalCovariateSelect by using the exclude
       # mojo
       
       # THIS IS SO CLOSE: I need to put the req(!is.null()) here for the

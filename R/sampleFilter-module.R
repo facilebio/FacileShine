@@ -20,7 +20,7 @@ sampleFilter <- function(input, output, session, rfds, sample_universe = NULL,
   covariate <- callModule(categoricalSampleCovariateSelect, "covariate",
                           rfds, sample_universe, include1 = FALSE,
                           default_covariate = default_covariate,
-                          .with_none = FALSE, .reactive = FALSE,
+                          with_none = FALSE, .reactive = FALSE,
                           ignoreNULL = FALSE)
 
   annotated_samples <- reactive({

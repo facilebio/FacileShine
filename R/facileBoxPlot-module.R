@@ -34,7 +34,7 @@ facileBoxPlot <- function(input, output, session, rfds,
                     ..., .reactive = .reactive)
 
   xaxis <- callModule(categoricalSampleCovariateSelect, "xaxis", rfds,
-                      .with_none = FALSE)
+                      with_none = FALSE)
   yaxis <- callModule(assayFeatureSelect2, "yaxis", rfds, gdb = gdb, ...)
   batch <- callModule(batchCorrectConfig, "batch", rfds)
 

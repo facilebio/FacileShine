@@ -21,7 +21,7 @@ shiny::shinyApp(
     rfds <- ReactiveFacileDataStore(efds, "rfds")
 
     scov <-  callModule(categoricalSampleCovariateSelect, "covariate",
-                        rfds, .with_none = FALSE, .reactive = TRUE,
+                        rfds, with_none = FALSE, .reactive = TRUE,
                         debug = debug)
     val1 <- callModule(categoricalSampleCovariateLevels, "val1", rfds, scov,
                        .reactive = TRUE, debug = debug)

@@ -15,8 +15,8 @@ categoricalSampleCovariateSelect.mod(
   include1 = TRUE,
   default_covariate = NULL,
   ...,
-  .with_none = TRUE,
-  .exclude = NULL,
+  with_none = TRUE,
+  exclude = NULL,
   .reactive = TRUE,
   ignoreNULL = TRUE,
   debug = FALSE
@@ -28,8 +28,8 @@ categoricalSampleCovariateSelectServer(
   include1 = TRUE,
   default_covariate = NULL,
   ...,
-  .with_none = TRUE,
-  .exclude = NULL,
+  with_none = TRUE,
+  exclude = NULL,
   ignoreNULL = TRUE,
   debug = FALSE
 )

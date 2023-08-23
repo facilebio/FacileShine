@@ -18,7 +18,7 @@
 #' @export
 #' @rdname quantitativeTraitSelect
 quantitativeTraitSelect <- function(input, output, session, rfds, ...,
-                                    .exclude = NULL, .reactive = TRUE) {
+                                    exclude = NULL, .reactive = TRUE) {
 
   assert_class(rfds, "ReactiveFacileDataStore")
   isolate. <- if (.reactive) base::identity else shiny::isolate
@@ -40,9 +40,9 @@ quantitativeTraitSelect <- function(input, output, session, rfds, ...,
 
 
   qassay <- callModule(assayFeatureSelect, "qassay", rfds, ...,
-                       .exclude = .exclude, .reactive = .reactive)
+                       exclude = exclude, .reactive = .reactive)
   qcovariate <- callModule(quantitativeSampleCovariateSelect, "qassay", rfds,
-                           ..., .exclude = .exclude, .reactive = .reactive)
+                           ..., exclude = exclude, .reactive = .reactive)
 
   source <- reactive({
     # TODO: ...
