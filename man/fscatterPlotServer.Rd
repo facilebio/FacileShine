@@ -13,8 +13,7 @@ fscatterPlotServer(
   x = NULL,
   y = NULL,
   z = NULL,
-  event_source = session$ns("selection"),
-  .reactive = TRUE,
+  event_source = NULL,
   debug = FALSE
 )
 }

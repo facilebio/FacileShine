@@ -91,7 +91,7 @@ facileScatterPlot <- function(input, output, session, rfds,
   })
 
   observe({
-    dat. <- tryCatch(rdat.core(), error = function(e) NULL)
+    dat. <- tryCatch(rdat(), error = function(e) NULL)
     enabled <- is.data.frame(dat.) && nrow(dat.) > 0L
     shinyjs::toggleState("dldata", condition = enabled)
   })
@@ -166,14 +166,16 @@ facileScatterPlot <- function(input, output, session, rfds,
 #' @importFrom plotly plotlyOutput
 #' @rdname facileScatterPlot
 facileScatterPlotUI <- function(id, with_download = TRUE, ...) {
-  ns <- NS(id)
-  tagList(
-    fluidRow(
-      column(4, wellPanel(assayFeatureSelect2UI(ns("xaxis"), "X axis"))),
-      column(4, wellPanel(assayFeatureSelect2UI(ns("yaxis"), "Y axis"))),
-      column(4, wellPanel(assayFeatureSelect2UI(ns("zaxis"), "Z axis")))),
-    wellPanel(batchCorrectConfigUI(ns("batch"), direction = "horizontal")),
-    fluidRow(
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(4, wellPanel(assayFeatureSelect2UI(ns("xaxis"), "X axis"))),
+      shiny::column(4, wellPanel(assayFeatureSelect2UI(ns("yaxis"), "Y axis"))),
+      shiny::column(4, wellPanel(assayFeatureSelect2UI(ns("zaxis"), "Z axis")))
+    ),
+    shiny::wellPanel(
+      batchCorrectConfigUI(ns("batch"), direction = "horizontal")),
+    shiny::fluidRow(
       column(
         12,
         wellPanel(

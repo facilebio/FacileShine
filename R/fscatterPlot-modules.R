@@ -1,20 +1,189 @@
 #' Module server for scatter plots
 #' 
 #' @export
-fscatterPlotServer <- function(id, rfds, ..., gdb = shiny::reactive(NULL),
-                               ndim = 3, x = NULL, y = NULL, z = NULL,
-                               event_source = session$ns("selection"),
-                               .reactive = TRUE, debug = FALSE) {
+fscatterPlotServer <- function(id, rfds, ..., 
+                               gdb = shiny::reactive(NULL),
+                               ndim = 3,
+                               x = NULL, y = NULL, z = NULL,
+                               event_source = NULL,
+                               debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
-  shiny::moduleServer(id, function(input, output, session) {
-    shiny::callModule(facileScatterPlot, id, rfds, gdb = gdb, x = x, y = y,
-                      z = z, event_source = event_source, .reactive = .reactive,
-                      debug = debug)
+  assert_int(ndim, lower = 2, upper = 3)
+  moduleServer(id, function(input, output, session) {
+    if (is.null(event_source)) {
+      event_source <- session$ns("selection")
+    }
+    
+    dims <- sapply(.dimnames(ndim), function(dname) {
+      assayFeatureSelectServer(dname, rfds, gdb = gdb, debug = debug, ...)
+    }, simplify = FALSE)
+    
+    features <- reactive({
+      lapply(dims, function(d) {
+        out <- d$selected()
+        # It's important for this to be after the reactive event, otherwise it
+        # seems like the result of from_fds() gets cached(?) and $selected()
+        # won't fire even if it should.
+        req(from_fds(d, rfds))
+        out
+      })
+    })
+    ndim. <- reactive(sum(!sapply(features(), unselected)))
+
+    aes <- categoricalAestheticMapServer(
+      "aes", rfds, color = TRUE, shape = TRUE, facet = TRUE, hover = TRUE, ...)
+    
+    # batch <- callModule(batchCorrectConfig, "batch", rfds)
+    
+    qcolnames <- reactive({
+      out <- sapply(dims, name)
+      out[!grepl("\\.nothing$", out)]
+    })
+    qlabels <- reactive({
+      out <- sapply(dims, label)
+      out[!grepl("^nothing$", out)]
+    })
+    
+    # The quantitative data to plot, without aesthetic mappings
+    rdat.core <- reactive({
+      xdim <- ndim.()
+      req(xdim >= 2L)
+      features. <- features()
+      
+      ftrace("Retrieving assay data for scatterplot")
+      
+      out <- active_samples(rfds)
+      # batch. <- name(batch$batch)
+      # main. <- name(batch$main)
+      batch. <- main. <- NULL
+      
+      for (f in features.) {
+        if (nrow(f)) {
+          out <- req(with_assay_data(out, f, aggregate = TRUE,
+                                     normalize = TRUE, batch = batch.,
+                                     main = main., prior.count = 0.1))
+        }
+      }
+      out <- collect(out, n = Inf)
+      colnames(out) <- c("dataset", "sample_id", qcolnames())
+      out
+    })
+    
+    rdat <- reactive({
+      add_aesthetic_covariates(aes, rdat.core())
+    })
+    
+    observe({
+      dat. <- tryCatch(rdat.core(), error = function(e) NULL)
+      enabled <- is.data.frame(dat.) && nrow(dat.) > 0L
+      shinyjs::toggleState("dldata", condition = enabled)
+    })
+    output$dldata <- downloadHandler(
+      filename = function() "scatterplot-data.csv",
+      content = function(file) {
+        req(rdat.core()) |>
+          with_sample_covariates() |>
+          write.csv(file, row.names = FALSE)
+      }
+    )
+    
+    fscatter <- reactive({
+      dat <- req(rdat())
+      .axes <- qcolnames()
+      aes. <- aes$map()
+      .labels <- qlabels()
+      
+      hover. <- c(
+        "sample_id",
+        unlist(unname(aes.), recursive = TRUE)) |> 
+        unique()
+      
+      if (length(hover.) == 0) hover. <- NULL
+      ftrace("drawing scatterplot")
+      if (length(.axes) == 3L) {
+        aes.$facet <- NULL
+        height <- 800
+        width <- 900
+      } else {
+        height <- 600
+        width <- 700
+      }
+      
+      fscatterplot(dat, .axes, color_aes = aes.$color, shape_aes = aes.$shape,
+                   facet_aes = aes.$facet, hover = hover.,
+                   webgl = nrow(dat) > 1000,
+                   xlabel = .labels[1], # label(axes$x),
+                   ylabel = .labels[2], # label(axes$y),
+                   zlabel = .labels[3], # label(axes$z),
+                   height = height, width = width,
+                   event_source = event_source)
+    })
+    
+    plotsize <- reactive({
+      fs <- fscatter()
+      req(fs, "FacileScatterViz")
+      list(width = plot(fs)$width, height = plot(fs)$height)
+    })
+    
+    observeEvent(plotsize(), {
+      psize <- req(plotsize())
+      output$scatterplot <- renderPlotly(plot(fscatter()))
+      output$plotlybox <- renderUI({
+        withSpinner(plotlyOutput(session$ns("scatterplot"),
+                                 width = psize$width,
+                                 height = psize$height))
+      })
+    })
+    
+    vals <- list(
+      ndim = ndim.,
+      dims = dims,
+      aes = aes,
+      viz = fscatter,
+      .ns = session$ns)
+    
+    class(vals) <- c("FacileBoxPlot", "ReactiveFacileViz")
+    vals
+    
   })
 }
 
 #' @noRd
 #' @export
-fscatterPlotUI <- function(id, ..., with_download = TRUE, debug = FALSE) {
-  facileScatterPlotUI(id, ..., with_download = with_download, debug = FALSE)
+fscatterPlotUI <- function(id, ndim = 3, with_download = TRUE, ...,
+                           debug = FALSE) {
+  assert_int(ndim, lower = 2, upper = 3)
+  ns <- shiny::NS(id)
+  select_ncol <- 12 / ndim
+
+  dims <- sapply(.dimnames(ndim), function(dname) {
+    label <- paste(toupper(dname), "Axis")
+    shiny::column(
+      width = select_ncol,
+      assayFeatureSelectInput(ns(dname), label))
+  }, simplify = FALSE)
+  
+  shiny::tagList(
+    shiny::fluidRow(dims),
+    shiny::wellPanel(
+      batchCorrectConfigUI(ns("batch"), direction = "horizontal"),
+    ),
+    shiny::fluidRow(
+      shiny::column(
+        width = 12,
+        shiny::wellPanel(
+          categoricalAestheticMapInput(
+            ns("aes"), color = TRUE, shape = TRUE, facet = TRUE, hover = TRUE,
+            group = FALSE)))),
+    shinyjs::disabled(downloadButton(ns("dldata"), "Download Data")),
+    shiny::fluidRow(
+      shiny::column(width = 12, shiny::uiOutput(ns("plotlybox"))))
+  )
+}
+
+# Utility Functions ------------------------------------------------------------
+
+.dimnames <- function(ndim, universe = c("x", "y", "z")) {
+  assert_int(ndim, lower = 1L, upper = 3)
+  head(universe, ndim)
 }

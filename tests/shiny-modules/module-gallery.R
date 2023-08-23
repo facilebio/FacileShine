@@ -28,10 +28,11 @@ shiny::shinyApp(
     shiny::fluidRow(
       shiny::column(
         width = 3,
-        FacileShine::facileDataSetSelectInput("fdslist"),
-        FacileShine::facileSampleFiltersSelectInput("rfds", debug = debug),
+        shiny::wellPanel(
+          FacileShine::facileDataSetSelectInput("fdslist"),
+          FacileShine::facileSampleFiltersSelectInput("rfds", debug = debug)),
         
-      shiny::tags$h2("Debug Module"),
+      shiny::tags$h3("Debug Filters"),
       shiny::verbatimTextOutput("rfdsdebug")),
       
       shiny::column(
@@ -42,15 +43,18 @@ shiny::shinyApp(
         assaySelectInput("assay", label = "Assay", debug = debug),
 
         # Assay Feature Select -------------------------------------------------
+        shiny::tags$hr(),
         shiny::tags$h2("Assay Feature Select"),
         assayFeatureSelectInput("features", label = "Features", debug = debug),
         
         # Categorical Select ---------------------------------------------------
+        shiny::tags$hr(),
         shiny::tags$h2("Categorical Select"),
         categoricalSampleCovariateSelectInput("cov1"),
         categoricalSampleCovariateLevelsSelectInput("cov1levels"),
 
         # Categorical AES Map Select -------------------------------------------
+        shiny::tags$hr(),
         shiny::tags$h2("Categorical aes map"),
         categoricalAestheticMapInput("aes", color = aes_color,
                                      shape = aes_shape, facet = aes_facet,
@@ -58,9 +62,17 @@ shiny::shinyApp(
                                      debug = debug),
         
         # Box Plot -------------------------------------------------------------
+        shiny::tags$hr(),
         shiny::tags$h2("fboxPlot"),
         fboxPlotUI("boxplot"),
         
+        # Scatter Plot ---------------------------------------------------------
+        shiny::tags$hr(),
+        shiny::tags$h2("fscaterPlot"),
+        fscatterPlotUI("scatterplot"),
+
+        # End ------------------------------------------------------------------
+        shiny::tags$hr(),
         shiny::tags$h2("End")
       ))
   ),
@@ -95,7 +107,9 @@ shiny::shinyApp(
       "aes", rfds, color = aes_color, shape = aes_shape, facet = aes_facet,
       hover = aes_hover, group = aes_group, debug = debug)
     
-    boxplot <- fboxPlotServer("boxplot", rfds)
+    boxplot <- fboxPlotServer("boxplot", rfds, gdb = fdslist$gdb)
+    
+    scatterplot <- fscatterPlotServer("scatterplot", rfds, gdb = fdslist$gdb)
   }
 )
 

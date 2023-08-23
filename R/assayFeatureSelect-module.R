@@ -98,6 +98,7 @@ initialized.AssayFeatureSelectModule <- function(x, ...) {
 #' @export
 from_fds.AssayFeatureSelectModule <- function(x, rfds, ...) {
   if (!from_fds(x$assay, rfds)) return(FALSE)
+  # x[[".state"]]$rfds_name == name(rfds)
   isolate(x[[".state"]]$rfds_name == name(rfds))
 }
 

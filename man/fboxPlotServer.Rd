@@ -12,7 +12,6 @@ fboxPlotServer(
   x = NULL,
   y = NULL,
   event_source = NULL,
-  .reactive = TRUE,
   debug = FALSE
 )
 }

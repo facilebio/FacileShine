@@ -5,9 +5,10 @@ fboxPlotServer <- function(id, rfds, ...,
                            gdb = shiny::reactive(NULL), 
                            x = NULL, y = NULL,
                            event_source = NULL,
-                           .reactive = TRUE, debug = FALSE) {
+                           debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
-  shiny::moduleServer(id, function(input, output, session) {
+  
+  moduleServer(id, function(input, output, session) {
     if (is.null(event_source)) {
       event_source <- session$ns("selection")
     }
@@ -39,17 +40,15 @@ fboxPlotServer <- function(id, rfds, ...,
     # The quantitative data to plot, without aesthetic mappings
     rdat.core <- reactive({
       indiv. <- input$individual
-      
       yvals. <- yaxis$selected()
       req(!unselected(yvals.), from_fds(yaxis, rfds))
       
-      xsum <- xaxis$summary()
       xaxis. <- xaxis$covariate()
       req(!unselected(xaxis.), from_fds(xaxis, rfds))
       
       samples. <- active_samples(rfds)
       ftrace("Retrieving assay data for boxplot")
-      # agg.by <- if (!indiv.) "ewm" else NULL
+
       agg. <- !indiv.
       # batch. <- name(batch$batch)
       # main. <- name(batch$main)
@@ -91,14 +90,7 @@ fboxPlotServer <- function(id, rfds, ...,
     })
     
     rdat <- reactive({
-      adata <- req(rdat.core())
-      req(is(adata, "facile_frame"))
-      amap <- aes$map()
-      fetch <- setdiff(unlist(amap), colnames(adata))
-      if (length(fetch)) {
-        adata <- with_sample_covariates(adata, fetch)
-      }
-      adata
+      add_aesthetic_covariates(aes, rdat.core())
     })
     
     fbox <- eventReactive(rdat(), {
@@ -166,25 +158,29 @@ fboxPlotServer <- function(id, rfds, ...,
 #' @noRd
 #' @export
 fboxPlotUI <- function(id, ..., debug = FALSE) {
-  ns <- NS(id)
-  tagList(
-    fluidRow(
-      column(4, categoricalSampleCovariateSelectInput(ns("xaxis"), "X Axis")),
-      column(4, wellPanel(assayFeatureSelectInput(ns("yaxis"), "Y Axis"))),
-      column(
-        4,
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(
+        width = 4,
+        categoricalSampleCovariateSelectInput(ns("xaxis"), "X Axis")),
+      shiny::column(
+        width = 4,
+        shiny::wellPanel(assayFeatureSelectInput(ns("yaxis"), "Y Axis"))),
+      shiny::column(
+        width = 4,
         checkboxInput(ns("individual"),
                       label = "Plot Genes Individually",
                       value = FALSE),
         batchCorrectConfigUI(ns("batch"), direction = "vertical"))),
-    fluidRow(
-      column(
-        12,
-        wellPanel(
+    shiny::fluidRow(
+      shiny::column(
+        width = 12,
+        shiny::wellPanel(
           categoricalAestheticMapInput(
             ns("aes"), color = TRUE, facet = TRUE, hover = TRUE)))),
     shinyjs::disabled(downloadButton(ns("dldata"), "Download Data")),
-    fluidRow(
-      column(12, uiOutput(ns("plotlybox"))))
+    shiny::fluidRow(
+      shiny::column(12, uiOutput(ns("plotlybox"))))
   )
 }
