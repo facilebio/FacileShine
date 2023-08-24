@@ -137,12 +137,13 @@ fboxPlotServer <- function(id, rfds, ...,
       psize <- req(plotsize())
       output$boxplot <- plotly::renderPlotly(plot(fbox()))
       output$plotlybox <- shiny::renderUI({
-        # withSpinner({
         shinyWidgets::addSpinner({
           plotly::plotlyOutput(session$ns("boxplot"),
                                width = psize$width,
                                height = psize$height)
-        })
+        }, 
+        spin = getOption("FacileShine.spinner_type"), 
+        color = getOption("FacileShine.spinner_color"))
       })
     })
     

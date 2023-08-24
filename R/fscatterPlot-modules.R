@@ -133,7 +133,9 @@ fscatterPlotServer <- function(id, rfds, ...,
           plotly::plotlyOutput(session$ns("scatterplot"),
                                width = psize$width,
                                height = psize$height)
-        })
+        }, 
+        spin = getOption("FacileShine.spinner_type"), 
+        color = getOption("FacileShine.spinner_color"))
       })
     })
     

@@ -17,6 +17,7 @@ Imports:
     broom,
     checkmate,
     crayon,
+    datamods,
     dplyr,
     FacileData (>= 0.98.91),
     FacileViz (>= 0.1.10),
