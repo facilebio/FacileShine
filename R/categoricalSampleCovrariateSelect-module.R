@@ -32,8 +32,8 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
                                              default_covariate = NULL,
                                              ...,
                                              with_none = TRUE,
-                                             exclude = NULL,
-                                             ignoreNULL = TRUE,
+                                             exclude = reactive(NULL),
+                                             ignoreNULL = with_none,
                                              debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   assert_flag(include1)
@@ -45,16 +45,37 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       multiple = "__initializing__",
       levels = "__initializing__",
       summary = .empty_covariate_summary(),
-      active_covariates = "__initializing__",
-      universe = "__initializing__",
-      exclude = tibble(variable = character(), value = character()))
+      exclude = character())
     
-    categorical_covariates <- eventReactive(active_covariates(rfds), {
+    observeEvent(exclude(), {
+      ignore <- exclude()
+      if (unselected(ignore)) ignore <- character()
+      if (!is.character(ignore)) {
+        ftrace("{reset}{red}illegal type of variable passed to exclude: ", 
+               class(ignore)[1] ,"{reset}")
+        ignore <- character()
+      }
+      if (!setequal(ignore, state$exclude)) {
+        state$exclude <- ignore
+      }
+    })
+    
+    excluded <- reactive({
+      ftrace("state||exclude has been updated: ", state$exclude)
+      state$exclude
+    })
+    
+    categorical_covariates <- eventReactive({
+      active_covariates(rfds)
+      excluded()
+    }, {
       req(initialized(rfds))
       out <- rfds |>
         active_covariates() |>
         dplyr::filter(.data$class == "categorical") |>
+        dplyr::filter(!.data$variable %in% state$exclude) |> 
         dplyr::arrange(variable, level)
+        
       if (!include1) {
         single_level_covariates <- out |> 
           dplyr::summarize(nlevels = n(), .by = "variable") |> 
@@ -68,14 +89,9 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       out
     }, label = "categorical_covariates")
     
-    # Updating the covariate select dropdown is a little tricky because we want
-    # to support the situation where the current active.covariates change in
-    # response to the current set of active_samples changing.
-    #
-    # Because this event listens to the underlying active.covariates() and can
-    # update the internal state of the selected covariate, we want crank up the
-    # priority to 10, so that if a covariate "goes missing" in a cohort swap,
-    # the selected covariate gets reset to unselected
+    # Update the available covariates in the UI in response to a change in the
+    # covariates that are available from the underlying set of samples
+    # (or updated set of `exclusions`)
     observeEvent(categorical_covariates(), {
       choices <- unique(categorical_covariates()$variable)
       
@@ -120,7 +136,7 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
                current = current, cov = cov)
         state$covariate <- cov
       }
-    })
+    }, ignoreNULL = ignoreNULL)
     
     covariate <- reactive({
       ftrace("covariate selection updated: ", state$covariate)
@@ -141,15 +157,6 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       if (notselected) {
         out <- .empty_covariate_summary()
       } else {
-        # Need to isolate the [sample] universe.() because that is updated at a
-        # higher priority, and sometimes when samples changed via cohort
-        # selection, it was triggering this code block to fire before the selected
-        # covariate could be reset to one that exists in this cohort (ie. if the
-        # cohort shift removes the currently selected covariate from the cohort).
-        # univ <- isolate(universe.())
-        # scovs <- try(fetch_sample_covariates(rfds, univ, covariate.), silent = TRUE)
-        # req(!is(scovs, "try-error"))
-        # out <- summary(scovs, expanded = TRUE)
         out <- allcovs. |> 
           # could be multiple so we test with %in% not ==
           filter(.data$variable %in% covariate.)
@@ -180,6 +187,7 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       summary = covariate.summary,
       levels = cov.levels,
       covariates_all = categorical_covariates,
+      excluded = excluded,
       .state = state,
       .ns = session$ns)
     class(vals) <- c("CategoricalCovariateSelectModule",
@@ -226,14 +234,14 @@ from_fds.CategoricalCovariateSelectModule <- function(x, rfds, ...) {
 
 #' @noRd
 #' @export
-name.CategoricalCovariateSelect <- function(x, ...) {
+name.CategoricalCovariateSelectModule <- function(x, ...) {
   out <- x[["covariate"]]()
   if (unselected(out)) NULL else out
 }
 
 #' @noRd
 #' @export
-label.CategoricalCovariateSelect <- function(x, ...) {
+label.CategoricalCovariateSelectModule <- function(x, ...) {
   warning("TODO: Need to provide labels for categorical covariates")
   x[["covariate"]]()
 }
@@ -250,7 +258,7 @@ label.CategoricalCovariateSelect <- function(x, ...) {
 #'   covariate's level.
 #' @importFrom shiny updateSelectizeInput
 categoricalSampleCovariateLevelsSelectServer <- function(
-    id, covariate, ..., missing_sentinel = NULL, exclude = NULL, 
+    id, covariate, ..., missing_sentinel = NULL, exclude = reactive(NULL), 
     debug = FALSE) {
   assert_class(covariate, "CategoricalCovariateSelectModule")
   
@@ -267,27 +275,41 @@ categoricalSampleCovariateLevelsSelectServer <- function(
       levels = character(),
       exclude = character())
     
-    # observe({
-    #   req(initialized(rfds))
-    #   update_exclude(state, isolate(exclude), type = "covariate_levels")
-    # })
+    observeEvent(exclude(), {
+      ignore <- exclude()
+      if (unselected(ignore)) ignore <- character()
+      if (!is.character(ignore)) {
+        ftrace("{reset}{red}illegal type of variable passed to exclude: ", 
+               class(ignore)[1] ,"{reset}")
+        ignore <- character()
+      }
+      if (!setequal(ignore, state$exclude)) {
+        state$exclude <- ignore
+      }
+    })
     
-    exclude. <- reactive(state$exclude)
+    excluded <- reactive({
+      ftrace("state||exclude has been updated: ", state$exclude)
+      state$exclude
+    })
     
-    observeEvent(covariate$levels(), {
+    
+    observeEvent({
+      covariate$levels()
+      excluded()
+    } , {
       levels. <- covariate$levels()
       if (!is.null(missing_sentinel)) {
         levels. <- unique(c(levels., missing_sentinel()))
       }
       
-      ignore <- exclude.()
+      ignore <- excluded()
       newlevels <- setdiff(levels., ignore)
       if (!setequal(state$levels, newlevels)) {
         ftrace("Updating levels from (", state$levels, "), to (",
                newlevels, ")")
         state$levels <- newlevels
       }
-    # }, priority = 10)
     })
     
     levels <- reactive(state$levels)
@@ -307,27 +329,12 @@ categoricalSampleCovariateLevelsSelectServer <- function(
       }
       updateSelectizeInput(session, "values", choices = levels.,
                            selected = overlap., server = TRUE)
-    # }, priority = 10)
     })
     
     observeEvent(input$values, {
       selected. <- input$values
-      # This is required because ignoreNULL is set to `FALSE`. We set it to
-      # false so that when all selected levels are removed from
+      # Note that when ignoreNULL and all selected levels are removed from
       # covariateSelectLevels, the values are released "back to the pool".
-      # When ignoreNULL is false, however, there are intermediate in the
-      # reactivity cycle when input$values is NULL even though its value
-      # hasn't changed.
-      #
-      # The latter situation hit me when I was trying to make "mutually
-      # exclusive" categoricalSampleCovariateLevels that are populated
-      # from the same categoricalCovariateSelect by using the exclude
-      # mojo
-      
-      # THIS IS SO CLOSE: I need to put the req(!is.null()) here for the
-      # mutually-excluve categoricalCovariateSelectLevel modules to work.
-      # TODO: Finish categoricalSampleCovariateLevelsMutex
-      # req(!is.null(selected.))
       if (unselected(selected.)) {
         selected. <- ""
       }
@@ -355,6 +362,7 @@ categoricalSampleCovariateLevelsSelectServer <- function(
     vals <- list(
       values = values,
       levels = levels,
+      excluded = excluded,
       .state = state,
       .ns = session$ns)
     class(vals) <- "CategoricalCovariateSelectLevels"
