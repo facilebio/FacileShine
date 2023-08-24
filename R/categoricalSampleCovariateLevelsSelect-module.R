@@ -65,7 +65,9 @@ categoricalSampleCovariateLevelsSelectServer <- function(
       }
     })
     
-    levels <- reactive(state$levels)
+    levels <- reactive({
+      state$levels
+    })
     
     observeEvent(levels(), {
       levels. <- levels()
@@ -106,7 +108,16 @@ categoricalSampleCovariateLevelsSelectServer <- function(
       }
     }, ignoreNULL = FALSE)
     
-    values <- reactive(state$values)
+    values <- reactive({
+      # before we return the levels, let's make sure they are still valid
+      # levels of the covariate and the underlying sampe-space hasn't moved
+      # from under us in this reactivity cycle
+      if (!unselected(state$values)) {
+        req(all(state$values %in% levels()))
+        req(all(state$values %in% covariate$levels()))
+      }
+      state$values
+    })
     
     if (debug) {
       output$selected <- renderText(values())
@@ -116,6 +127,7 @@ categoricalSampleCovariateLevelsSelectServer <- function(
       values = values,
       levels = levels,
       excluded = excluded,
+      covariate = covariate,
       .state = state,
       .ns = session$ns)
     class(vals) <- "CategoricalCovariateSelectLevels"

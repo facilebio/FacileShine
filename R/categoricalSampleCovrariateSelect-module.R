@@ -43,7 +43,6 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       rfds_name = "__initializing__",
       covariate = "__initializing__",
       multiple = "__initializing__",
-      levels = "__initializing__",
       summary = .empty_covariate_summary(),
       exclude = character())
     
@@ -140,6 +139,12 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
     
     covariate <- reactive({
       ftrace("covariate selection updated: ", state$covariate)
+      # Before we return the covariate, let's make that the underlying samples
+      # haven't changed and we aren't returning a stale covariate that used
+      # to be available but has been replaced/fitered out.
+      if (!unselected(state$covariate)) {
+        req(all(state$covariate %in% categorical_covariates()$variable))
+      }
       state$covariate
     })
     
@@ -163,29 +168,18 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       }
       out
     })
-    
-    observeEvent(req(covariate.summary()), {
-      csummary <- covariate.summary()
-      lvls <- csummary[["level"]]
-      if (!setequal(state$levels, lvls)) {
-        ftrace("Resetting available levels for {red}", covariate(), "{reset}")
-        state$levels <- lvls
-      }
-    })
-    
-    cov.levels <- reactive({
-      if (unselected(state$levels)) {
-        "" 
-      } else {
-        state$levels
-      }
+
+    levels <- reactive({
+      covariate.summary() |> 
+        filter(ninlevel > 0) |> 
+        dplyr::pull(level)
     })
     
     vals <- list(
       multiple = reactive(state$multiple),
       covariate = covariate,
       summary = covariate.summary,
-      levels = cov.levels,
+      levels = levels,
       covariates_all = categorical_covariates,
       excluded = excluded,
       .state = state,

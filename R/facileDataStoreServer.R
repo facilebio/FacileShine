@@ -78,7 +78,7 @@ facileDataStoreServer <- function(id, x, ...,
       # observeEvent(state$active_samples) goes through before they use the
       # new ReactiveFacileDataSet again
       ftrace("{bold}{red}initializing new fds() [fds]")
-      out <- FacileDataStoreFactory(x(), ...)
+      out <- .xfdsFactory(x(), ...)
       req(is(out, "FacileDataStore"))
       
       state$name <- name(out)
@@ -147,7 +147,11 @@ facileDataStoreServer <- function(id, x, ...,
       fme <- colnames(pdata())
       ignore <- c("dataset", "sample_id")
       imore <- ignore_sample_covariates()
-      if (is.character(imore)) ignore <- unique(c(ignore, imore))
+      if (test_character(imore, min.len = 1)) {
+        ignore <- unique(c(ignore, imore))
+        ftrace("Ignoring the following columns as sample filters: ", 
+               paste(ignore, collapse = ";;"))
+      }
       setdiff(fme, ignore)
     }, label = "var2filter")
     
@@ -184,9 +188,12 @@ facileDataStoreServer <- function(id, x, ...,
       } else {
         flog("filters$filtered() fired but active_samples didn't change: no-op")
       }
-    }, label = "observeEvent(filtered$filtered())")
+    }, 
+    label = "observeEvent(filtered$filtered())")
     
-    active_samples <- reactive(state$active_samples)
+    active_samples <- reactive({
+      state$active_samples
+    })
     
     # active_assays ------------------------------------------------------------
     active_assays <- eventReactive(state$active_samples, {
@@ -207,7 +214,12 @@ facileDataStoreServer <- function(id, x, ...,
     active_covariates <- reactive({
       req(is(active_pdata(), "facile_frame"))
       ftrace("updating active_covariates")
-      summary(active_pdata(), expanded = TRUE)
+      active_pdata() |> 
+        summary(expanded = TRUE) |> 
+        # if we don't include this step, sampleCovariateLevelSelect dropdowns
+        # can return levels that have 0 support given the current set of
+        # active samples
+        filter(.data$ninlevel > 0)
     }, label = "active_covariates")
     
     obj <- list(
@@ -226,6 +238,64 @@ facileDataStoreServer <- function(id, x, ...,
       "DatamodFacileDataStore", "ReactiveFacileDataStore", "FacileDataStore")
     obj
   })
+}
+
+#' Crate a facileDataStoreServer module form whatevrrrrrrrrr
+#' 
+#' @export
+#' @param id the id of the server module
+#' @param x A thing, this will be passed into the reactive
+#'   `facileDataStoreServer,x` parameter.
+#' @param ... things to pass into the `facileDataStoreServer(...)`
+#' @return a [facileDataStoreServer()] module
+FacileDataStoreServer <- function(id, x, samples_subset = NULL, ...) {
+  assert_string(id)
+  if (is(x, "reactive")) x <- x()
+  if (is(samples_subset, "reactive")) samples_subset <- samples_subset()
+  
+  if (test_string(x) || is(x, "FacileDataStore")) {
+    xx <- reactive(x)
+  } else if (is(x, "facile_frame")) {
+    xx <- reactive(fds(x))
+    samples_subset <- reactive(x)
+  } else {
+    stop("Not sure what to do with x of type: ", class(x)[1L])
+  }
+  
+  facileDataSetSelectServer(
+    id, xx, samples_subset = reactive(samples_subset), ...)
+}
+
+#' Helper function to create a FacileDataStore (really a FacileDataSet).
+#' 
+#' This function figures out what `x` is and turns into into a FacileDataStore.
+#' 
+#' @param x a path to a faciledataset on disk, a faciledataset itself, etc.
+#' @param ... dunno what else
+#' @return A FacileDataStore[Set]
+.xfdsFactory <- function(x, ...) {
+  if (test_directory_exists(x)) {
+    x <- FacileData::FacileDataSet(x, ...)
+  }
+  if (is(x, "FacileDataStore")) {
+    # Wrapping this as "BoxedFacileDataStore" so we can intercept some facile
+    # API calls and allow them to accept ephemeral annotations.
+    class(x) <- c("BoxedFacileDataStore", class(x))
+    return(x)
+  }
+  
+  stop("`x` of type '", class(x)[1L], "' not handled yet")
+  # You can imagine x is path to a serialized bioconductor object, or the
+  # bioconductor object itself
+  if (test_file_exists(x, extension = "rds")) {
+    x <- readRDS(x)
+  }
+  if (test_multi_class(x, c("SummarizedExperiment", "DGEList"))) {
+    reqpkg("FacileBiocData")
+    out <- FacileBiocData::facilitate(x, ...)
+    class(out) <- c("BoxedFacileDataStore", class(out))
+    return(out)
+  }
 }
 
 # UI stuffs --------------------------------------------------------------------
@@ -344,38 +414,6 @@ name.DatamodFacileDataStore <- function(x, ...) {
 }
 
 # Utility Functions ============================================================
-
-#' Helper function to create a FacileDataStore (really a FacileDataSet).
-#' 
-#' This function figures out what `x` is and turns into into a FacileDataStore.
-#' 
-#' @param x a path to a faciledataset on disk, a faciledataset itself, etc.
-#' @param ... dunno what else
-#' @return A FacileDataStore[Set]
-FacileDataStoreFactory <- function(x, ...) {
-  if (test_directory_exists(x)) {
-    x <- FacileData::FacileDataSet(x, ...)
-  }
-  if (is(x, "FacileDataSet")) {
-    # Wrapping this as "BoxedFacileDataStore" so we can intercept some facile
-    # API calls and allow them to accept ephemeral annotations.
-    class(x) <- c("BoxedFacileDataStore", class(x))
-    return(x)
-  }
-  
-  stop("There are other things we can do, but not now ...")
-  # You can imagine x is path to a serialized bioconductor object, or the
-  # bioconductor object itself
-  if (test_file_exists(x, extension = "rds")) {
-    x <- readRDS(x)
-  }
-  if (test_multi_class(x, c("SummarizedExperiment", "DGEList"))) {
-    reqpkg("FacileBiocData")
-    out <- FacileBiocData::facilitate(x, ...)
-    class(out) <- c("BoxedFacileDataStore", class(out))
-    return(out)
-  }
-}
 
 #' @noRd
 .empty_sample_annotation_tbl <- function() {

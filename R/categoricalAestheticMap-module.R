@@ -16,7 +16,7 @@ categoricalAestheticMapServer <- function(id, rfds, color = FALSE,
     
     aes_mods <- sapply(names(aes_covs), function(aes_name) {
       categoricalSampleCovariateSelectServer(
-        aes_name, rfds, with_none = aes_name != "hover")
+        aes_name, rfds, with_none = aes_name != "hover", include1 = FALSE)
     }, simplify = FALSE)
     
     aes_values <- reactive({
