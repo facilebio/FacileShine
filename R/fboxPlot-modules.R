@@ -20,7 +20,8 @@ fboxPlotServer <- function(id, rfds, ...,
       "xaxis", rfds, with_none = FALSE)
     
     yaxis <- assayFeatureSelectServer("yaxis", rfds, gdb = gdb, ...)
-    # batch <- callModule(batchCorrectConfig, "batch", rfds)
+    
+    batch <- batchCorrectConfigServer("batch", rfds, debug = debug)
     
     # "Individual" checkbox is only active when multiple genes are entered
     # in the y-axis selector
@@ -50,9 +51,8 @@ fboxPlotServer <- function(id, rfds, ...,
       ftrace("Retrieving assay data for boxplot")
 
       agg. <- !indiv.
-      # batch. <- name(batch$batch)
-      # main. <- name(batch$main)
-      batch. <- main. <- NULL
+      batch. <- name(batch$batch)
+      main. <- name(batch$main)
 
       out <- rfds$fds() |> 
         fetch_assay_data(
@@ -135,11 +135,14 @@ fboxPlotServer <- function(id, rfds, ...,
     
     observeEvent(plotsize(), {
       psize <- req(plotsize())
-      output$boxplot <- renderPlotly(plot(fbox()))
-      output$plotlybox <- renderUI({
-        withSpinner(plotlyOutput(session$ns("boxplot"),
-                                 width = psize$width,
-                                 height = psize$height))
+      output$boxplot <- plotly::renderPlotly(plot(fbox()))
+      output$plotlybox <- shiny::renderUI({
+        # withSpinner({
+        shinyWidgets::addSpinner({
+          plotly::plotlyOutput(session$ns("boxplot"),
+                               width = psize$width,
+                               height = psize$height)
+        })
       })
     })
     
@@ -169,9 +172,10 @@ fboxPlotUI <- function(id, ..., debug = FALSE) {
         shiny::wellPanel(assayFeatureSelectInput(ns("yaxis"), "Y Axis"))),
       shiny::column(
         width = 4,
-        checkboxInput(ns("individual"),
-                      label = "Plot Genes Individually",
-                      value = FALSE),
+        shiny::checkboxInput(
+          ns("individual"),
+          label = "Plot Genes Individually",
+          value = FALSE),
         batchCorrectConfigUI(ns("batch"), direction = "vertical"))),
     shiny::fluidRow(
       shiny::column(
@@ -179,8 +183,8 @@ fboxPlotUI <- function(id, ..., debug = FALSE) {
         shiny::wellPanel(
           categoricalAestheticMapInput(
             ns("aes"), color = TRUE, facet = TRUE, hover = TRUE)))),
-    shinyjs::disabled(downloadButton(ns("dldata"), "Download Data")),
+    shinyjs::disabled(shiny::downloadButton(ns("dldata"), "Download Data")),
     shiny::fluidRow(
-      shiny::column(12, uiOutput(ns("plotlybox"))))
+      shiny::column(12, shiny::uiOutput(ns("plotlybox"))))
   )
 }

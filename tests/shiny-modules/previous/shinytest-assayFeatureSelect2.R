@@ -27,7 +27,7 @@ shiny::shinyApp(
       column(6, shiny::wellPanel(assayFeatureSelect2UI("xaxis"))),
       column(6, shiny::wellPanel(assayFeatureSelect2UI("yaxis")))),
     shiny::tags$h2("Scatter Plot"),
-    plotlyOutput("scatter")),
+    plotly::plotlyOutput("scatter")),
 
   server = function(input, output, session) {
     rfds <- callModule(
@@ -63,7 +63,7 @@ shiny::shinyApp(
       fscatterplot(dat, axes, xlabel = label(xaxis), ylabel = label(yaxis))
     })
 
-    output$scatter <- renderPlotly({
+    output$scatter <- plotly::renderPlotly({
       fs <- fscatter()
       req(fs, "FacileScatterViz")
       plot(fs)

@@ -292,11 +292,6 @@ initialized.ReactiveFacileDataStore <- function(x, ...) {
   !any(initing) && is(fds., "FacileDataStore") && !unselected(name(x))
 }
 
-#' @noRd
-#' @export
-initialized.BoxedFacileDataStore <- function(x, ...) {
-  is(x, "FacileDataStore")
-}
 
 #' @noRd
 #' @export

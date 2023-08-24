@@ -46,12 +46,12 @@
 #'   * `user`: the name of the current user
 #'   * `trigger`: reactive triggers over samples, assays, covariates. I don't
 #'     think we need to use these now ...
-datamodFacileDataStoreServer <- function(id, x, ...,
-                                         ignore_sample_covariates = reactive(NULL),
-                                         samples_subset = reactive(NULL),
-                                         samples_filter_init = reactive(NULL),
-                                         user = Sys.getenv("USER"),
-                                         debug = FALSE) {
+facileDataStoreServer <- function(id, x, ...,
+                                  ignore_sample_covariates = reactive(NULL),
+                                  samples_subset = reactive(NULL),
+                                  samples_filter_init = reactive(NULL),
+                                  user = Sys.getenv("USER"),
+                                  debug = FALSE) {
   moduleServer(id, function(input, output, session) {
     state <- reactiveValues(
       name = "__initializing__",
@@ -271,7 +271,7 @@ filteredSamplesTable <- function(id, ..., debug = FALSE) {
 #' 
 #' @export
 #' @noRd
-debugDatamodFacileDataStoreUI <- function(id, ..., debug = FALSE) {
+facileDataStoreUI <- function(id, ..., debug = FALSE) {
   ns <- shiny::NS(id)
   shiny::fluidRow(
     shiny::column(
@@ -288,7 +288,13 @@ debugDatamodFacileDataStoreUI <- function(id, ..., debug = FALSE) {
   )
 }
 
-# DatamodFacileDataStore methods -----------------------------------------------
+# FacileDataStore methods -----------------------------------------------
+
+#' @noRd
+#' @export
+initialized.BoxedFacileDataStore <- function(x, ...) {
+  is(x, "FacileDataStore")
+}
 
 #' @noRd
 #' @export
@@ -337,6 +343,8 @@ name.DatamodFacileDataStore <- function(x, ...) {
   x[[".state"]][["name"]]
 }
 
+# Utility Functions ============================================================
+
 #' Helper function to create a FacileDataStore (really a FacileDataSet).
 #' 
 #' This function figures out what `x` is and turns into into a FacileDataStore.
@@ -367,4 +375,34 @@ FacileDataStoreFactory <- function(x, ...) {
     class(out) <- c("BoxedFacileDataStore", class(out))
     return(out)
   }
- }
+}
+
+#' @noRd
+.empty_sample_annotation_tbl <- function() {
+  tibble(
+    dataset = character(),
+    sample_id = character(),
+    variable = character(),
+    value = character(),
+    class = character(),
+    type = character(),
+    date_entered = integer())
+}
+
+#' @noRd
+.empty_facet_tbl <- function() {
+  tibble(
+    dataset = character(),
+    sample_id = character(),
+    facet = character(),
+    description = character())
+}
+
+#' @noRd
+.empty_feature_annotation_tbl <- function() {
+  tibble(
+    collection = character(),
+    name = character(),
+    feature_id = character(),
+    feature_type = character())
+}

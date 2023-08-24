@@ -117,15 +117,18 @@ assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE, ...) {
   }
   
   out <- tagList(
-    fluidRow(
-      column(9, selectizeInput(ns("features"), label = label, choices = NULL,
-                               multiple = multiple)),
-      column(
-        3,
-        tags$div(style = assay.style,
-                 assaySelectInput(ns("assay"), label = NULL, choices = NULL)))),
+    shiny::fluidRow(
+      shiny::column(
+        width = 9,
+        selectizeInput(ns("features"), label = label, choices = NULL,
+                       multiple = multiple)),
+      shiny::column(
+        width = 3,
+        shiny::tags$div(
+          style = assay.style,
+          assaySelectInput(ns("assay"), label = NULL, choices = NULL)))),
     shinyjs::hidden(
-      tags$div(
+      shiny::tags$div(
         id = ns("genesetbox"),
         sparrow.shiny::reactiveGeneSetSelectUI(ns("geneset"))))
   )

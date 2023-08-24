@@ -70,7 +70,7 @@ categoricalAestheticMapInput <- function(id, color = FALSE, shape = FALSE,
     ui <- categoricalSampleCovariateSelectInput(
       ns(aes_name), label = label, multiple = aes_name == "hover", ...,
       debug = debug)
-    if (horizontal) ui <- column(ncol, ui)
+    if (horizontal) ui <- shiny::column(ncol, ui)
     ui
   }, simplify = FALSE)
 

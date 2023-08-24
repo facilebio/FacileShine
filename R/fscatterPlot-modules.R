@@ -33,7 +33,7 @@ fscatterPlotServer <- function(id, rfds, ...,
     aes <- categoricalAestheticMapServer(
       "aes", rfds, color = TRUE, shape = TRUE, facet = TRUE, hover = TRUE, ...)
     
-    # batch <- callModule(batchCorrectConfig, "batch", rfds)
+    batch <- batchCorrectConfigServer("batch", rfds, debug = debug)
     
     qcolnames <- reactive({
       out <- sapply(dims, name)
@@ -53,10 +53,9 @@ fscatterPlotServer <- function(id, rfds, ...,
       ftrace("Retrieving assay data for scatterplot")
       
       out <- active_samples(rfds)
-      # batch. <- name(batch$batch)
-      # main. <- name(batch$main)
-      batch. <- main. <- NULL
-      
+      batch. <- name(batch$batch)
+      main. <- name(batch$main)
+
       for (f in features.) {
         if (nrow(f)) {
           out <- req(with_assay_data(out, f, aggregate = TRUE,
@@ -127,11 +126,14 @@ fscatterPlotServer <- function(id, rfds, ...,
     
     observeEvent(plotsize(), {
       psize <- req(plotsize())
-      output$scatterplot <- renderPlotly(plot(fscatter()))
-      output$plotlybox <- renderUI({
-        withSpinner(plotlyOutput(session$ns("scatterplot"),
-                                 width = psize$width,
-                                 height = psize$height))
+      output$scatterplot <- plotly::renderPlotly(plot(fscatter()))
+      output$plotlybox <- shiny::renderUI({
+        # withSpinner({
+        shinyWidgets::addSpinner({
+          plotly::plotlyOutput(session$ns("scatterplot"),
+                               width = psize$width,
+                               height = psize$height)
+        })
       })
     })
     
@@ -175,7 +177,7 @@ fscatterPlotUI <- function(id, ndim = 3, with_download = TRUE, ...,
           categoricalAestheticMapInput(
             ns("aes"), color = TRUE, shape = TRUE, facet = TRUE, hover = TRUE,
             group = FALSE)))),
-    shinyjs::disabled(downloadButton(ns("dldata"), "Download Data")),
+    shinyjs::disabled(shiny::downloadButton(ns("dldata"), "Download Data")),
     shiny::fluidRow(
       shiny::column(width = 12, shiny::uiOutput(ns("plotlybox"))))
   )

@@ -198,9 +198,9 @@ facileBoxPlotUI <- function(id, ...) {
         wellPanel(
           categoricalAestheticMapUI(
             ns("aes"), color = TRUE, facet = TRUE, hover = TRUE)))),
-    shinyjs::disabled(downloadButton(ns("dldata"), "Download Data")),
+    shinyjs::disabled(shiny::downloadButton(ns("dldata"), "Download Data")),
     fluidRow(
-      column(12, uiOutput(ns("plotlybox"))))
+      shiny::column(12, shiny::uiOutput(ns("plotlybox"))))
     )
 }
 

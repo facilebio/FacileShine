@@ -534,28 +534,15 @@ categoricalSampleCovariateLevelsMutexUI <- function(id, label1 = "Vals1",
   vals <- list(values1 = list(label = label1, multiple = multiple1),
                values2 = list(label = label2, multiple = multiple2))
 
-  # out <- sapply(names(vals), function(name) {
-  #   ui <- selectizeInput(ns(name), choices = NULL,
-  #                        label = vals[[name]][["label"]],
-  #                        multiple = vals[[name]][["multiple"]])
-  #   if (horizontal) {
-  #     ui <- column(width[name], ui)
-  #   }
-  # })
-  #
-  # if (horizontal) {
-  #   out <- fluidRow(out)
-  # }
-
   out <- sapply(names(vals), function(name) {
     out <- uiOutput(ns(name))
     if (horizontal) {
-      ui <- column(width[name], ui)
+      ui <- shiny::column(width[name], ui)
     }
   })
 
   if (horizontal) {
-    out <- fluidRow(out)
+    out <- shiny::fluidRow(out)
   }
 
   out

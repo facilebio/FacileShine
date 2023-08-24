@@ -4,7 +4,7 @@
 \alias{update_selected}
 \title{Updates a selected item from a module.}
 \usage{
-update_selected(x, covariate, ...)
+update_selected(x, ...)
 }
 \description{
 This can apply to an item selected in a dropdown, ie. a selected covariate
