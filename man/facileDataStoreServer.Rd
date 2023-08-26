@@ -2,7 +2,7 @@
 % Please edit documentation in R/facileDataStoreServer.R
 \name{FacileDataStoreServer}
 \alias{FacileDataStoreServer}
-\title{Crate a facileDataStoreServer module form whatevrrrrrrrrr}
+\title{Create a server module form a non-reactive context.}
 \usage{
 FacileDataStoreServer(id, x, samples_subset = NULL, ...)
 }
@@ -18,5 +18,5 @@ FacileDataStoreServer(id, x, samples_subset = NULL, ...)
 a \code{\link[=facileDataStoreServer]{facileDataStoreServer()}} module
 }
 \description{
-Crate a facileDataStoreServer module form whatevrrrrrrrrr
+Create a server module form a non-reactive context.
 }

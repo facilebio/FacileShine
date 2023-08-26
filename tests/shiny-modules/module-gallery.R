@@ -88,7 +88,9 @@ shiny::shinyApp(
     fdslist <- FacileShine::facileDataSetSelectServer(
       "fdslist", reactive(datadir))
     
-    rfds <- FacileShine::facileDataStoreServer(
+    # rfds <- FacileShine::facileDataStoreServer(
+    #   "rfds", fdslist$path, user = user, debug = debug)
+    rfds <- FacileShine::FacileDataStoreServer(
       "rfds", fdslist$path, user = user, debug = debug)
     
     output$rfdsdebug <- shiny::renderText({

@@ -83,9 +83,21 @@ assaySelectServer <- function(id, rfds, ..., debug = FALSE) {
       if (unselected(state$assay_info)) "" else state$assay_info$assay
     })
     
+    assay_info <- reactive({
+      active_assays(rfds) |> 
+        filter(.data$assay == assay_name())
+    })
+    
+    features <- reactive({
+      req(!unselected(assay_name()))
+      FacileData::features(rfds$fds(), assay_name = assay_name())
+    })
+    
     vals <- list(
       assay_name = assay_name,
       assay_names = assay_names,
+      assay_info = assay_info,
+      features = features,
       .state = state,
       .ns = session$ns)
     class(vals) <- c("AssaySelectModule", "Labeled")

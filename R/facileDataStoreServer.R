@@ -118,12 +118,18 @@ facileDataStoreServer <- function(id, x, ...,
       
       if (nrow(state$esample_annotation)) {
         ftrace("{bold}{red}adding ephemeral sample covariates [pdata]")
-        # TODO: pivot into wide form and presere type
-        ephemeral <- state$esample_annotation |> 
-          select(dataset, sample_id, variable, value) |> 
-          tidyr::pivot_wider(
-            id_cols = c("dataset", "sample_id"),
-            names_from = "variable")
+        is_long <- local({
+          check <- c("variable", "value")
+          length(setdiff(check, colnames(state$esample_annotation)) == 0)
+        })
+        if (is_long) {
+          # TODO: pivot into wide form and presere type
+          ephemeral <- state$esample_annotation |> 
+            select(dataset, sample_id, variable, value) |> 
+            tidyr::pivot_wider(
+              id_cols = c("dataset", "sample_id"),
+              names_from = "variable")
+        }
         out <- left_join(out, ephemeral, by = c("dataset", "sample_id"))
       }
       
@@ -240,7 +246,7 @@ facileDataStoreServer <- function(id, x, ...,
   })
 }
 
-#' Crate a facileDataStoreServer module form whatevrrrrrrrrr
+#' Create a server module form a non-reactive context.
 #' 
 #' @export
 #' @param id the id of the server module
@@ -250,8 +256,12 @@ facileDataStoreServer <- function(id, x, ...,
 #' @return a [facileDataStoreServer()] module
 FacileDataStoreServer <- function(id, x, samples_subset = NULL, ...) {
   assert_string(id)
-  if (is(x, "reactive")) x <- x()
-  if (is(samples_subset, "reactive")) samples_subset <- samples_subset()
+  if (is(x, "reactive")) {
+    stop("You can only use this in non-reactive context")
+  }
+  if (is(samples_subset, "reactive")) {
+    stop("You can only use this in non-reactive context")
+  }
   
   if (test_string(x) || is(x, "FacileDataStore")) {
     xx <- reactive(x)
