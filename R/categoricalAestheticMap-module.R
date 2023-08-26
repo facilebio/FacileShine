@@ -22,7 +22,7 @@ categoricalAestheticMapServer <- function(id, rfds, color = FALSE,
     aes_values <- reactive({
       sapply(all_aes_vars, function(aes_name) {
         amod <- aes_mods[[aes_name]]
-        aval <- if (is.null(amod)) NULL else amod$covariate()
+        aval <- if (is.null(amod)) NULL else amod$selected()
         if (unselected(aval)) NULL else aval
       }, simplify = FALSE)
     }, label = "aes_values")

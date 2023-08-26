@@ -14,13 +14,17 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
     
     assay <- assaySelectServer("assay", rfds, debug = FALSE, ...)
     
-    features_all <- eventReactive(assay$assay_name(), {
-      req(from_fds(assay, rfds))
+    in_sync <- reactive({
+      assay$in_sync() && state$rfds_name == name(rfds)
+    })
+    
+    features_all <- eventReactive(assay$selected(), {
+      req(assay$in_sync())
       if (name(rfds) != state$rfds_name) {
         state$rfds_name <- name(rfds)
       }
       rfds$fds() |> 
-        features(assay_name = assay$assay_name())
+        features(assay_name = assay$selected())
     })
 
     observeEvent(features_all(), {
@@ -46,8 +50,11 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
       }
     }, ignoreNULL = FALSE)
     
-    selected <- reactive(state$selected)
-    
+    selected <- reactive({
+      req(in_sync())
+      state$selected
+    })
+  
     # ................................................................. genesets
     observe({
       # Only show the UI element if a GeneSetDb was passed in.
@@ -56,11 +63,12 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
     
     geneset <- callModule(
       sparrow.shiny::reactiveGeneSetSelect, "geneset", gdb, ...)
+    
     # We tend to use the same genesets between transcriptomics and proteomics
     # (based on ensembl id). When users switch to proteomics, firing on
-    # assay$assay_name() gives us a shot to update the geneset again, unless
+    # assay$selected() gives us a shot to update the geneset again, unless
     # the proteomics assay covers all of the same features as transcriptomics.
-    observeEvent({ geneset$membership(); assay$assay_name() }, {
+    observeEvent({ geneset$membership(); assay$selected() }, {
       req(initialized(assay))
       req(nrow(features_all()))
       
@@ -79,6 +87,7 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
       selected = selected,
       features_all = features_all,
       assay = assay,
+      in_sync = in_sync,
       .state = state,
       .ns = session$ns)
     class(vals) <- c("AssayFeatureSelectModule", "FacileDataAPI", "Labeled")    
@@ -97,8 +106,8 @@ initialized.AssayFeatureSelectModule <- function(x, ...) {
 #' @noRd
 #' @export
 from_fds.AssayFeatureSelectModule <- function(x, rfds, ...) {
-  if (!from_fds(x$assay, rfds)) return(FALSE)
-  # x[[".state"]]$rfds_name == name(rfds)
+  .Deprecated("Use x$in_sync() instead")
+  if (!x$assay$in_sync()) return(FALSE)
   isolate(x[[".state"]]$rfds_name == name(rfds))
 }
 

@@ -184,7 +184,7 @@ facileDataStoreServer <- function(id, x, ...,
       update <- unselected(state$active_samples) || 
         !setequal(fsamples$sample_id, state$active_samples$sample_id)
       if (update) {
-        flog("updating state$active_samples")
+        flog("{reset}{bold}{green}updating state$active_samples{reset}: ", nrow(fsamples))
         state$active_samples <- fsamples |> 
           as_facile_frame(classes = "reactive_facile_frame")
         
@@ -195,9 +195,11 @@ facileDataStoreServer <- function(id, x, ...,
         flog("filters$filtered() fired but active_samples didn't change: no-op")
       }
     }, 
+    ignoreInit = TRUE,
     label = "observeEvent(filtered$filtered())")
     
     active_samples <- reactive({
+      req(is(state$active_samples, "facile_frame"))
       state$active_samples
     })
     
@@ -420,7 +422,8 @@ user.DatamodFacileDataStore <- function(x, ...) {
 #' @export
 name.DatamodFacileDataStore <- function(x, ...) {
   req(initialized(x))
-  x[[".state"]][["name"]]
+  # x[[".state"]][["name"]]
+  name(x$fds())
 }
 
 # Utility Functions ============================================================

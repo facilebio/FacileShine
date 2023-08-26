@@ -29,22 +29,26 @@
 #'   A tibble with "variable" and "value" columns can be used so that only
 #'   specific levels of a covariate are ignored.
 categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
-                                             default_covariate = NULL,
-                                             ...,
-                                             with_none = TRUE,
-                                             exclude = reactive(NULL),
-                                             ignoreNULL = with_none,
-                                             debug = FALSE) {
+                                                   default_covariate = NULL,
+                                                   ...,
+                                                   with_none = TRUE,
+                                                   exclude = reactive(NULL),
+                                                   ignoreNULL = with_none,
+                                                   debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
   assert_flag(include1)
 
   moduleServer(id, function(input, output, session) {
     state <- reactiveValues(
       rfds_name = "__initializing__",
-      covariate = "__initializing__",
+      selected = "__initializing__",
       multiple = "__initializing__",
       summary = .empty_covariate_summary(),
       exclude = character())
+    
+    in_sync <- reactive({
+      state$rfds_name == name(rfds)
+    })
     
     observeEvent(exclude(), {
       ignore <- exclude()
@@ -65,12 +69,14 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
     })
     
     categorical_covariates <- eventReactive({
-      active_covariates(rfds)
+      # active_covariates(rfds)
+      rfds$active_covariates()
       excluded()
     }, {
       req(initialized(rfds))
-      out <- rfds |>
-        active_covariates() |>
+      # out <- rfds |>
+      #   active_covariates() |>
+      out <- rfds$active_covariates() |> 
         dplyr::filter(.data$class == "categorical") |>
         dplyr::filter(!.data$variable %in% state$exclude) |> 
         dplyr::arrange(variable, level)
@@ -108,15 +114,15 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       overlap <- intersect(selected, choices)
       if (length(overlap)) {
         if (!setequal(state$covariate, overlap)) {
-          state$covariate <- overlap
+          state$selected <- overlap
         }
         selected <- overlap
       } else {
         selected <- if (with_none) "---" else NULL
-        state$covariate <- ""
+        state$selected <- ""
       }
       
-      if (length(state$covariate) > 1) {
+      if (length(state$selected) > 1) {
         if (isFALSE(state$multiple)) state$multiple <- TRUE
       } else {
         if (isTRUE(state$multiple)) state$multiple <- FALSE
@@ -128,28 +134,30 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
     observeEvent(input$covariate, {
       cov <- input$covariate
       ftrace("{bold}covariate selectInput has fired: `", cov, "`")
-      current <- state$covariate
+      current <- state$selected
       if (unselected(cov)) cov <- ""
       if (!setequal(cov, current)) {
         ftrace("{bold}Updating covariate state: {current} -> {cov}{reset}",
                current = current, cov = cov)
-        state$covariate <- cov
+        state$selected <- cov
       }
     }, ignoreNULL = ignoreNULL)
     
-    covariate <- reactive({
+    
+    selected <- reactive({
       ftrace("covariate selection updated: ", state$covariate)
       # Before we return the covariate, let's make that the underlying samples
       # haven't changed and we aren't returning a stale covariate that used
       # to be available but has been replaced/fitered out.
-      if (!unselected(state$covariate)) {
-        req(all(state$covariate %in% categorical_covariates()$variable))
+      req(in_sync())
+      if (!unselected(state$selected)) {
+        req(all(state$selected %in% categorical_covariates()$variable))
       }
-      state$covariate
+      state$selected
     })
     
-    covariate.summary <- reactive({
-      covariate. <- covariate()
+    selected_summary <- reactive({
+      covariate. <- selected()
       allcovs. <- categorical_covariates()
       notselected <- unselected(covariate.) ||
         !(all(covariate. %in% allcovs.[["variable"]]))
@@ -170,16 +178,17 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
     })
 
     levels <- reactive({
-      covariate.summary() |> 
+      selected_summary() |> 
         filter(ninlevel > 0) |> 
         dplyr::pull(level)
     })
     
     vals <- list(
-      multiple = reactive(state$multiple),
-      covariate = covariate,
-      summary = covariate.summary,
+      selected = selected,
+      summary = selected_summary,
       levels = levels,
+      in_sync = in_sync,
+      multiple = reactive(state$multiple),
       covariates_all = categorical_covariates,
       excluded = excluded,
       .state = state,
@@ -215,7 +224,7 @@ categoricalSampleCovariateSelectInput <- function(
 #' @export
 #' @noRd
 initialized.CategoricalCovariateSelectModule <- function(x, ...) {
-  check <- c("covariate", "levels")
+  check <- c("selected", "levels")
   ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
   all(ready)
 }
@@ -223,13 +232,14 @@ initialized.CategoricalCovariateSelectModule <- function(x, ...) {
 #' @export
 #' @noRd
 from_fds.CategoricalCovariateSelectModule <- function(x, rfds, ...) {
+  .Deprecated("Use x$in_sync() instead. See `?from_fds`")
   isolate(x[[".state"]]$rfds_name == name(rfds))
 }
 
 #' @noRd
 #' @export
 name.CategoricalCovariateSelectModule <- function(x, ...) {
-  out <- x[["covariate"]]()
+  out <- x$selected()
   if (unselected(out)) NULL else out
 }
 
@@ -237,7 +247,7 @@ name.CategoricalCovariateSelectModule <- function(x, ...) {
 #' @export
 label.CategoricalCovariateSelectModule <- function(x, ...) {
   warning("TODO: Need to provide labels for categorical covariates")
-  x[["covariate"]]()
+  x$selected()
 }
 
 # Internal Helper Functions ====================================================

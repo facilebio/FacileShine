@@ -15,8 +15,9 @@ assaySelectServer <- function(id, rfds, ..., debug = FALSE) {
         feature_type = "__initializing__",
         nfeatures = "__initializing__"))
     
-    observeEvent(active_assays(rfds), {
-      aa <- active_assays(rfds)
+    observeEvent(rfds$active_assays(), {
+      # aa <- active_assays(rfds)
+      aa <- rfds$active_assays()
       update <- !setequal(state$assay_names, aa$assay)
       if (name(rfds) != state$rfds_name) {
         ftrace("Updating assaySelect due to new rfds")
@@ -74,30 +75,39 @@ assaySelectServer <- function(id, rfds, ..., debug = FALSE) {
       selected <- input$assay
       if (!unselected(selected)) {
         ftrace("Updating selected assay: ", selected)
-        state$assay_info <- active_assays(rfds) |> 
+        state$assay_info <- rfds$active_assays() |> # active_assays(rfds) |>
           filter(.data$assay == selected)
       }
     })
     
-    assay_name <- reactive({
+    selected <- reactive({
       if (unselected(state$assay_info)) "" else state$assay_info$assay
     })
     
+    in_sync <- reactive({
+      req(initialized(rfds))
+      state$rfds_name == name(rfds) &&
+        xor(unselected(selected()), selected() %in% assay_names())
+    })
+    
     assay_info <- reactive({
-      active_assays(rfds) |> 
-        filter(.data$assay == assay_name())
+      req(in_sync())
+      rfds$active_assays() |> 
+        filter(.data$assay == selected())
     })
     
     features <- reactive({
-      req(!unselected(assay_name()))
-      FacileData::features(rfds$fds(), assay_name = assay_name())
+      req(in_sync())
+      req(!unselected(selected()))
+      FacileData::features(rfds$fds(), assay_name = selected())
     })
     
     vals <- list(
-      assay_name = assay_name,
+      selected = selected,
       assay_names = assay_names,
       assay_info = assay_info,
       features = features,
+      in_sync = in_sync,
       .state = state,
       .ns = session$ns)
     class(vals) <- c("AssaySelectModule", "Labeled")
@@ -122,19 +132,20 @@ assaySelectInput <- function(id, label = "Assay", choices = NULL, selected = NUL
 initialized.AssaySelectModule <- function(x, ...) {
   check <- c("rfds_name", "assay_names", "assay_info")
   ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
-  congruent <- x$assay_name() %in% x$assay_names()
+  congruent <- x$selected() %in% x$assay_names()
   # when the underlying fds is swapped, sometimes the selected assay does not
   # match the available assays
-  all(ready) && !unselected(x$assay_name()) && congruent
+  all(ready) && !unselected(x$selected()) && congruent
 }
 
 #' @noRd
 #' @export
 from_fds.AssaySelectModule <- function(x, rfds, ...) {
+  .Deprecated(("Use module$in_sync() instead"))
   isolate({
     initialized(x) &&
       initialized(rfds) &&
       x$.state$rfds_name == name(rfds) &&
-      x$assay_name() %in% active_assays(rfds)$assay
+      x$selected() %in% rfds$active_assays()$assay
   })
 }

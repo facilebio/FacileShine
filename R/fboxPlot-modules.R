@@ -42,12 +42,12 @@ fboxPlotServer <- function(id, rfds, ...,
     rdat.core <- reactive({
       indiv. <- input$individual
       yvals. <- yaxis$selected()
-      req(!unselected(yvals.), from_fds(yaxis, rfds))
+      req(!unselected(yvals.), yaxis$in_sync())
       
-      xaxis. <- xaxis$covariate()
-      req(!unselected(xaxis.), from_fds(xaxis, rfds))
+      xaxis. <- xaxis$selected()
+      req(!unselected(xaxis.), xaxis$in_sync())
       
-      samples. <- active_samples(rfds)
+      samples. <- rfds$active_samples()
       ftrace("Retrieving assay data for boxplot")
 
       agg. <- !indiv.
@@ -96,7 +96,7 @@ fboxPlotServer <- function(id, rfds, ...,
     fbox <- eventReactive(rdat(), {
       dat <- req(rdat())
       yvals. <- yaxis$selected()
-      xaxis. <- xaxis$covariate()
+      xaxis. <- xaxis$selected()
       aes. <- aes$map()
       indiv. <- input$individual
       

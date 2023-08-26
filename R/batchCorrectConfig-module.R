@@ -19,7 +19,7 @@ batchCorrectConfigServer <- function(id, rfds, ..., debug = FALSE) {
     batch <- categoricalSampleCovariateSelectServer(
       "batch", rfds, with_none = FALSE)
     main <- categoricalSampleCovariateSelectServer(
-      "main", rfds, exclude = batch$covariate)
+      "main", rfds, exclude = batch$selected)
     
     vals <- list(
       batch = batch,

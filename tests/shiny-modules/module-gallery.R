@@ -11,8 +11,8 @@ aes_facet <- TRUE
 aes_hover <- TRUE
 aes_group <- TRUE
 
-kfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/BulkKPMPDataSet")
-nfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/FacileNightingaleDataSet")
+# kfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/BulkKPMPDataSet")
+# nfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/FacileNightingaleDataSet")
 
 if (FALSE) {
   lcovs <- fetch_sample_covariates(kfds)
@@ -88,16 +88,14 @@ shiny::shinyApp(
     fdslist <- FacileShine::facileDataSetSelectServer(
       "fdslist", reactive(datadir))
     
-    # rfds <- FacileShine::facileDataStoreServer(
-    #   "rfds", fdslist$path, user = user, debug = debug)
-    rfds <- FacileShine::FacileDataStoreServer(
+    rfds <- FacileShine::facileDataStoreServer(
       "rfds", fdslist$path, user = user, debug = debug)
     
     output$rfdsdebug <- shiny::renderText({
       output <- "not initialized"
       wtf <- try(req(initialized(rfds)), silent = TRUE)
       if (isTRUE(wtf)) {
-        output <- paste("nsamples:", nrow(active_samples(rfds)))
+        output <- paste("nsamples:", nrow(rfds$active_samples()))
       }
       output
     })
@@ -114,7 +112,7 @@ shiny::shinyApp(
     
     # these update the things available by ignoring things selected in cov1
     cov2 <- categoricalSampleCovariateSelectServer(
-      "cov2", rfds, exclude = cov1$covariate)
+      "cov2", rfds, exclude = cov1$selected)
     c2levels <- categoricalSampleCovariateLevelsSelectServer(
       "cov2levels", cov2, exclude = c1levels$values)
     

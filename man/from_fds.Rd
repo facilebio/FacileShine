@@ -12,5 +12,7 @@ from_fds(x, rfds, ...)
 \item{fds}{the ReactivFacileDataStore to test}
 }
 \description{
-Check that the data of a module comes from the expected fds.
+This was a temporary (2 day) fix. I think the \code{module$in_sync()} paradigm
+is a better one to ensure that the data that \code{module} is returning is still
+the same internal \code{rfds} that it came from.
 }

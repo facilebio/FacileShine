@@ -21,10 +21,9 @@ fscatterPlotServer <- function(id, rfds, ...,
     features <- reactive({
       lapply(dims, function(d) {
         out <- d$selected()
-        # It's important for this to be after the reactive event, otherwise it
-        # seems like the result of from_fds() gets cached(?) and $selected()
-        # won't fire even if it should.
-        req(from_fds(d, rfds))
+        # I've convinced myself that the `$in_sync()` calls has to come second,
+        # but I don't think that should be the case.
+        req(d$in_sync())
         out
       })
     })
@@ -52,7 +51,7 @@ fscatterPlotServer <- function(id, rfds, ...,
       
       ftrace("Retrieving assay data for scatterplot")
       
-      out <- active_samples(rfds)
+      out <- rfds$active_samples()
       batch. <- name(batch$batch)
       main. <- name(batch$main)
 

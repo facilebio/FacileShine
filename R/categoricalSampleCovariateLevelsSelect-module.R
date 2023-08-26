@@ -51,6 +51,7 @@ categoricalSampleCovariateLevelsSelectServer <- function(
       covariate$levels()
       excluded()
     } , {
+      req(covariate$in_sync())
       levels. <- covariate$levels()
       if (!is.null(missing_sentinel)) {
         levels. <- unique(c(levels., missing_sentinel()))
