@@ -21,17 +21,11 @@
 #' @return a list with `$depend()` and `$trigger()` to be used in reactive
 #'   expressions across your app.
 makeReactiveTrigger <- function() {
-  rv <- reactiveValues(a = 0L)
+  rv <- shiny::reactiveVal(0)
   out <- list(
-    depend = function() {
-      rv$a
-      invisible()
-    },
-    counter = function() isolate(rv$a), # for debugging purposes
-    trigger = function() {
-      rv$a <- isolate(rv$a + 1L)
-    }
-  )
+    depend = function() invisible(rv()),
+    counter = function() isolate(rv()), # for debugging purposes
+    trigger = function() invisible(rv(isolate(rv() + 1L))))
   class(out) <- "ReactiveTrigger"
   out
 }

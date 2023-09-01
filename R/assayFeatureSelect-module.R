@@ -1,110 +1,147 @@
-#' Retrieves assay features from a FacileDataStore for a given assay type.
-#'
+#' A module to pull out features from an assay with optional GeneSetDb support.
+#' 
 #' @export
-#' @importFrom shiny
-#'   callModule
-#'   isolate
-#'   observe
-#'   reactive
-#'   reactiveValues
-#'   updateSelectizeInput
-#' @rdname assayFeatureSelect
-#' @return a list with the following elements:
-#'   * `assay_info`: one row assay,assay_type,feature_type tibble
-#'   * `selected`: n-row feature_info_tbl() like tbl enumerating the assay
-#'     features selected in this module
-assayFeatureSelect <- function(input, output, session, rfds, gdb = NULL, ...,
-                               .exclude = NULL, .reactive = TRUE) {
+assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
+                                     exclude = NULL, debug = FALSE) {
   assert_class(rfds, "ReactiveFacileDataStore")
+  moduleServer(id, function(input, output, session) {
+    state <- reactiveValues(
+      rfds_name = "__initializing__",
+      selected = .no_features(),
+      # "labeled" API
+      name = "__initializing__",
+      label = "__initializing__")
+    
+    assay <- assaySelectServer("assay", rfds, debug = FALSE, ...)
+    
+    in_sync <- reactive({
+      assay$in_sync() && state$rfds_name == name(rfds)
+    })
+    
+    features_all <- eventReactive(assay$selected(), {
+      req(assay$in_sync())
+      if (name(rfds) != state$rfds_name) {
+        state$rfds_name <- name(rfds)
+      }
+      rfds$fds() |> 
+        features(assay_name = assay$selected())
+    })
 
-  isolate. <- if (.reactive) base::identity else shiny::isolate
-
-  state <- reactiveValues(
-    selected = .no_features(),
-    # "labeled" API
-    name = "__initializing__",
-    label = "__initializing__")
-
-
-  if (!is.null(.exclude)) {
-    # TODO: Are we excluding assays altogether, features from assays, or both?
-  }
-
-  assay_select <- callModule(assaySelect, "assay", rfds, .reactive = .reactive)
-
-  # Update assayFeatureSelect with feature universe from assay_select
-  observe({
-    universe <- assay_select$features()
-    choices <- setNames(universe[["feature_id"]], universe[["name"]])
-    updateSelectizeInput(session, "features", choices = choices,
-                         selected = NULL, server = TRUE)
+    observeEvent(features_all(), {
+      shiny::updateSelectizeInput(
+        session, "features", 
+        choices = setNames(features_all()$feature_id, features_all()$name),
+        selected = NULL, server = TRUE)
+    })
+    
+    observeEvent(input$features, {
+      req(nrow(features_all()))
+      ifeatures <- input$features
+      if (unselected(ifeatures)) {
+        out <- .no_features()
+      } else {
+        out <- filter(features_all(), .data$feature_id %in% ifeatures)
+      }
+      
+      if (!setequal(out$feature_id, state$selected$feature_id)) {
+        ftrace("updating selected features: ", 
+               paste(out$feature_id, collapse = ","))
+        state$selected <- out
+      }
+    }, ignoreNULL = FALSE)
+    
+    selected <- reactive({
+      req(in_sync())
+      state$selected
+    })
+  
+    # ................................................................. genesets
+    observe({
+      # Only show the UI element if a GeneSetDb was passed in.
+      shinyjs::toggleElement("genesetbox", condition = !is.null(gdb()))
+    })
+    
+    geneset <- callModule(
+      sparrow.shiny::reactiveGeneSetSelect, "geneset", gdb, ...)
+    
+    # We tend to use the same genesets between transcriptomics and proteomics
+    # (based on ensembl id). When users switch to proteomics, firing on
+    # assay$selected() gives us a shot to update the geneset again, unless
+    # the proteomics assay covers all of the same features as transcriptomics.
+    observeEvent({ geneset$membership(); assay$selected() }, {
+      req(initialized(assay))
+      req(nrow(features_all()))
+      
+      gfeatures <- geneset$membership()
+      out <- semi_join(features_all(), gfeatures, by = "feature_id")
+      
+      if (!setequal(out$feature_id, state$selected$feature_id)) {
+        # state$selected <- out
+        choices <- setNames(features_all()$feature_id, features_all()$name)
+        updateSelectizeInput(session, "features", selected = out$feature_id,
+                             choices = choices, server = TRUE)
+      }
+    }, ignoreNULL = TRUE)
+    
+    vals <- list(
+      selected = selected,
+      features_all = features_all,
+      assay = assay,
+      in_sync = in_sync,
+      .state = state,
+      .ns = session$ns)
+    class(vals) <- c("AssayFeatureSelectModule", "FacileDataAPI", "Labeled")    
+    vals
   })
+}
 
-  selected <- reactive({
-    req(initialized(rfds))
-    current <- isolate(state$selected)
-    selected_ids <- input$features
-    # Putting req(!is.null(selected_ids)) kills the output
-    # req(!is.null(selected_ids)) # NULLFlash?
-    universe <- assay_select$features()
+#' @noRd
+#' @export
+initialized.AssayFeatureSelectModule <- function(x, ...) {
+  check <- c("assay_names", "assay_info")
+  ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
+  initialized(x$assay) && all(ready) && is(x$features_all(), "tbl")
+}
 
-    is.unselected <- unselected(selected_ids)
-    bad.ids <- setdiff(selected_ids, universe[["feature_id"]])
-
-    if (is.unselected || length(bad.ids)) {
-      selected <- .no_features()
-    } else {
-      selected <- filter(universe, feature_id %in% selected_ids)
-    }
-
-    if (!setequal(current$feature_id, selected$feature_id)) {
-      state$selected <- selected
-    }
-
-    state$selected
-  })
-
-  vals <- list(
-    selected = selected,
-    assay_info = assay_select$result,
-    .state = state,
-    .ns = session$ns)
-  class(vals) <- c("AssayFeatureSelect", "FacileDataAPI", "Labeled")
-
-  vals
+#' @noRd
+#' @export
+from_fds.AssayFeatureSelectModule <- function(x, rfds, ...) {
+  .Deprecated("Use x$in_sync() instead")
+  if (!x$assay$in_sync()) return(FALSE)
+  isolate(x[[".state"]]$rfds_name == name(rfds))
 }
 
 #' @export
+#' @noRd
 #' @importFrom shiny selectInput selectizeInput
 #' @rdname assayFeatureSelect
 #' @param multiple,... passed into the `"features"` `selectizeInput`
-assayFeatureSelectUI <- function(id, label = NULL, multiple = TRUE, ...) {
+assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE, ...) {
   ns <- NS(id)
-
+  
   if (is.null(label)) {
     assay.style <- ""
   } else {
     assay.style <- "padding-top: 1.7em"
   }
-
+  
   out <- tagList(
-    fluidRow(
-      column(9, selectizeInput(ns("features"), label = label, choices = NULL,
-                               multiple = multiple, ...)),
-      # column(3, selectInput(ns("assay"), label = NULL, choices = NULL))),
-      column(
-        3,
-        tags$div(style = assay.style,
-                 assaySelectUI(ns("assay"), label = NULL, choices = NULL)))))
-  if (FALSE) {
-    # add genesets
-    out <- tagList(
-      out,
-      fluidRow(
-        column(12,
-               selectInput(ns("fset"), label = NULL,
-                           choices = "GeneSetDb for assay"))))
-  }
+    shiny::fluidRow(
+      shiny::column(
+        width = 9,
+        selectizeInput(ns("features"), label = label, choices = NULL,
+                       multiple = multiple)),
+      shiny::column(
+        width = 3,
+        shiny::tags$div(
+          style = assay.style,
+          assaySelectInput(ns("assay"), label = NULL, choices = NULL)))),
+    shinyjs::hidden(
+      shiny::tags$div(
+        id = ns("genesetbox"),
+        sparrow.shiny::reactiveGeneSetSelectUI(ns("geneset"))))
+  )
+  
   out
 }
 
@@ -112,7 +149,7 @@ assayFeatureSelectUI <- function(id, label = NULL, multiple = TRUE, ...) {
 
 #' @noRd
 #' @export
-name.AssayFeatureSelect <- function(x, ...) {
+name.AssayFeatureSelectModule <- function(x, ...) {
   xf <- x[["selected"]]()
   out <- if (nrow(xf) == 0) {
     "nothing"
@@ -126,14 +163,16 @@ name.AssayFeatureSelect <- function(x, ...) {
 
 #' @noRd
 #' @export
-label.AssayFeatureSelect <- function(x, ...) {
+label.AssayFeatureSelectModule <- function(x, ...) {
   xf <- x[["selected"]]()
   if (nrow(xf) == 0) {
     "nothing"
   } else if (nrow(xf) == 1) {
     xf$name
-  } else {
+  } else if (nrow(xf) < 10) {
     paste(xf$name, collapse = ",")
+  } else {
+    "score"
   }
 }
 

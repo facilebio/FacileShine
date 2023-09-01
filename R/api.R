@@ -67,6 +67,20 @@ reset <- function(x, ...) {
   UseMethod("reset", x)
 }
 
+#' Check that the data of a module comes from the expected fds.
+#' 
+#' This was a temporary (2 day) fix. I think the `module$in_sync()` paradigm
+#' is a better one to ensure that the data that `module` is returning is still
+#' the same internal `rfds` that it came from.
+#' 
+#' @export
+#' @param x the moduleServer
+#' @param fds the ReactivFacileDataStore to test
+from_fds <- function(x, rfds, ...) {
+  .Deprecated("Use module$in_sync() instead")
+  UseMethod("from_fds", x)
+}
+
 # Labeled API ==================================================================
 # name and label generic definitions come from FacileData
 
@@ -90,19 +104,19 @@ label.Labeled <- function(x, ...) {
 
 # Defined primarily for ReactiveFacileDataStore ================================
 
-#' @rdname reactiveFacileDataStore-module
+#' @noRd
 #' @export
 active_assays <- function(x, ...) {
   UseMethod("active_assays", x)
 }
 
-#' @rdname reactiveFacileDataStore-module
+#' @noRd
 #' @export
 active_covariates <- function(x, ...) {
   UseMethod("active_covariates", x)
 }
 
-#' @rdname reactiveFacileDataStore-module
+#' @noRd
 #' @export
 active_samples <- function(x, ...) {
   UseMethod("active_samples", x)

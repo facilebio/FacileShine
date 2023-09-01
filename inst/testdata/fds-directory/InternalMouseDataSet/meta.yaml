@@ -1,0 +1,3 @@
+name: "Private Company: Mouse Data"
+organism: Mus musculus
+default_assay: counts
