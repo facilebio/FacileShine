@@ -1,11 +1,10 @@
 Package: FacileShine
 Type: Package
 Title: Shiny primitives to interact with FacileData and FacileViz objects.
-Version: 0.98.9
+Version: 0.98.10
 Authors@R: c(
     person("Steve", "Lianoglou", , "slianoglou@gmail.com", c("aut", "cre"),
-      comment = c(ORCID = "0000-0002-0924-1754")),
-    person("Denali Therapeutics", role = c("cph", "fnd")))
+      comment = c(ORCID = "0000-0002-0924-1754")))
 Description: Provides shiny "primitives" to enable GUI driven interaction over
     FacileData and FacileViz objects. These are provided in the form of shiny
     modules and gadgets.

@@ -2,6 +2,7 @@ devtools::load_all(".")
 
 user <- Sys.getenv("USER")
 datadir <- "~/workspace/facilebio/data/"
+datadir <- "~/workspace/projects/trv/chemoproteomics/faciledata"
 debug <- TRUE
 options(facile.log.level.fshine = "trace")
 

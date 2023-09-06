@@ -34,6 +34,8 @@
 #' @export
 #' @param id the id of the module
 #' @param x the thing that will instantiate a FacileDataSet
+#' @param filter_vars the variables to use for filtering. Default is `NULL`,
+#'   which means to use all of the variables.
 #' @param user the user using it
 #' @return a DatamodFacileDataStore module with the following named elemets:
 #'   * `fds`: the `BoxedFacileDataStore`
@@ -47,7 +49,7 @@
 #'   * `trigger`: reactive triggers over samples, assays, covariates. I don't
 #'     think we need to use these now ...
 facileDataStoreServer <- function(id, x, ...,
-                                  ignore_sample_covariates = reactive(NULL),
+                                  filter_vars = reactive(NULL),
                                   samples_subset = reactive(NULL),
                                   samples_filter_init = reactive(NULL),
                                   user = Sys.getenv("USER"),
@@ -150,15 +152,39 @@ facileDataStoreServer <- function(id, x, ...,
     vars2filter <- reactive({
       req(is(pdata(), "tbl"))
       flog("defining sample_covariates to use for datamod filters")
-      fme <- colnames(pdata())
-      ignore <- c("dataset", "sample_id")
-      imore <- ignore_sample_covariates()
-      if (test_character(imore, min.len = 1)) {
-        ignore <- unique(c(ignore, imore))
-        ftrace("Ignoring the following columns as sample filters: ", 
-               paste(ignore, collapse = ";;"))
+
+      pdat <- pdata()
+      fvars <- unique(c(filter_vars(), meta_info(fds())[["sample_filters"]]))
+      fall <- colnames(pdat)
+      
+      if (test_flag(fvars) && isFALSE(fvars)) {
+        # TODO: Disables filtering
+        ftrace("Disable all filters ...")
+        fme <- character()
+      } else if (test_character(fvars)) {
+        fme <- intersect(fall, fvars)
+      } else {
+        ftrace("No modification to filter variables")
+        fme <- NULL
       }
-      setdiff(fme, ignore)
+      
+      ignore <- c("dataset", "sample_id")
+      fme <- setdiff(fme, ignore)
+
+      # NOTE: we are only filtering on categorical varialbes for now.
+      ignore.numeric <- sapply(pdat, is.numeric)
+      fme <- setdiff(fme, fall[ignore.numeric])
+      
+      # NOTE: When se support "ephemeral annotations" we should include
+      # all those by default.
+      if (test_character(fme, min.len = 1)) {
+        ftrace("Filtering dataset using these covariates: ",
+               paste(fme, collapse = ";;"))
+      } else if (test_character(fme, max.len = 0)) {
+        ftrace("Empty filtering variables means disable filtering")
+      }
+      
+      fme
     }, label = "var2filter")
     
     # filters$filtered() are coming back as a wide_covariates, facile_frame
@@ -182,15 +208,14 @@ facileDataStoreServer <- function(id, x, ...,
       
       # check if fsamples is different from state$active_samples
       update <- unselected(state$active_samples) || 
-        !setequal(fsamples$sample_id, state$active_samples$sample_id)
+        !setequal(
+          paste0(fsamples$dataset, fsamples$sample_id),
+          paste0(state$active_samples$dataset, state$active_samples$sample_id))
+      
       if (update) {
         flog("{reset}{bold}{green}updating state$active_samples{reset}: ", nrow(fsamples))
         state$active_samples <- fsamples |> 
           as_facile_frame(classes = "reactive_facile_frame")
-        
-        shinyWidgets::updateProgressBar(
-          session = session, id = "pbar",
-          value = nrow(fsamples), total = nrow(pdata()))
       } else {
         flog("filters$filtered() fired but active_samples didn't change: no-op")
       }
@@ -201,6 +226,12 @@ facileDataStoreServer <- function(id, x, ...,
     active_samples <- reactive({
       req(is(state$active_samples, "facile_frame"))
       state$active_samples
+    })
+    
+    observeEvent(active_samples(), {
+      shinyWidgets::updateProgressBar(
+        session = session, id = "pbar",
+        value = nrow(active_samples()), total = nrow(pdata()))
     })
     
     # active_assays ------------------------------------------------------------
