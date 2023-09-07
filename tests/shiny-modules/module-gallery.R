@@ -2,7 +2,7 @@ devtools::load_all(".")
 
 user <- Sys.getenv("USER")
 datadir <- "~/workspace/facilebio/data/"
-datadir <- "~/workspace/projects/trv/chemoproteomics/faciledata"
+# datadir <- "~/workspace/projects/trv/chemoproteomics/faciledata"
 debug <- TRUE
 options(facile.log.level.fshine = "trace")
 
@@ -14,6 +14,7 @@ aes_group <- TRUE
 
 # kfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/BulkKPMPDataSet")
 # nfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/FacileNightingaleDataSet")
+# s0 <- FacileData::filter_samples(dfds, cell_line %in% c("JEKO", "KG"))
 
 afds <- FacileData::an_fds()
 asamples <- FacileData::samples(afds) |> FacileData::with_sample_covariates()
@@ -119,7 +120,8 @@ shiny::shinyApp(
       "fdslist", reactive(datadir))
     
     rfds <- FacileShine::facileDataStoreServer(
-      "rfds", fdslist$path, user = user, debug = debug)
+      "rfds", fdslist$path, 
+      user = user, debug = debug)
     filterSamplesTableServer("fdstable", rfds)
     
     rfdssub <- FacileShine::facileDataStoreServer(

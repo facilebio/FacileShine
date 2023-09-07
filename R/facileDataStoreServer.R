@@ -125,7 +125,7 @@ facileDataStoreServer <- function(id, x, ...,
         ftrace("{bold}{red}adding ephemeral sample covariates [pdata]")
         is_long <- local({
           check <- c("variable", "value")
-          length(setdiff(check, colnames(state$esample_annotation)) == 0)
+          all(check %in% colnames(state$esample_annotation))
         })
         if (is_long) {
           # TODO: pivot into wide form and presere type
@@ -134,8 +134,14 @@ facileDataStoreServer <- function(id, x, ...,
             tidyr::pivot_wider(
               id_cols = c("dataset", "sample_id"),
               names_from = "variable")
+        } else {
+          ephemeral <- state$esample_annotation
         }
-        out <- left_join(out, ephemeral, by = c("dataset", "sample_id"))
+        
+        # run the join so that the ephemeral values take precedence over the
+        # internal ones
+        out <- left_join(out, ephemeral, by = c("dataset", "sample_id"),
+                         suffix = c(".infds", ""))
       }
       
       for (cname in colnames(out)) {
@@ -263,8 +269,8 @@ facileDataStoreServer <- function(id, x, ...,
       
       output$fdsdebug <- shiny::renderText({
         output <- "not initialized"
-        wtf <- try(req(initialized(rfds)), silent = TRUE)
-        if (isTRUE(wtf)) {
+        asamples <- active_samples()
+        if (is(asamples, "tbl")) {
           output <- paste("nsamples:", nrow(rfds$active_samples()))
         }
         output
@@ -454,9 +460,11 @@ initialized.BoxedFacileDataStore <- function(x, ...) {
 #' @noRd
 #' @export
 initialized.DatamodFacileDataStore <- function(x, ...) {
-  check <- c("name", "active_samples")
+  # check <- c("name", "active_samples")
+  # ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
+  check <- c("name")
   ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
-  initialized(x$fds()) && all(ready)
+  initialized(x$fds()) && all(ready) && !unselected(x$active_samples())
 }
 
 #' @noRd
