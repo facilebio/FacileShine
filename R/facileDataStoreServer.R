@@ -443,7 +443,7 @@ facileDataStoreUI <- function(id, with_filters = TRUE, ..., debug = FALSE) {
   out
 }
 
-# FacileDataStore methods -----------------------------------------------
+# FacileDataStore methods ------------------------------------------------------
 
 #' @noRd
 #' @export

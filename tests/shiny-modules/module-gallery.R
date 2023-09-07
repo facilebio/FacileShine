@@ -105,6 +105,7 @@ shiny::shinyApp(
         # Prefiltered FacileDataStore [IC samples (14)] ------------------------
         shiny::tags$hr(),
         shiny::tags$h2("samples-fixed faciledatastore: IC, 14 samples"),
+        # facileDataStoreUI("rfdsic", with_filters = TRUE),
         filteredSamplesTable("fdsictable"),
         
         # End ------------------------------------------------------------------
@@ -136,6 +137,7 @@ shiny::shinyApp(
       with_filters = FALSE,
       user = user, debug = debug)
     filterSamplesTableServer("fdsictable", rfdsic)
+    
 
     output$rfdsdebug <- shiny::renderText({
       output <- "not initialized"
