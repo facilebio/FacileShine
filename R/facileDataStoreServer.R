@@ -49,11 +49,14 @@
 #'   * `trigger`: reactive triggers over samples, assays, covariates. I don't
 #'     think we need to use these now ...
 facileDataStoreServer <- function(id, x, ...,
+                                  with_filters = TRUE,
                                   filter_vars = reactive(NULL),
                                   samples_subset = reactive(NULL),
                                   samples_filter_init = reactive(NULL),
                                   user = Sys.getenv("USER"),
                                   debug = FALSE) {
+  assert_flag(with_filters)
+  
   moduleServer(id, function(input, output, session) {
     state <- reactiveValues(
       name = "__initializing__",
@@ -122,7 +125,7 @@ facileDataStoreServer <- function(id, x, ...,
         ftrace("{bold}{red}adding ephemeral sample covariates [pdata]")
         is_long <- local({
           check <- c("variable", "value")
-          length(setdiff(check, colnames(state$esample_annotation)) == 0)
+          all(check %in% colnames(state$esample_annotation))
         })
         if (is_long) {
           # TODO: pivot into wide form and presere type
@@ -131,8 +134,14 @@ facileDataStoreServer <- function(id, x, ...,
             tidyr::pivot_wider(
               id_cols = c("dataset", "sample_id"),
               names_from = "variable")
+        } else {
+          ephemeral <- state$esample_annotation
         }
-        out <- left_join(out, ephemeral, by = c("dataset", "sample_id"))
+        
+        # run the join so that the ephemeral values take precedence over the
+        # internal ones
+        out <- left_join(out, ephemeral, by = c("dataset", "sample_id"),
+                         suffix = c(".infds", ""))
       }
       
       for (cname in colnames(out)) {
@@ -146,94 +155,128 @@ facileDataStoreServer <- function(id, x, ...,
       out
     }, label = "pdata")
     
-    
-    # datamods::filters --------------------------------------------------------
-    # what sample_covariate columns do we want to include in the filtering?
-    vars2filter <- reactive({
-      req(is(pdata(), "tbl"))
-      flog("defining sample_covariates to use for datamod filters")
-
-      pdat <- pdata()
-      fvars <- unique(c(filter_vars(), meta_info(fds())[["sample_filters"]]))
-      fall <- colnames(pdat)
-      
-      if (test_flag(fvars) && isFALSE(fvars)) {
-        # TODO: Disables filtering
-        ftrace("Disable all filters ...")
-        fme <- character()
-      } else if (test_character(fvars)) {
-        fme <- intersect(fall, fvars)
-      } else {
-        ftrace("No modification to filter variables")
-        fme <- NULL
-      }
-      
-      ignore <- c("dataset", "sample_id")
-      fme <- setdiff(fme, ignore)
-
-      # NOTE: we are only filtering on categorical varialbes for now.
-      ignore.numeric <- sapply(pdat, is.numeric)
-      fme <- setdiff(fme, fall[ignore.numeric])
-      
-      # NOTE: When se support "ephemeral annotations" we should include
-      # all those by default.
-      if (test_character(fme, min.len = 1)) {
-        ftrace("Filtering dataset using these covariates: ",
-               paste(fme, collapse = ";;"))
-      } else if (test_character(fme, max.len = 0)) {
-        ftrace("Empty filtering variables means disable filtering")
-      }
-      
-      fme
-    }, label = "var2filter")
-    
-    # filters$filtered() are coming back as a wide_covariates, facile_frame
-    filters <- datamods::filter_data_server(
-      id = "filtering",
-      data = pdata,
-      vars = vars2filter,
-      name = reactive(isolate(state$name)),
-      # name = reactive("dataset"),
-      defaults = samples_filter_init,
-      drop_ids = TRUE,
-      widget_char = "picker")
-    
-    # active_samples update ----------------------------------------------------    
-    # state$active_samples can only be updated when people mess with filters
-    observeEvent(filters$filtered(), {
-      filtered <- filters$filtered()
-      ftrace("retrieving ", nrow(filtered), " new sample subset from ",
-             "datamod::filters [observeEvent||filtered||filtered()")
-      fsamples <- distinct(filtered, dataset, sample_id)
-      
-      # check if fsamples is different from state$active_samples
-      update <- unselected(state$active_samples) || 
-        !setequal(
-          paste0(fsamples$dataset, fsamples$sample_id),
-          paste0(state$active_samples$dataset, state$active_samples$sample_id))
-      
-      if (update) {
-        flog("{reset}{bold}{green}updating state$active_samples{reset}: ", nrow(fsamples))
-        state$active_samples <- fsamples |> 
-          as_facile_frame(classes = "reactive_facile_frame")
-      } else {
-        flog("filters$filtered() fired but active_samples didn't change: no-op")
-      }
-    }, 
-    ignoreInit = TRUE,
-    label = "observeEvent(filtered$filtered())")
-    
     active_samples <- reactive({
       req(is(state$active_samples, "facile_frame"))
       state$active_samples
     })
     
-    observeEvent(active_samples(), {
-      shinyWidgets::updateProgressBar(
-        session = session, id = "pbar",
-        value = nrow(active_samples()), total = nrow(pdata()))
-    })
-    
+    if (with_filters) {
+      # datamods::filters ------------------------------------------------------
+      # what sample_covariate columns do we want to include in the filtering?
+      vars2filter <- reactive({
+        req(is(pdata(), "tbl"))
+        flog("defining sample_covariates to use for datamod filters")
+        
+        pdat <- pdata()
+        fvars <- unique(c(filter_vars(), meta_info(fds())[["sample_filters"]]))
+        fall <- colnames(pdat)
+        
+        if (test_flag(fvars) && isFALSE(fvars)) {
+          # TODO: Disables filtering
+          ftrace("Disable all filters ...")
+          fme <- character()
+        } else if (test_character(fvars)) {
+          fme <- intersect(fall, fvars)
+        } else {
+          ftrace("No modification to filter variables")
+          fme <- NULL
+        }
+        
+        ignore <- c("dataset", "sample_id")
+        fme <- setdiff(fme, ignore)
+        
+        # NOTE: we are only filtering on categorical varialbes for now.
+        ignore.numeric <- sapply(pdat, is.numeric)
+        fme <- setdiff(fme, fall[ignore.numeric])
+        
+        # NOTE: When se support "ephemeral annotations" we should include
+        # all those by default.
+        if (test_character(fme, min.len = 1)) {
+          ftrace("Filtering dataset using these covariates: ",
+                 paste(fme, collapse = ";;"))
+        } else if (test_character(fme, max.len = 0)) {
+          ftrace("Empty filtering variables means disable filtering")
+        }
+        
+        fme
+      }, label = "var2filter")
+      
+      # filters$filtered() are coming back as a wide_covariates, facile_frame
+      filters <- datamods::filter_data_server(
+        id = "filtering",
+        data = pdata,
+        vars = vars2filter,
+        name = reactive(isolate(state$name)),
+        # name = reactive("dataset"),
+        defaults = samples_filter_init,
+        drop_ids = TRUE,
+        widget_char = "picker")
+      
+      # active_samples update --------------------------------------------------    
+      # state$active_samples can only be updated when people mess with filters
+      observeEvent(
+        filters$filtered(),
+        ignoreInit = TRUE,
+        label = "observeEvent(filtered$filtered())",
+        {
+          filtered <- filters$filtered()
+          ftrace("retrieving ", nrow(filtered), " new sample subset from ",
+                 "datamod::filters [observeEvent||filtered||filtered()")
+          fsamples <- distinct(filtered, dataset, sample_id)
+          
+          # check if fsamples is different from state$active_samples
+          update <- unselected(state$active_samples) || 
+            !setequal(
+              paste0(fsamples$dataset, fsamples$sample_id),
+              paste0(state$active_samples$dataset, state$active_samples$sample_id))
+          
+          if (update) {
+            flog(
+              "{reset}{bold}{green}updating state$active_samples{reset}: ", 
+              nrow(fsamples))
+            state$active_samples <- fsamples |> 
+              as_facile_frame(classes = "reactive_facile_frame")
+          } else {
+            flog("filters$filtered() fired but active_samples didn't change: no-op")
+          }
+        })
+      
+      observeEvent(active_samples(), {
+        shinyWidgets::updateProgressBar(
+          session = session, id = "pbar",
+          value = nrow(active_samples()), total = nrow(pdata()))
+      })
+    } else {
+      filters <- reactive(NULL)
+      
+      observeEvent(pdata(), {
+        pdat <- req(pdata(), is(pdata(), "tbl"))
+        psamples <- distinct(pdat, dataset, sample_id)
+        update <- unselected(state$active_samples) || 
+          !setequal(
+            paste0(psamples$dataset, psamples$sample_id),
+            paste0(state$active_samples$dataset, state$active_samples$sample_id))
+        if (update) {
+          flog(
+            "{reset}{bold}{green}updating state$active_samples{reset}: ", 
+            nrow(pdat))
+          state$active_samples <- psamples |> 
+            as_facile_frame(classes = "reactive_facile_frame")
+        } else {
+          flog("pdata() fired but active_samples didn't change: no-op")
+        }
+      })
+      
+      output$fdsdebug <- shiny::renderText({
+        output <- "not initialized"
+        asamples <- active_samples()
+        if (is(asamples, "tbl")) {
+          output <- paste("nsamples:", nrow(rfds$active_samples()))
+        }
+        output
+      })
+    }
+
     # active_assays ------------------------------------------------------------
     active_assays <- eventReactive(state$active_samples, {
       req(is(state$active_samples, "facile_frame"))
@@ -384,24 +427,29 @@ filteredSamplesTable <- function(id, ..., debug = FALSE) {
 #' 
 #' @export
 #' @noRd
-facileDataStoreUI <- function(id, ..., debug = FALSE) {
+facileDataStoreUI <- function(id, with_filters = TRUE, ..., debug = FALSE) {
   ns <- shiny::NS(id)
-  shiny::fluidRow(
-    shiny::column(
-      width = 3,
-      datamods::filter_data_ui(ns("filtering"), show_nrow = TRUE)
-    ),
-    shiny::column(
-      width = 9,
-      shinyWidgets::progressBar(
-        id = ns("pbar"), value = 100, total = 100, display_pct = TRUE
+  if (with_filters) {
+    out <- shiny::fluidRow(
+      shiny::column(
+        width = 3,
+        datamods::filter_data_ui(ns("filtering"), show_nrow = TRUE)
       ),
-      reactable::reactableOutput(outputId = ns("table"))
+      shiny::column(
+        width = 9,
+        shinyWidgets::progressBar(
+          id = ns("pbar"), value = 100, total = 100, display_pct = TRUE
+        ),
+        reactable::reactableOutput(outputId = ns("table"))
+      )
     )
-  )
+  } else {
+    out <- shiny::verbatimTextOutput("fdsdebug")
+  }
+  out
 }
 
-# FacileDataStore methods -----------------------------------------------
+# FacileDataStore methods ------------------------------------------------------
 
 #' @noRd
 #' @export
@@ -412,9 +460,11 @@ initialized.BoxedFacileDataStore <- function(x, ...) {
 #' @noRd
 #' @export
 initialized.DatamodFacileDataStore <- function(x, ...) {
-  check <- c("name", "active_samples")
+  # check <- c("name", "active_samples")
+  # ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
+  check <- c("name")
   ready <- sapply(check, \(s) !unselected(x$.state[[s]]))
-  initialized(x$fds()) && all(ready)
+  initialized(x$fds()) && all(ready) && !unselected(x$active_samples())
 }
 
 #' @noRd

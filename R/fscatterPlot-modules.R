@@ -127,14 +127,11 @@ fscatterPlotServer <- function(id, rfds, ...,
       psize <- req(plotsize())
       output$scatterplot <- plotly::renderPlotly(plot(fscatter()))
       output$plotlybox <- shiny::renderUI({
-        # withSpinner({
-        shinyWidgets::addSpinner({
+        waiter::withWaiter({
           plotly::plotlyOutput(session$ns("scatterplot"),
                                width = psize$width,
                                height = psize$height)
-        }, 
-        spin = getOption("FacileShine.spinner_type"), 
-        color = getOption("FacileShine.spinner_color"))
+        })
       })
     })
     

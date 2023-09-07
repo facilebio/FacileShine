@@ -2,7 +2,7 @@ devtools::load_all(".")
 
 user <- Sys.getenv("USER")
 datadir <- "~/workspace/facilebio/data/"
-datadir <- "~/workspace/projects/trv/chemoproteomics/faciledata"
+# datadir <- "~/workspace/projects/trv/chemoproteomics/faciledata"
 debug <- TRUE
 options(facile.log.level.fshine = "trace")
 
@@ -14,7 +14,13 @@ aes_group <- TRUE
 
 # kfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/BulkKPMPDataSet")
 # nfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/FacileNightingaleDataSet")
+# s0 <- FacileData::filter_samples(dfds, cell_line %in% c("JEKO", "KG"))
 
+afds <- FacileData::an_fds()
+asamples <- FacileData::samples(afds) |> FacileData::with_sample_covariates()
+s1 <- dplyr::filter(asamples, cell_abbrev == "CNT") # 10 samples
+s2 <- dplyr::filter(asamples, cell_abbrev == "IC")  # 14 samples
+s3 <- dplyr::bind_rows(s1, s2)
 if (FALSE) {
   lcovs <- fetch_sample_covariates(kfds)
   cov.sum.short <- summary(lcovs)
@@ -34,12 +40,20 @@ shiny::shinyApp(
           FacileShine::facileSampleFiltersSelectInput("rfds", debug = debug)),
         
       shiny::tags$h3("Debug Filters"),
-      shiny::verbatimTextOutput("rfdsdebug")),
+      shiny::verbatimTextOutput("rfdsdebug"),
+      
+      shiny::tags$h3("Subsetted FDS"),
+      shiny::wellPanel(
+        FacileShine::facileSampleFiltersSelectInput("rfdssub", debug = debug))
+      ),
+      
+      
+      
       
       shiny::column(
         width = 9,
 
-        # Assay Select ----------------------------------------------------------
+        # Assay Select ---------------------------------------------------------
         shiny::tags$h2("Assay Select"),
         assaySelectInput("assay", label = "Assay", debug = debug),
 
@@ -78,7 +92,23 @@ shiny::shinyApp(
         shiny::tags$hr(),
         shiny::tags$h2("fscaterPlot"),
         fscatterPlotUI("scatterplot"),
-
+        
+        # Filtered Samples Table -----------------------------------------------
+        shiny::tags$hr(),
+        shiny::tags$h2("Filtered Samples Table"),
+        filteredSamplesTable("fdstable"),
+        
+        # Prefiltered FacileDataStore [CNT samples (10)] -----------------------
+        shiny::tags$hr(),
+        shiny::tags$h2("samples-fixed faciledatastore: CNT, 10 samples"),
+        filteredSamplesTable("fdscnttable"),
+        
+        # Prefiltered FacileDataStore [IC samples (14)] ------------------------
+        shiny::tags$hr(),
+        shiny::tags$h2("samples-fixed faciledatastore: IC, 14 samples"),
+        # facileDataStoreUI("rfdsic", with_filters = TRUE),
+        filteredSamplesTable("fdsictable"),
+        
         # End ------------------------------------------------------------------
         shiny::tags$hr(),
         shiny::tags$h2("End")
@@ -90,8 +120,27 @@ shiny::shinyApp(
       "fdslist", reactive(datadir))
     
     rfds <- FacileShine::facileDataStoreServer(
-      "rfds", fdslist$path, user = user, debug = debug)
+      "rfds", fdslist$path, 
+      user = user, debug = debug)
+    filterSamplesTableServer("fdstable", rfds)
     
+    rfdssub <- FacileShine::facileDataStoreServer(
+      "rfdssub", reactive(afds), samples_subset = reactive(s3),
+      user = user, debug = debug)
+    
+    rfdscnt <- FacileShine::facileDataStoreServer(
+      "rfdscnt", reactive(afds), samples_subset = reactive(s1),
+      with_filters = FALSE,
+      user = user, debug = debug)
+    filterSamplesTableServer("fdscnttable", rfdscnt)
+    
+    rfdsic <- FacileShine::facileDataStoreServer(
+      "rfdsic", reactive(afds), samples_subset = reactive(s2),
+      with_filters = FALSE,
+      user = user, debug = debug)
+    filterSamplesTableServer("fdsictable", rfdsic)
+    
+
     output$rfdsdebug <- shiny::renderText({
       output <- "not initialized"
       wtf <- try(req(initialized(rfds)), silent = TRUE)
