@@ -61,6 +61,8 @@ facileDataSetSelectServer <- function(id, datadir, metafn = NULL, ...) {
           out <- qs::qread(gspath)
           tt <- toq()
           ftrace("GeneSetDb load: ", tt$ss)
+        } else {
+          ftrace("GeneSetDb not found: ", gspath)
         }
       }
       out
@@ -143,6 +145,8 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
     label = sapply(ds.meta, "[[", "name"),
     path = paths,
     organism = sapply(ds.meta, "[[", "organism"),
+    gdb = file.path(datadir, "_metadata", organism, "genesets.qs"),
+    gdb_load = file.exists(gdb),
     meta = ds.meta,
     default = FALSE)
   
