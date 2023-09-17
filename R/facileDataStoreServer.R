@@ -53,6 +53,7 @@ facileDataStoreServer <- function(id, x, ...,
                                   filter_vars = reactive(NULL),
                                   samples_subset = reactive(NULL),
                                   samples_filter_init = reactive(NULL),
+                                  samples_filter_categorical_only = TRUE,
                                   user = Sys.getenv("USER"),
                                   debug = FALSE) {
   assert_flag(with_filters)
@@ -185,9 +186,11 @@ facileDataStoreServer <- function(id, x, ...,
         ignore <- c("dataset", "sample_id")
         fme <- setdiff(fme, ignore)
         
-        # NOTE: we are only filtering on categorical varialbes for now.
-        ignore.numeric <- sapply(pdat, is.numeric)
-        fme <- setdiff(fme, fall[ignore.numeric])
+        if (samples_filter_categorical_only) {
+          # NOTE: we are only filtering on categorical varialbes for now.
+          ignore.numeric <- sapply(pdat, is.numeric)
+          fme <- setdiff(fme, fall[ignore.numeric])
+        }
         
         # NOTE: When se support "ephemeral annotations" we should include
         # all those by default.
