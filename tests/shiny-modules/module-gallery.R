@@ -180,4 +180,4 @@ shiny::shinyApp(
 )
 
 # reactlog::reactlog_enable()
-shiny::reactlogShow()
+# shiny::reactlogShow()

@@ -19,7 +19,7 @@ assaySelectServer <- function(id, rfds, ..., debug = FALSE) {
       # aa <- active_assays(rfds)
       aa <- rfds$active_assays()
       update <- !setequal(state$assay_names, aa$assay)
-      
+      ftrace("{reset}{bold}rfds$active_assays() changed")
       if (name(rfds) != state$rfds_name) {
         ftrace("Updating assaySelect due to new rfds")
         state$rfds_name <- name(rfds)

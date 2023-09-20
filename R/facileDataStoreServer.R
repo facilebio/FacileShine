@@ -61,7 +61,7 @@ facileDataStoreServer <- function(id, x, ...,
   moduleServer(id, function(input, output, session) {
     state <- reactiveValues(
       name = "__initializing__",
-      active_samples = "__initializing__",
+      active_samples = .empty_samples(),
       
       # ephemeral annotations provided by user during interactive exploration
       esample_annotation = .empty_sample_annotation_tbl(),
@@ -88,7 +88,7 @@ facileDataStoreServer <- function(id, x, ...,
       req(is(out, "FacileDataStore"))
       
       state$name <- name(out)
-      # state$active_samples <- "__initializing__"
+      state$active_samples <- .empty_samples()
       
       state$esample_annotation <- .empty_sample_annotation_tbl()
       state$efeature_annotation <- .empty_feature_annotation_tbl()
@@ -511,6 +511,11 @@ name.DatamodFacileDataStore <- function(x, ...) {
 }
 
 # Utility Functions ============================================================
+
+#' @noRd
+.empty_samples <- function() {
+  tibble(dataset = character(), sample_id = character())
+}
 
 #' @noRd
 .empty_sample_annotation_tbl <- function() {
