@@ -27,7 +27,7 @@ system.time(test_sample_subset(samples.all, xfds))
 
 # 1a. retrieve all the sample covariate names.
 #    the first time, this takes ~7s, but subsequent calls are closer to 2.5s
-system.time(acovs <- fetch_sample_covariates(xfds, samples.all))
+system.time(acovs <- fetch_sample_covariates(samples.all))
 #  user  system elapsed 
 # 3.930   0.823   7.629 
 #  user  system elapsed 

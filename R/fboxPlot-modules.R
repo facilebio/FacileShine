@@ -26,8 +26,9 @@ fboxPlotServer <- function(id, rfds, ...,
     # "Individual" checkbox is only active when multiple genes are entered
     # in the y-axis selector
     observe({
-      nvals <- nrow(yaxis$selected())
-      shinyjs::toggleState("individual", condition = nvals > 1)
+      ys <- req(yaxis$selected())
+      # browser()
+      shinyjs::toggleState("individual", condition = nrow(ys) > 1)
     })
     
     # Due to the limitations of the curent boxplot implementation, if the user
@@ -42,10 +43,14 @@ fboxPlotServer <- function(id, rfds, ...,
     rdat.core <- reactive({
       indiv. <- input$individual
       yvals. <- yaxis$selected()
-      req(!unselected(yvals.), yaxis$in_sync())
+      ftrace("{reset}{bold}{red}rdat.core: testing if yaxis is ready ...")
+      # req(!unselected(yvals.), yaxis$in_sync())
+      req(!unselected(yvals.))
       
       xaxis. <- xaxis$selected()
-      req(!unselected(xaxis.), xaxis$in_sync())
+      ftrace("rdat.core: testing if xaxis is ready ...")
+      # req(!unselected(xaxis.), xaxis$in_sync())
+      req(!unselected(xaxis.))
       
       samples. <- rfds$active_samples()
       ftrace("Retrieving assay data for boxplot")
@@ -53,7 +58,7 @@ fboxPlotServer <- function(id, rfds, ...,
       agg. <- !indiv.
       batch. <- name(batch$batch)
       main. <- name(batch$main)
-
+      
       out <- rfds$fds() |> 
         fetch_assay_data(
           yvals., samples., normalized = TRUE,
