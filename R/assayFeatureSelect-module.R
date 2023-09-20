@@ -15,16 +15,12 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
     assay <- assaySelectServer("assay", rfds, debug = FALSE, ...)
     
     in_sync <- reactive({
-      assay$in_sync() && state$rfds_name == name(rfds)
+      req(assay$in_sync())
     })
     
     features_all <- eventReactive(assay$selected(), {
-      req(assay$in_sync())
-      if (name(rfds) != state$rfds_name) {
-        state$rfds_name <- name(rfds)
-      }
-      rfds$fds() |> 
-        features(assay_name = assay$selected())
+      req(in_sync())
+      features(rfds$fds(), assay_name = assay$selected())
     })
 
     observeEvent(features_all(), {
@@ -35,24 +31,32 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
     })
     
     observeEvent(input$features, {
-      req(nrow(features_all()))
+      fall <- features_all()
+      req(nrow(fall))
       ifeatures <- input$features
+
       if (unselected(ifeatures)) {
         out <- .no_features()
       } else {
-        out <- filter(features_all(), .data$feature_id %in% ifeatures)
+        fx <- tibble(assay = assay$selected(), feature_id = ifeatures)
+        out <- semi_join(fall, fx, by = c("assay", "feature_id"))
       }
       
-      if (!setequal(out$feature_id, state$selected$feature_id)) {
+      update <- !setequal(
+        paste(out$assay, out$feature_id),
+        paste(state$selected$assay, state$selected$feature_id))
+
+      if (update) {
         ftrace("updating selected features: ", 
                paste(out$feature_id, collapse = ","))
         state$selected <- out
       }
+      
     }, ignoreNULL = FALSE)
     
     selected <- reactive({
       req(in_sync())
-      state$selected
+      semi_join(state$selected, features_all(), by = c("assay", "feature_id"))
     })
   
     # ................................................................. genesets
@@ -69,11 +73,12 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
     # assay$selected() gives us a shot to update the geneset again, unless
     # the proteomics assay covers all of the same features as transcriptomics.
     observeEvent({ geneset$membership(); assay$selected() }, {
-      req(initialized(assay))
-      req(nrow(features_all()))
+      in_sync()
+      fall <- req(features_all())
+      req(nrow(fall))
       
       gfeatures <- geneset$membership()
-      out <- semi_join(features_all(), gfeatures, by = "feature_id")
+      out <- semi_join(fall, gfeatures, by = "feature_id")
       
       if (!setequal(out$feature_id, state$selected$feature_id)) {
         # state$selected <- out

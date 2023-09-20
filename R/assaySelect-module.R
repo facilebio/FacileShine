@@ -19,6 +19,7 @@ assaySelectServer <- function(id, rfds, ..., debug = FALSE) {
       # aa <- active_assays(rfds)
       aa <- rfds$active_assays()
       update <- !setequal(state$assay_names, aa$assay)
+      
       if (name(rfds) != state$rfds_name) {
         ftrace("Updating assaySelect due to new rfds")
         state$rfds_name <- name(rfds)
@@ -35,6 +36,7 @@ assaySelectServer <- function(id, rfds, ..., debug = FALSE) {
     assay_names <- reactive({
       if (unselected(state$assay_names)) character() else state$assay_names
     })
+    
     assay_count <- reactive({
       length(assay_names())
     })
@@ -80,19 +82,31 @@ assaySelectServer <- function(id, rfds, ..., debug = FALSE) {
       }
     })
     
-    selected <- reactive({
+    # This .selected() and selected() thing is weird, come back to fix it
+    # one day.
+    .selected <- reactive({
       if (unselected(state$assay_info)) "" else state$assay_info$assay
+    })
+    
+    selected <- reactive({
+      req(in_sync())
+      .selected()
     })
     
     in_sync <- reactive({
       req(initialized(rfds))
-      state$rfds_name == name(rfds) &&
-        xor(unselected(selected()), selected() %in% assay_names())
+      if (state$rfds_name != name(rfds)) {
+        out <- FALSE
+      } else {
+        sel <- .selected()
+        out <- !unselected(sel) && sel %in% rfds$active_assays()$assay
+      }
+      out
     })
     
     assay_info <- reactive({
       req(in_sync())
-      rfds$active_assays() |> 
+      rfds$active_assays() |>
         filter(.data$assay == selected())
     })
     

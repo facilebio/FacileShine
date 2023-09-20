@@ -19,13 +19,7 @@ fscatterPlotServer <- function(id, rfds, ...,
     }, simplify = FALSE)
     
     features <- reactive({
-      lapply(dims, function(d) {
-        out <- d$selected()
-        # I've convinced myself that the `$in_sync()` calls has to come second,
-        # but I don't think that should be the case.
-        req(d$in_sync())
-        out
-      })
+      lapply(dims, function(d) d$selected())
     })
     ndim. <- reactive(sum(!sapply(features(), unselected)))
 
