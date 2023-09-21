@@ -129,12 +129,17 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
     metafn <- file.path(datadir, "meta.yaml")
   }
   assert_directory_exists(datadir, "r")
-  paths <- dir(datadir, "^[a-zA-Z0-9]", full.names = TRUE)
-  paths <- paths[file.info(paths)$isdir]
+  
+  paths <- dir(datadir, full.names = TRUE)
+  fddirs <- sapply(paths, test_facile_dataset_directory)
+  paths <- paths[fddirs]
+  
   if (length(paths) == 0) {
-    stop("No directories found in datadir: ", datadir)
+    none <- tibble(name = character(), label = name, path = name,
+                   organism = name, gdb = name, gdb_load = logical(),
+                   meta = list(), default = logical())
+    return(none)
   }
-  assert_directory_exists(paths, "r")
   
   ds.meta <- sapply(basename(paths), function(fname) {
     yaml::read_yaml(file.path(datadir, fname, "meta.yaml"))
