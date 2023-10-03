@@ -68,11 +68,15 @@ facileDataSetSelectServer <- function(id, datadir, metafn = NULL, ...) {
       out
     })
     
-    list(
+    out <- list(
+      selected = dataset_info,
       path = fds.path,
+      datasets = dinfo,
       gdb = gdb,
       .state = state,
-      .ns = session$ns) 
+      .ns = session$ns)
+    class(out) <- c("FacileDataSetSelectModule", class(out))
+    out
   })
 }
 
