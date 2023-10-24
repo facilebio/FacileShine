@@ -180,7 +180,7 @@ facileDataStoreServer <- function(id, x, ...,
           fme <- intersect(fall, fvars)
         } else {
           ftrace("No modification to filter variables")
-          fme <- NULL
+          fme <- fall
         }
         
         ignore <- c("dataset", "sample_id")
@@ -392,6 +392,7 @@ FacileDataStoreServer <- function(id, x, samples_subset = NULL, ...) {
 #' @export
 #' @noRd
 facileSampleFiltersSelectInput <- function(id, progress_bar = TRUE, ...,
+                                           filter_width = "100%",
                                            debug = FALSE) {
   ns <- shiny::NS(id)
   shiny::tagList(
@@ -401,7 +402,9 @@ facileSampleFiltersSelectInput <- function(id, progress_bar = TRUE, ...,
     } else {
       NULL
     },
-    datamods::filter_data_ui(ns("filtering"), show_nrow = TRUE))
+    shiny::tags$div(
+      style = sprintf("width: %s", filter_width),
+      datamods::filter_data_ui(ns("filtering"), show_nrow = TRUE)))
 }
 
 #' Show the filtered samples table for a ReactiveFacileDataSet
