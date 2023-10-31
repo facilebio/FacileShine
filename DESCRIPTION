@@ -1,7 +1,7 @@
 Package: FacileShine
 Type: Package
 Title: Shiny primitives to interact with FacileData and FacileViz objects.
-Version: 0.98.17
+Version: 0.98.18
 Authors@R: c(
     person("Steve", "Lianoglou", , "slianoglou@gmail.com", c("aut", "cre"),
       comment = c(ORCID = "0000-0002-0924-1754")))
@@ -33,7 +33,7 @@ Imports:
     tictoc,
     V8,
     viridis,
-    waiter,
+    shinycssloaders,
     yaml
 Suggests:
     FacileBiocData,
@@ -44,6 +44,7 @@ Remotes:
     facilebio/FacileData,
     facilebio/FacileViz,
     glin/reactable,
+    daattali/shinycssloaders,
     lianos/sparrow.shiny
 License: Apache License (>= 2.0)
 Encoding: UTF-8

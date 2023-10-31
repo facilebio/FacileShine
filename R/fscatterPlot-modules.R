@@ -121,7 +121,7 @@ fscatterPlotServer <- function(id, rfds, ...,
       psize <- req(plotsize())
       output$scatterplot <- plotly::renderPlotly(plot(fscatter()))
       output$plotlybox <- shiny::renderUI({
-        waiter::withWaiter({
+        shinycssloaders::withSpinner({
           plotly::plotlyOutput(session$ns("scatterplot"),
                                width = psize$width,
                                height = psize$height)

@@ -142,7 +142,7 @@ fboxPlotServer <- function(id, rfds, ...,
       psize <- req(plotsize())
       output$boxplot <- plotly::renderPlotly(plot(fbox()))
       output$plotlybox <- shiny::renderUI({
-        waiter::withWaiter({
+        shinycssloaders::withSpinner({
           plotly::plotlyOutput(session$ns("boxplot"),
                                width = psize$width,
                                height = psize$height)
