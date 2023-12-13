@@ -36,6 +36,7 @@
 #' @param x the thing that will instantiate a FacileDataSet
 #' @param filter_vars the variables to use for filtering. Default is `NULL`,
 #'   which means to use all of the variables.
+#' @param drop_ids [datamods::filter_data_server()] drop_ids parameter.
 #' @param user the user using it
 #' @return a DatamodFacileDataStore module with the following named elemets:
 #'   * `fds`: the `BoxedFacileDataStore`
@@ -50,6 +51,7 @@
 #'     think we need to use these now ...
 facileDataStoreServer <- function(id, x, ...,
                                   with_filters = TRUE,
+                                  drop_ids = FALSE,
                                   filter_vars = reactive(NULL),
                                   samples_subset = reactive(NULL),
                                   samples_filter_init = reactive(NULL),
@@ -212,7 +214,7 @@ facileDataStoreServer <- function(id, x, ...,
         name = reactive(isolate(state$name)),
         # name = reactive("dataset"),
         defaults = samples_filter_init,
-        drop_ids = TRUE,
+        drop_ids = drop_ids,
         widget_char = "picker")
       
       # active_samples update --------------------------------------------------    
