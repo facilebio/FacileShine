@@ -9,7 +9,7 @@ NULL
 # Specific functions from package we use alot and don't want to prefix ---------
 
 #' @importFrom glue glue
-#' @importFrom tictoc tic
+#' @importFrom htmltools tags tagList
 #' @importFrom shiny
 #'    eventReactive
 #'    isolate
@@ -19,4 +19,5 @@ NULL
 #'    reactive
 #'    req
 #'    reactiveValues
+#' @importFrom tictoc tic
 NULL

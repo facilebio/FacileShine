@@ -207,7 +207,7 @@ facileDataStoreServer <- function(id, x, ...,
       }, label = "var2filter")
       
       # filters$filtered() are coming back as a wide_covariates, facile_frame
-      filters <- datamods::filter_data_server(
+      filters <- ffilter_data_server(
         id = "filtering",
         data = pdata,
         vars = vars2filter,
@@ -441,7 +441,7 @@ facileDataStoreUI <- function(id, with_filters = TRUE, ..., debug = FALSE) {
     out <- shiny::fluidRow(
       shiny::column(
         width = 3,
-        datamods::filter_data_ui(ns("filtering"), show_nrow = TRUE)
+        ffilter_data_ui(ns("filtering"), show_nrow = TRUE)
       ),
       shiny::column(
         width = 9,
