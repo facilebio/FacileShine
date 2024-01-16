@@ -36,8 +36,10 @@ ffilter_data_ui <- function(id,
       )
     ),
     if (isTRUE(show_nrow)) {
-      tags$span(i18n("Number of rows:"), 
-                shiny::uiOutput(outputId = ns("nrow"), inline = TRUE))
+      tags$span(
+        # i18n("Number of rows:"), 
+        "Row count:",
+        shiny::uiOutput(outputId = ns("nrow"), inline = TRUE))
     },
     shiny::uiOutput(outputId = ns("placeholder_filters"), style = max_height)
   )
@@ -82,12 +84,16 @@ ffilter_data_server <- function(id,
   widget_char <- match.arg(widget_char)
   widget_num <- match.arg(widget_num)
   widget_date <- match.arg(widget_date)
+  
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     jns <- function(x) paste0("#", ns(x))
     
-    output$nrow <- shiny::renderUI({
-      tags$b(nrow(data_filtered()) , "/", nrow(data()))
+    state <- reactiveValues(
+      selected_rows = TRUE)  
+    
+    observeEvent(data(), {
+      state$selected_rows <- rep(TRUE, nrow(data()))
     })
     
     rv_filters <- reactiveValues(
@@ -96,6 +102,8 @@ ffilter_data_server <- function(id,
       params = NULL)
     rv_code <- reactiveValues(expr = NULL, dplyr = NULL)
     
+    # When the input `data`()-frame is updated, create the new filter UI and
+    # collect stats on the universe of columns
     output$placeholder_filters <- shiny::renderUI({
       data <- data()
       req(data)
@@ -111,63 +119,90 @@ ffilter_data_server <- function(id,
         widget_num = widget_num,
         widget_date = widget_date,
         label_na = label_na,
-        value_na = value_na
-      )
+        value_na = value_na)
       rv_filters$mapping <- filters$filters_id
       rv_filters$mapping_na <- filters$filters_na_id
       rv_filters$params <- filters$param
       filters$ui
     })
     
+    # The values that are currently selected across all the filters
     filter_values <- reactive({
-      data <- data()
-      req(data)
+      data <- req(data())
       req(all(names(rv_filters$mapping) %in% names(data)))
-      filter_inputs <- lapply(rv_filters$mapping, function(x) {
+      out <- lapply(rv_filters$mapping, function(x) {
         input[[x]]
       })
-      filter_inputs
+      out
     })
     
-    data_filtered <- reactive({
-      data <- data()
-      req(data)
+    # N/A (include/exclude) setting for each of the columns in data
+    filter_nas <- reactive({
+      data <- req(data())
       req(all(names(rv_filters$mapping) %in% names(data)))
-      
-      filter_inputs <- lapply(rv_filters$mapping, function(x) {
-        # req(input[[x]])
+      out <- lapply(rv_filters$mapping_na, function(x) {
         input[[x]]
       })
+      out
+    })
+    
+    # respond to user-filtering actions
+    observe({
+      data <- req(data())
+      fvals <- req(filter_values())
+      fnas <- req(filter_nas())
       
-      filter_nas <- lapply(rv_filters$mapping_na, function(x) {
-        input[[x]]
-      })
-      
+      selected <- isolate(state$selected_rows)
+
       filters <- make_expr_filter(
-        filters = filter_inputs,
-        filters_na = filter_nas,
+        filters = fvals,
+        filters_na = fnas,
         data = data,
-        data_name = isolate(name()) %||% "data"
-      )
+        data_name = isolate(name()) %||% "data")
+      
       rv_code$expr <- filters$expr
       rv_code$dplyr <- filters$expr_dplyr
-      if (length(rv_code$expr) > 0) {
+      if (is.null(filters$expr)) {
+        # Nothing to rmeove/filter-out, so we need to select all rows
+        result <- rep(TRUE, nrow(data))
+      } else { # if (length(rv_code$expr) > 0) {
         result <- eval_tidy(expr = rv_code$expr, data = data)
-        data[result, , drop = FALSE]
-      } else {
-        data
+      }
+      if (!isTRUE(all.equal(result, selected))) {
+        state$selected_rows <- result
       }
     })
-    shiny::outputOptions(x = output, name = "placeholder_filters", suspendWhenHidden = FALSE)
     
-    return(list(
+    # Update the pickers when state$selected_rows is updated to show which
+    # potential elements have been selected out.
+    observeEvent(state$selected_rows, {
+      
+    })
+    
+    # The filtered dataset is updated when state$selected_rows changes
+    data_filtered <- eventReactive(state$selected_rows, {
+      data <- req(data())
+      selected <- state$selected_rows
+      if (length(selected) != nrow(data)) {
+        data
+      } else {
+        data[selected,,drop = FALSE]
+      }
+    })
+    
+    shiny::outputOptions(x = output, name = "placeholder_filters", suspendWhenHidden = FALSE)
+
+    output$nrow <- shiny::renderUI({
+      tags$b(nrow(data_filtered()) , "/", nrow(data()))
+    })
+    
+    list(
       filtered = data_filtered,
       values = filter_values,
+      nas = filter_nas,
       code = reactive(rv_code$dplyr),
-      expr = reactive(rv_code$expr)
-    ))
-  }
-  )
+      expr = reactive(rv_code$expr))
+  })
 }
 
 
@@ -387,6 +422,10 @@ create_categorical_filter <- function(var, id, default = NULL, width = "100%",
         label = NULL,
         multiple = TRUE,
         width = width,
+        # custom
+        search = TRUE,
+        showSelectedOptionsFirst = TRUE,
+        # end custom
         showValueAsTags = TRUE,
         zIndex = 9999,
         dropboxWrapper = paste0("#", ns("placeholder_filters"), " .datamods-filters-container"),

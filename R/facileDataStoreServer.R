@@ -181,7 +181,7 @@ facileDataStoreServer <- function(id, x, ...,
         } else if (test_character(fvars)) {
           fme <- intersect(fall, fvars)
         } else {
-          ftrace("No modification to filter variables")
+          ftrace("No modification to filter variadbles")
           fme <- fall
         }
         
@@ -406,7 +406,9 @@ facileSampleFiltersSelectInput <- function(id, progress_bar = TRUE, ...,
     },
     shiny::tags$div(
       style = sprintf("width: %s", filter_width),
-      datamods::filter_data_ui(ns("filtering"), show_nrow = TRUE)))
+      # datamods::filter_data_ui(ns("filtering"), show_nrow = TRUE)
+      ffilter_data_ui(ns("filtering"), show_nrow = TRUE)
+      ))
 }
 
 #' Show the filtered samples table for a ReactiveFacileDataSet
