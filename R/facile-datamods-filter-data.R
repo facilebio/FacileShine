@@ -173,12 +173,6 @@ ffilter_data_server <- function(id,
       }
     })
     
-    # Update the pickers when state$selected_rows is updated to show which
-    # potential elements have been selected out.
-    observeEvent(state$selected_rows, {
-      
-    })
-    
     # The filtered dataset is updated when state$selected_rows changes
     data_filtered <- eventReactive(state$selected_rows, {
       data <- req(data())
@@ -190,7 +184,33 @@ ffilter_data_server <- function(id,
       }
     })
     
-    shiny::outputOptions(x = output, name = "placeholder_filters", suspendWhenHidden = FALSE)
+    observeEvent(data_filtered(), {
+      # rv_filters$mapping is a list of column names of data_filtered() and the
+      # value is the shiny input id of the filter
+      fdata <- req(data_filtered())
+      for (cname in names(rv_filters$mapping)) {
+        if (cname == "cell_abbrev") {
+          browser()
+        }
+        uvals <- unique(fdata[[cname]])
+        params <- rv_filters$params[[cname]]
+        if (params$class == "categorical") {
+          universe <- params$universe$variable
+          selected <- filter_values()[[cname]]
+          update <- intersect(selected, uvals)
+          if (!setequal(selected, update)) {
+            shiny::freezeReactiveValue(input, params$id)
+            shinyWidgets::updateVirtualSelect(
+              params$id,
+              choices = universe,
+              selected = update)
+          }
+        }
+      }
+    })
+    
+    shiny::outputOptions(output, "placeholder_filters", 
+                         suspendWhenHidden = FALSE)
 
     output$nrow <- shiny::renderUI({
       tags$b(nrow(data_filtered()) , "/", nrow(data()))
@@ -273,7 +293,7 @@ create_filters <- function(input, data,
       default <- defaults[[label]]
     }
     
-    shiny::freezeReactiveValue(input, id)
+    # shiny::freezeReactiveValue(input, id)
     
     if (inherits(var, c("numeric", "integer"))) {
       res <- create_numeric_filter(var, ns(id), default, width, widget_num)
@@ -290,6 +310,13 @@ create_filters <- function(input, data,
         na_filter(id = ns(paste0("na_", id)), label = label_na, 
                   value = value_na)
       })
+      
+    params <- res$params
+    params[["name"]] <- variable
+    params[["id"]] <- id
+    params[["nsid"]] <- ns(id)
+    params[["label"]] <- label
+    params[["any_na"]] <- any_na
     
     list(
       ui = tags$div(
@@ -297,18 +324,14 @@ create_filters <- function(input, data,
         class = attr(res$ui, "container-class"),
         tag_label,
         res$ui),
-      params = res$params,
-      id = id,
-      nsid = ns(id),
-      label = label,
-      any_na = any_na)
+      params = params)
   }, simplify = FALSE)
 
   list(
     ui = tags$div(
       class = "datamods-filters-container",
       lapply(filters, "[[", "ui")),
-    params = lapply(filters, function(x) x[setdiff(names(x), "ui")]),
+    params = lapply(filters, "[[", "params"),
     filters_id = filters_id,
     filters_na_id = filters_na_id)
 }
@@ -386,8 +409,8 @@ create_categorical_filter <- function(var, id, default = NULL, width = "100%",
   choices.all <- table(var)
   choices.all <- data.frame(
     variable = names(choices.all),
-    count = unname(choices.all))
-  params <- list(class = "character", universe = choices.all)
+    count = as.numeric(choices.all))
+  params <- list(class = "categorical", universe = choices.all)
   choices <- choices.all$variable
   if ("" %in% choices) {
     choices <- append(choices, .empty_field_char)

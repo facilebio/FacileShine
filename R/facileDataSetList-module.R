@@ -180,7 +180,7 @@ facileDataSetSelectInput <- function(id, label = "Select Dataset",
           mutate(group = ifelse(is.na(group), "ungrouped", group))
         # We will arrange the outgoing tibble to be in the same order as was
         # listed in the meta.yaml file
-        dorder <- unique(group.xref$name, info$name)
+        dorder <- unique(c(group.xref$name, info$name))
         info <- info |> 
           mutate(name = factor(name, dorder)) |> 
           arrange(name) |> 
