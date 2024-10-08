@@ -107,26 +107,13 @@ fscatterPlotServer <- function(id, rfds, ...,
                    xlabel = .labels[1], # label(axes$x),
                    ylabel = .labels[2], # label(axes$y),
                    zlabel = .labels[3], # label(axes$z),
-                   height = height, width = width,
+                   height = NULL, width = NULL,
                    event_source = event_source)
     })
     
-    plotsize <- reactive({
-      fs <- fscatter()
-      req(fs, "FacileScatterViz")
-      list(width = plot(fs)$width, height = plot(fs)$height)
-    })
-    
-    observeEvent(plotsize(), {
-      psize <- req(plotsize())
-      output$scatterplot <- plotly::renderPlotly(plot(fscatter()))
-      output$plotlybox <- shiny::renderUI({
-        shinycssloaders::withSpinner({
-          plotly::plotlyOutput(session$ns("scatterplot"),
-                               width = psize$width,
-                               height = psize$height)
-        })
-      })
+    output$scatterplot <- plotly::renderPlotly({
+      plot. <- shiny::req(fscatter())
+      plot(plot.)
     })
     
     vals <- list(
@@ -171,7 +158,9 @@ fscatterPlotUI <- function(id, ndim = 3, with_download = TRUE, ...,
             group = FALSE)))),
     shinyjs::disabled(shiny::downloadButton(ns("dldata"), "Download Data")),
     shiny::fluidRow(
-      shiny::column(width = 12, shiny::uiOutput(ns("plotlybox"))))
+      # shiny::column(width = 12, shiny::uiOutput(ns("plotlybox")))
+      shinyjqui::jqui_resizable(plotly::plotlyOutput(ns("scatterplot")))
+    )
   )
 }
 
