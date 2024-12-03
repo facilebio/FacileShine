@@ -111,23 +111,27 @@ fscatterPlotServer <- function(id, rfds, ...,
                    event_source = event_source)
     })
     
-    plotsize <- reactive({
-      fs <- fscatter()
-      req(fs, "FacileScatterViz")
-      list(width = plot(fs)$width, height = plot(fs)$height)
+    output$jqscatter <- plotly::renderPlotly({
+      plot(req(fscatter()))
     })
     
-    observeEvent(plotsize(), {
-      psize <- req(plotsize())
-      output$scatterplot <- plotly::renderPlotly(plot(fscatter()))
-      output$plotlybox <- shiny::renderUI({
-        shinycssloaders::withSpinner({
-          plotly::plotlyOutput(session$ns("scatterplot"),
-                               width = psize$width,
-                               height = psize$height)
-        })
-      })
-    })
+    # plotsize <- reactive({
+    #   fs <- fscatter()
+    #   req(fs, "FacileScatterViz")
+    #   list(width = plot(fs)$width, height = plot(fs)$height)
+    # })
+    # 
+    # observeEvent(plotsize(), {
+    #   psize <- req(plotsize())
+    #   output$scatterplot <- plotly::renderPlotly(plot(fscatter()))
+    #   output$plotlybox <- shiny::renderUI({
+    #     shinycssloaders::withSpinner({
+    #       plotly::plotlyOutput(session$ns("scatterplot"),
+    #                            width = psize$width,
+    #                            height = psize$height)
+    #     })
+    #   })
+    # })
     
     vals <- list(
       ndim = ndim.,
@@ -170,8 +174,13 @@ fscatterPlotUI <- function(id, ndim = 3, with_download = TRUE, ...,
             ns("aes"), color = TRUE, shape = TRUE, facet = TRUE, hover = TRUE,
             group = FALSE)))),
     shinyjs::disabled(shiny::downloadButton(ns("dldata"), "Download Data")),
+    
+    # shiny::fluidRow(
+    #   shiny::column(width = 12, shiny::uiOutput(ns("plotlybox"))))
     shiny::fluidRow(
-      shiny::column(width = 12, shiny::uiOutput(ns("plotlybox"))))
+      shiny::column(12, shinycssloaders::withSpinner({
+        shinyjqui::jqui_resizable(plotly::plotlyOutput(ns("jqscatter")))
+      })))
   )
 }
 

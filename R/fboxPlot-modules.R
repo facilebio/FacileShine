@@ -132,23 +132,27 @@ fboxPlotServer <- function(id, rfds, ...,
       plt
     }, label = "fbox")
     
-    plotsize <- reactive({
-      plot. <- fbox()
-      req(plot., "FacileScatterViz")
-      list(width = plot(plot.)$width, height = plot(plot.)$height)
+    output$jqboxplot <- plotly::renderPlotly({
+      plot(req(fbox()))
     })
     
-    observeEvent(plotsize(), {
-      psize <- req(plotsize())
-      output$boxplot <- plotly::renderPlotly(plot(fbox()))
-      output$plotlybox <- shiny::renderUI({
-        shinycssloaders::withSpinner({
-          plotly::plotlyOutput(session$ns("boxplot"),
-                               width = psize$width,
-                               height = psize$height)
-        })
-      })
-    })
+    # plotsize <- reactive({
+    #   plot. <- fbox()
+    #   req(plot., "FacileScatterViz")
+    #   list(width = plot(plot.)$width, height = plot(plot.)$height)
+    # })
+    # 
+    # observeEvent(plotsize(), {
+    #   psize <- req(plotsize())
+    #   output$boxplot <- plotly::renderPlotly(plot(fbox()))
+    #   output$plotlybox <- shiny::renderUI({
+    #     shinycssloaders::withSpinner({
+    #       plotly::plotlyOutput(session$ns("boxplot"),
+    #                            width = psize$width,
+    #                            height = psize$height)
+    #     })
+    #   })
+    # })
     
     vals <- list(
       xaxis = xaxis,
@@ -188,7 +192,14 @@ fboxPlotUI <- function(id, ..., debug = FALSE) {
           categoricalAestheticMapInput(
             ns("aes"), color = TRUE, facet = TRUE, hover = TRUE)))),
     shinyjs::disabled(shiny::downloadButton(ns("dldata"), "Download Data")),
+    
+    # shiny::fluidRow(
+    #   shiny::column(12, shiny::uiOutput(ns("plotlybox"))))
+    
     shiny::fluidRow(
-      shiny::column(12, shiny::uiOutput(ns("plotlybox"))))
+      shiny::column(12, shinycssloaders::withSpinner({
+        shinyjqui::jqui_resizable(plotly::plotlyOutput(ns("jqboxplot")))
+      })))
+      
   )
 }
