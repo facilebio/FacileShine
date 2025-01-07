@@ -17,18 +17,27 @@ aes_group <- TRUE
 
 # kfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/BulkKPMPDataSet")
 # nfds <- FacileData::FacileDataSet("~/workspace/facilebio/data/FacileNightingaleDataSet")
-# s0 <- FacileData::filter_samples(dfds, cell_line %in% c("JEKO", "KG"))
 
-afds <- FacileData::an_fds()
-asamples <- FacileData::samples(afds) |> FacileData::with_sample_covariates()
-s1 <- dplyr::filter(asamples, cell_abbrev == "CNT") # 10 samples
-s2 <- dplyr::filter(asamples, cell_abbrev == "IC")  # 14 samples
-s3 <- dplyr::bind_rows(s1, s2)
+# afds <- FacileData::an_fds()
+# asamples <- FacileData::samples(afds) |> FacileData::with_sample_covariates()
+# 
+# s0 <- FacileData::filter_samples(dfds, cell_line %in% c("JEKO", "KG"))
+# s1 <- dplyr::filter(asamples, cell_abbrev == "CNT") # 10 samples
+# s2 <- dplyr::filter(asamples, cell_abbrev == "IC")  # 14 samples
+
+afds <- FacileData::FacileDataSet("~/workspace/projects/revir/data/facileisr/FacileVWMXtalpiDataSet")
+asamples <- FacileData::samples(afds) |> FacileData::with_sample_covariates() |> arrange(group)
+s1 <- dplyr::filter(asamples, genotype == "WT")
+s2 <- dplyr::filter(asamples, genotype == "R191H", treatment == "vehicle")
+
 if (FALSE) {
   lcovs <- fetch_sample_covariates(kfds)
   cov.sum.short <- summary(lcovs)
   cov.sum.exp <- summary(lcovs, expanded = TRUE)
 }
+
+s3 <- dplyr::bind_rows(s1, s2)
+
 
 # reactlog::reactlog_enable()
 
