@@ -18,10 +18,18 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
       req(assay$in_sync())
     })
     
-    features_all <- eventReactive(assay$selected(), {
-      req(in_sync())
-      features(rfds$fds(), assay_name = assay$selected())
-    })
+    # features_all <- eventReactive(assay$selected(), {
+    #   req(in_sync())
+    #   features(rfds$fds(), assay_name = assay$selected())
+    # })
+    features_all <- shiny::reactive({
+      shiny::req(in_sync())
+      rfds$fds() |> 
+        FacileData::features(assay_name = assay$selected()) |> 
+        dplyr::mutate(
+          name = ifelse(is.na(.data$name), .data$feature_id, .data$name))
+    }) |> 
+      shiny::bindEvent(assay$selected())
 
     observeEvent(features_all(), {
       shiny::updateSelectizeInput(
