@@ -16,7 +16,8 @@ categoricalAestheticMapServer <- function(id, rfds, color = FALSE,
     
     aes_mods <- sapply(names(aes_covs), function(aes_name) {
       categoricalSampleCovariateSelectServer(
-        aes_name, rfds, with_none = aes_name != "hover", include1 = FALSE)
+        aes_name, rfds, with_none = aes_name != "hover", include1 = FALSE,
+        include_sample_id = aes_name == "hover")
     }, simplify = FALSE)
     
     aes_values <- reactive({
@@ -68,8 +69,8 @@ categoricalAestheticMapInput <- function(id, color = FALSE, shape = FALSE,
   aes.tags <- sapply(names(aes_covs), function(aes_name) {
     label <- tools::toTitleCase(aes_name)
     ui <- categoricalSampleCovariateSelectInput(
-      ns(aes_name), label = label, multiple = aes_name == "hover", ...,
-      debug = debug)
+      ns(aes_name), label = label, multiple = aes_name == "hover", 
+      include_sample_id = aes_name == "hover", ..., debug = debug)
     if (horizontal) ui <- shiny::column(ncol, ui)
     ui
   }, simplify = FALSE)

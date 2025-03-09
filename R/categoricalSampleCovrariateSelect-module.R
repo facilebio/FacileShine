@@ -31,6 +31,7 @@
 categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
                                                    default_covariate = NULL,
                                                    ...,
+                                                   include_sample_id = FALSE,
                                                    with_none = TRUE,
                                                    exclude = reactive(NULL),
                                                    ignoreNULL = with_none,
@@ -91,6 +92,18 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
         state$rfds_name <- name(rfds)
       }
       
+      if (include_sample_id) {
+        asamples <- rfds$active_samples()
+        sids <- asamples |> 
+          dplyr::transmute(
+            variable = "sample_id",
+            class = "categorical",
+            nsamples = nrow(asamples),
+            level = .data$sample_id,
+            ninlevel = 1L
+          )
+        out <- out |> dplyr::bind_rows(sids)
+      }
       out
     }, label = "categorical_covariates")
     
