@@ -25,7 +25,8 @@ aes_group <- TRUE
 # s1 <- dplyr::filter(asamples, cell_abbrev == "CNT") # 10 samples
 # s2 <- dplyr::filter(asamples, cell_abbrev == "IC")  # 14 samples
 
-afds <- FacileData::FacileDataSet("~/workspace/projects/revir/data/facileisr/FacileVWMXtalpiDataSet")
+# afds <- FacileData::FacileDataSet("~/workspace/projects/revir/data/facileisr/FacileVWMXtalpiDataSet")
+# afds <- FacileData::FacileDataSet("~/workspace/projects/revir/data/faciledata/FacileCompoundDataSet/")
 asamples <- FacileData::samples(afds) |> FacileData::with_sample_covariates() |> arrange(group)
 s1 <- dplyr::filter(asamples, genotype == "WT")
 s2 <- dplyr::filter(asamples, genotype == "R191H", treatment == "vehicle")

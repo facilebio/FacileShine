@@ -19,7 +19,7 @@ fboxPlotServer <- function(id, rfds, ...,
     xaxis <- categoricalSampleCovariateSelectServer(
       "xaxis", rfds, with_none = FALSE)
     
-    yaxis <- assayFeatureSelectServer("yaxis", rfds, gdb = gdb, ...)
+    yaxis <- assayFeatureSelectServer("yaxis", rfds, gdb = gdb, debug = debug, ...)
     
     batch <- batchCorrectConfigServer("batch", rfds, debug = debug)
     
@@ -27,7 +27,6 @@ fboxPlotServer <- function(id, rfds, ...,
     # in the y-axis selector
     observe({
       ys <- req(yaxis$selected())
-      # browser()
       shinyjs::toggleState("individual", condition = nrow(ys) > 1)
     })
     
