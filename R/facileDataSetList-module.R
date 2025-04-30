@@ -19,14 +19,23 @@
 #' @return A list with reactive components:
 #' 1. `$path()`: The path to the FacileDataSet
 #' 2. `$gdb()`: A GeneSetDb object to match the organism of the FDS at `$path`.
-facileDataSetSelectServer <- function(id, datadir, metafn = NULL, ...) {
+facileDataSetSelectServer <- function(
+    id, 
+    datadir, 
+    metafn = NULL,
+    list_referenced_datasets_only = TRUE,
+    ...
+) {
   moduleServer(id, function(input, output, session) {
     state <- reactiveValues(
       organism = "__initializing__")
     
     # Initialize the selectUI on startup
     dinfo <- reactive({
-      parse_faciledatasets_directory(datadir(), metafn)
+      parse_faciledatasets_directory(
+        datadir(), 
+        metafn,
+        list_referenced_datasets_only = list_referenced_datasets_only)
     })
     
     observeEvent(dinfo(), {

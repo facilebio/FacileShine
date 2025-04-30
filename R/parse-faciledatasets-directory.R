@@ -10,7 +10,12 @@
 #'   metadata about the datasets in `datadir`
 #' @return a tibble of information for the FacileDataSets in the `datadir`
 #'   directory.
-parse_faciledatasets_directory <- function(datadir, metafn = NULL, ...) {
+parse_faciledatasets_directory <- function(
+    datadir, 
+    metafn = NULL, 
+    list_referenced_datasets_only = TRUE,
+    ...
+) {
   if (FALSE) {
     datadir <- system.file("testdata", "fds-directory", package = "FacileShine")
     metafn <- file.path(datadir, "meta.yaml")
@@ -72,6 +77,14 @@ parse_faciledatasets_directory <- function(datadir, metafn = NULL, ...) {
     }
   } else {
     info[["group"]] <- "ungrouped"
+  }
+
+  if (isTRUE(list_referenced_datasets_only)) {
+    info <- dplyr::filter(info, .data$group != "ungrouped")
+  }
+  
+  if (nrow(info) == 0L) {
+    stop("No datasets available to show")
   }
   
   if (!any(info$default)) {
