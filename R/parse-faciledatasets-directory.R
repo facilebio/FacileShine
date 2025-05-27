@@ -78,11 +78,18 @@ parse_faciledatasets_directory <- function(
   } else {
     info[["group"]] <- "ungrouped"
   }
-
+  
   if (isTRUE(list_referenced_datasets_only)) {
     info <- dplyr::filter(info, .data$group != "ungrouped")
   }
+
+  dupes <- dplyr::filter(info, duplicated(.data$name))
+  if (nrow(dupes) > 0) {
+    warning("Removing duplicated datasets from meta.fn: ", paste(dupes$name, collapse = ","))
+    info <- dplyr::distinct(info, .data$name, .keep_all = TRUE)
+  }
   
+    
   if (nrow(info) == 0L) {
     stop("No datasets available to show")
   }
