@@ -327,7 +327,7 @@ facileDataStoreServer <- function(id, x, ...,
   })
 }
 
-#' Create a server module form a non-reactive context.
+#' Create a server module from a non-reactive context.
 #' 
 #' @export
 #' @param id the id of the server module
@@ -371,7 +371,9 @@ FacileDataStoreServer <- function(id, x, samples_subset = NULL, ...) {
   if (is(x, "FacileDataStore")) {
     # Wrapping this as "BoxedFacileDataStore" so we can intercept some facile
     # API calls and allow them to accept ephemeral annotations.
+    message("+++ Boxing FacileDataStore +++")
     class(x) <- c("BoxedFacileDataStore", class(x))
+    browser()
     return(x)
   }
   
@@ -462,6 +464,7 @@ facileDataStoreUI <- function(id, with_filters = TRUE, ..., debug = FALSE) {
 #' @noRd
 #' @export
 initialized.BoxedFacileDataStore <- function(x, ...) {
+  message("initialized.BoxedFacileDataStore")
   is(x, "FacileDataStore")
 }
 
