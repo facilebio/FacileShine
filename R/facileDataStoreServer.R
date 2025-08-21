@@ -372,8 +372,7 @@ FacileDataStoreServer <- function(id, x, samples_subset = NULL, ...) {
     # Wrapping this as "BoxedFacileDataStore" so we can intercept some facile
     # API calls and allow them to accept ephemeral annotations.
     message("+++ Boxing FacileDataStore +++")
-    class(x) <- c("BoxedFacileDataStore", class(x))
-    # browser()
+    class(x) <- unique(c("BoxedFacileDataStore", class(x)))
     return(x)
   }
   

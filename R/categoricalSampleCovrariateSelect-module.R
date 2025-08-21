@@ -75,13 +75,10 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       excluded()
     }, {
       req(initialized(rfds))
-      # out <- rfds |>
-      #   active_covariates() |>
       out <- rfds$active_covariates() |> 
         dplyr::filter(.data$class == "categorical") |>
         dplyr::filter(!.data$variable %in% state$exclude) |> 
         dplyr::arrange(variable, level)
-        
       if (!include1) {
         single_level_covariates <- out |> 
           dplyr::summarize(nlevels = n(), .by = "variable") |> 
