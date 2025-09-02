@@ -145,7 +145,7 @@ categoricalSampleCovariateLevelsSelectInput <- function(
     multiple = FALSE, width = NULL, size = NULL,
     options = NULL, ..., debug = FALSE) {
   ns <- NS(id)
-  
+
   out <- tagList(
     selectizeInput(ns("values"), label = label, choices = choices,
                    selected = selected, multiple = multiple, width = width,

@@ -20,22 +20,30 @@
 #'   reactiveValues
 #'   req
 #'   updateSelectInput
-#' @param default_covariate the name of a covariate to use as the default
-#'   one that is selected here, if available
+#' @param default_covariate A character vector of preferred covarites to have
+#'   selected by default. If this is `lenght() > 1` the first covariate found
+#'   will be selected. If no levels match the covariate, then no preference
+#'   to covariate is triggered
 #' @param a reactive character vector, which specifies the covariates to ignore
 #'   or a tibble with "variable" (and optional "value") columns. If a character
 #'   vector, or tibble with just has a "variable" column are provide, then
 #'   the variable names enumerated there will not be included in this dropdown.
 #'   A tibble with "variable" and "value" columns can be used so that only
 #'   specific levels of a covariate are ignored.
-categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
-                                                   default_covariate = NULL,
-                                                   ...,
-                                                   include_sample_id = FALSE,
-                                                   with_none = TRUE,
-                                                   exclude = reactive(NULL),
-                                                   ignoreNULL = with_none,
-                                                   debug = FALSE) {
+categoricalSampleCovariateSelectServer <- function(
+    id,
+    rfds,
+    include1 = TRUE,
+    include_id_like = FALSE,
+    id_like_threshold = 0.85,
+    default_covariate = NULL,
+    ...,
+    include_sample_id = FALSE,
+    with_none = TRUE,
+    exclude = reactive(NULL),
+    ignoreNULL = with_none,
+    debug = FALSE
+) {
   assert_class(rfds, "ReactiveFacileDataStore")
   assert_flag(include1)
 
@@ -75,22 +83,31 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       excluded()
     }, {
       req(initialized(rfds))
+      asamples <- rfds$active_samples()
+      
       out <- rfds$active_covariates() |> 
         dplyr::filter(.data$class == "categorical") |>
         dplyr::filter(!.data$variable %in% state$exclude) |> 
         dplyr::arrange(variable, level)
+      level_count <- out |> 
+        dplyr::summarize(nlevels = n(), .by = "variable")
+      
       if (!include1) {
-        single_level_covariates <- out |> 
-          dplyr::summarize(nlevels = n(), .by = "variable") |> 
+        single_level_covariates <- level_count |> 
           dplyr::filter(nlevels == 1L)
-        out <- anti_join(out, single_level_covariates, by = "variable")
+        out <- dplyr::anti_join(out, single_level_covariates, by = "variable")
       }
+      if (!include_id_like) {
+        id_like <- level_count |> 
+          dplyr::filter(nlevels / nrow(asamples) >= id_like_threshold)
+        out <- dplyr::anti_join(out, id_like, by = "variable")
+      }
+      
       if (state$rfds_name != name(rfds)) {
         state$rfds_name <- name(rfds)
       }
       
       if (include_sample_id) {
-        asamples <- rfds$active_samples()
         sids <- asamples |> 
           dplyr::transmute(
             variable = "sample_id",
@@ -119,10 +136,18 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       }
       
       selected <- input$covariate
-      if (unselected(selected)) selected <- default_covariate
+      if (unselected(selected)) {
+        selected <- default_covariate
+      }
       
       overlap <- intersect(selected, choices)
-      if (length(overlap)) {
+      if (length(overlap) > 0L) {
+        # it's possible length(overlap) > 1 because default_covariate can be
+        # many options, so we just take the first element by default if we
+        # can't have multiple select.
+        if (isFALSE(state$multiple)) {
+          overlap <- overlap[1L]
+        }
         if (!setequal(state$covariate, overlap)) {
           state$selected <- overlap
         }
@@ -137,8 +162,14 @@ categoricalSampleCovariateSelectServer <- function(id, rfds, include1 = TRUE,
       } else {
         if (isTRUE(state$multiple)) state$multiple <- FALSE
       }
-      updateSelectInput(session, "covariate", choices = choices,
-                        selected = selected)
+      # updateSelectInput(session, "covariate", choices = choices,
+      #                   selected = selected)
+      shinyWidgets::updatePickerInput(
+        session,
+        "covariate",
+        choices = choices,
+        selected = selected
+      )
     })
     
     observeEvent(input$covariate, {
@@ -222,13 +253,35 @@ categoricalSampleCovariateSelectInput <- function(
     choices = NULL, selected = NULL,
     multiple = FALSE,
     selectize = TRUE, width = NULL,
-    size = NULL, ...) {
+    size = NULL,
+    pickerOptions = list(
+      dropdownAlignRight = FALSE,
+      dropupAuto = TRUE
+    ),
+    ...) {
   ns <- NS(id)
   
+  pickerargs <- as.list(formals(shinyWidgets::pickerOptions))
+  for (oname in intersect(names(pickerargs), names(pickerOptions))) {
+    pickerargs[[oname]] <- pickerOptions[[oname]]
+  }
+  pickerargs[["..."]] <- NULL
+
+  pickeropts <- do.call(shinyWidgets::pickerOptions, pickerargs)
   tagList(
-    selectInput(ns("covariate"), label = label, choices = choices,
-                selected = selected, multiple = multiple, selectize = selectize,
-                width = width, size = size))
+    # selectInput(ns("covariate"), label = label, choices = choices,
+    #             selected = selected, multiple = multiple, selectize = selectize,
+    #             width = width, size = size)
+    shinyWidgets::pickerInput(
+      ns("covariate"),
+      label = label,
+      choices = choices,
+      selected = selected,
+      multiple = multiple,
+      width = width,
+      options = pickeropts
+    )
+  )
 }
 
 #' @export
