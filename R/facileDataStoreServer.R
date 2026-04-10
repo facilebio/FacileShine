@@ -419,7 +419,8 @@ filterSamplesTableServer <- function(id, dfds, ..., debug = FALSE) {
     # Visuals ==================================================================
     output$table <- reactable::renderReactable({
       req(is(dfds$active_pdata(), "tbl"))
-      reactable::reactable(dfds$active_pdata(), server = TRUE)
+      # reactable::reactable(dfds$active_pdata(), server = TRUE)
+      reactable::reactable(dfds$active_pdata())
     })
   })
 }

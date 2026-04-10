@@ -63,11 +63,11 @@ facileDataSetSelectServer <- function(
       out <- NULL
       org <- state$organism
       if (!unselected(org)) {
-        gspath <- file.path(datadir(), "_metadata", org, "genesets.qs")
+        gspath <- file.path(datadir(), "_metadata", org, "genesets.qs2")
         if (file.exists(gspath)) {
           ftrace("Updating GeneSetDb: ", gspath)
           tic()
-          out <- qs::qread(gspath)
+          out <- qs2::qs_read(gspath)
           tt <- toq()
           ftrace("GeneSetDb load: ", tt$ss)
         } else {
