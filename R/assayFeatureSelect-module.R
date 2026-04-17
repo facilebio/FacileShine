@@ -32,10 +32,32 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
       shiny::bindEvent(assay$selected())
 
     observeEvent(features_all(), {
+      fall <- features_all()
+      choices <- setNames(fall$feature_id, fall$name)
+      selected <- input$features
+      if (unselected(selected) && nrow(state$selected) > 0L) {
+        selected <- state$selected$feature_id
+      }
+      overlap <- intersect(selected, fall$feature_id)
+      if (length(overlap) > 0L) {
+        keep <- tibble(assay = assay$selected(), feature_id = overlap)
+        out <- semi_join(fall, keep, by = c("assay", "feature_id"))
+      } else {
+        out <- .no_features()
+        overlap <- NULL
+      }
+      if (!setequal(
+        paste(out$assay, out$feature_id),
+        paste(state$selected$assay, state$selected$feature_id)
+      )) {
+        state$selected <- out
+      }
       shiny::updateSelectizeInput(
-        session, "features", 
-        choices = setNames(features_all()$feature_id, features_all()$name),
-        selected = NULL, server = TRUE)
+        session, "features",
+        choices = choices,
+        selected = overlap,
+        server = TRUE
+      )
     })
     
     observeEvent(input$features, {
@@ -128,8 +150,12 @@ from_fds.AssayFeatureSelectModule <- function(x, rfds, ...) {
 #' @noRd
 #' @importFrom shiny selectInput selectizeInput
 #' @rdname assayFeatureSelect
-#' @param multiple,... passed into the `"features"` `selectizeInput`
-assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE, ...) {
+#' @param multiple whether the `"features"` input accepts multiple values
+#' @param selectizeOptions a list of options passed to the `"features"`
+#'   `selectizeInput`; defaults enable remove buttons and multi-value paste by
+#'   feature id or label
+assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE,
+                                    selectizeOptions = list(), ...) {
   ns <- NS(id)
   
   if (is.null(label)) {
@@ -143,7 +169,10 @@ assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE, ...) {
       shiny::column(
         width = 9,
         selectizeInput(ns("features"), label = label, choices = NULL,
-                       multiple = multiple)),
+                       multiple = multiple,
+                       options = .assay_feature_selectize_options(
+                         selectizeOptions
+                       ))),
       shiny::column(
         width = 3,
         shiny::tags$div(
@@ -195,4 +224,47 @@ label.AssayFeatureSelectModule <- function(x, ...) {
     assay = character(),
     feature_id = character(),
     name = character())
+}
+
+.assay_feature_selectize_options <- function(selectizeOptions = list()) {
+  paste_handler <- I(
+    "function() {
+      var s = this;
+      s.$control_input.on('paste', function(e) {
+        var cd = (e.originalEvent || e).clipboardData;
+        if (!cd) return;
+        var txt = cd.getData('text');
+        if (!txt) return;
+        var vals = txt.split(/\\r?\\n|,|\\t|;/)
+          .map(function(x) { return x.trim(); })
+          .filter(Boolean);
+        if (vals.length < 2) return;
+        if (s.settings.maxItems === 1) return;
+        e.preventDefault();
+        vals.forEach(function(v) {
+          var key = null;
+          if (s.options[v]) {
+            key = v;
+          } else {
+            Object.keys(s.options).some(function(k) {
+              var opt = s.options[k];
+              var label = opt && (opt.text || opt.label);
+              if (label === v) {
+                key = k;
+                return true;
+              }
+              return false;
+            });
+          }
+          if (key) s.addItem(key, true);
+        });
+        s.refreshItems();
+      });
+    }"
+  )
+  default_selectize_options <- list(
+    plugins = list("remove_button"),
+    onInitialize = paste_handler
+  )
+  utils::modifyList(default_selectize_options, selectizeOptions)
 }

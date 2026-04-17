@@ -20,7 +20,6 @@
 #'   reactiveValues
 #'   req
 #'   updateSelectInput
-#'   updateSelectizeInput
 #' @param default_covariate A character vector of preferred covarites to have
 #'   selected by default. If this is `lenght() > 1` the first covariate found
 #'   will be selected. If no levels match the covariate, then no preference
@@ -165,19 +164,11 @@ categoricalSampleCovariateSelectServer <- function(
       }
       # updateSelectInput(session, "covariate", choices = choices,
       #                   selected = selected)
-      # Previous picker-based update:
-      # shinyWidgets::updatePickerInput(
-      #   session,
-      #   "covariate",
-      #   choices = choices,
-      #   selected = selected
-      # )
-      shiny::updateSelectizeInput(
+      shinyWidgets::updatePickerInput(
         session,
         "covariate",
         choices = choices,
-        selected = selected,
-        server = TRUE
+        selected = selected
       )
     })
     
@@ -256,7 +247,7 @@ categoricalSampleCovariateSelectServer <- function(
 #' @noRd
 #' @export
 #' @rdname categoricalSampleCovariateSelect
-#' @importFrom shiny NS selectInput selectizeInput
+#' @importFrom shiny NS selectInput
 categoricalSampleCovariateSelectInput <- function(
     id, label = "Covariate",
     choices = NULL, selected = NULL,
@@ -267,96 +258,28 @@ categoricalSampleCovariateSelectInput <- function(
       dropdownAlignRight = FALSE,
       dropupAuto = TRUE
     ),
-    selectizeOptions = list(),
     ...) {
   ns <- NS(id)
-
-  # Previous pickerInput implementation retained for reference:
-  # pickerargs <- as.list(formals(shinyWidgets::pickerOptions))
-  # for (oname in intersect(names(pickerargs), names(pickerOptions))) {
-  #   pickerargs[[oname]] <- pickerOptions[[oname]]
-  # }
-  # pickerargs[["..."]] <- NULL
-  # pickeropts <- do.call(shinyWidgets::pickerOptions, pickerargs)
-  # tagList(
-  #   shinyWidgets::pickerInput(
-  #     ns("covariate"),
-  #     label = label,
-  #     choices = choices,
-  #     selected = selected,
-  #     multiple = multiple,
-  #     width = width,
-  #     options = pickeropts
-  #   )
-  # )
   
-  if (isFALSE(selectize)) {
-    return(tagList(
-      selectInput(
-        ns("covariate"),
-        label = label,
-        choices = choices,
-        selected = selected,
-        multiple = multiple,
-        selectize = FALSE,
-        width = width,
-        size = size
-      )
-    ))
+  pickerargs <- as.list(formals(shinyWidgets::pickerOptions))
+  for (oname in intersect(names(pickerargs), names(pickerOptions))) {
+    pickerargs[[oname]] <- pickerOptions[[oname]]
   }
+  pickerargs[["..."]] <- NULL
 
-  # Base selectize behavior:
-  # 1) allow quick remove of selected tokens
-  # 2) support multi-line paste into the control for multi-select mode
-  paste_handler <- I(
-    "function() {
-      var s = this;
-      s.$control_input.on('paste', function(e) {
-        var cd = (e.originalEvent || e).clipboardData;
-        if (!cd) return;
-        var txt = cd.getData('text');
-        if (!txt) return;
-        var vals = txt.split(/\\r?\\n|,|\\t|;/)
-          .map(function(x) { return x.trim(); })
-          .filter(Boolean);
-        if (vals.length < 2) return;
-        if (s.settings.maxItems === 1) return;
-        e.preventDefault();
-        vals.forEach(function(v) {
-          if (s.options[v]) s.addItem(v, true);
-        });
-        s.refreshItems();
-      });
-    }"
-  )
-  default_selectize_options <- list(
-    plugins = list("remove_button"),
-    onInitialize = paste_handler
-  )
-  selectize_options <- utils::modifyList(
-    default_selectize_options,
-    selectizeOptions
-  )
-
+  pickeropts <- do.call(shinyWidgets::pickerOptions, pickerargs)
   tagList(
-    # Previous implementation:
-    # shinyWidgets::pickerInput(
-    #   ns("covariate"),
-    #   label = label,
-    #   choices = choices,
-    #   selected = selected,
-    #   multiple = multiple,
-    #   width = width,
-    #   options = pickeropts
-    # )
-    selectizeInput(
+    # selectInput(ns("covariate"), label = label, choices = choices,
+    #             selected = selected, multiple = multiple, selectize = selectize,
+    #             width = width, size = size)
+    shinyWidgets::pickerInput(
       ns("covariate"),
       label = label,
       choices = choices,
       selected = selected,
       multiple = multiple,
       width = width,
-      options = selectize_options
+      options = pickeropts
     )
   )
 }
