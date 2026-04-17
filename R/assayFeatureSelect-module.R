@@ -227,10 +227,92 @@ label.AssayFeatureSelectModule <- function(x, ...) {
 }
 
 .assay_feature_selectize_options <- function(selectizeOptions = list()) {
-  paste_handler <- I(
+  init_handler <- I(
     "function() {
       var s = this;
-      s.$control_input.on('paste', function(e) {
+      var copyText = function(txt) {
+        var copyFallback = function() {
+          var ta = document.createElement('textarea');
+          ta.value = txt;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'absolute';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+          } finally {
+            document.body.removeChild(ta);
+            s.focus();
+          }
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(txt).catch(copyFallback);
+        } else {
+          copyFallback();
+        }
+      };
+      var lookupKey = function(v) {
+        if (s.options[v]) return v;
+        var key = null;
+        Object.keys(s.options).some(function(k) {
+          var opt = s.options[k];
+          var label = opt && (opt.text || opt.label);
+          if (label === v) {
+            key = k;
+            return true;
+          }
+          return false;
+        });
+        return key;
+      };
+      var itemLabel = function(key) {
+        var opt = s.options[key];
+        if (!opt) return key;
+        return opt.text || opt.label || key;
+      };
+      var resolveKeys = function(vals, done) {
+        var out = [];
+        var i = 0;
+        var next = function() {
+          if (i >= vals.length) {
+            done(out);
+            return;
+          }
+          var v = vals[i++];
+          var key = lookupKey(v);
+          if (key) {
+            out.push(key);
+            next();
+            return;
+          }
+          if (!s.settings.load) {
+            next();
+            return;
+          }
+          s.load(function(callback) {
+            s.settings.load.call(s, v, function(results) {
+              callback(results);
+              key = lookupKey(v);
+              if (key) out.push(key);
+              next();
+            });
+          });
+        };
+        next();
+      };
+      s.$control_input.on('keydown.assayFeatureSelectCopy', function(e) {
+        var isCopy = (e.ctrlKey || e.metaKey) &&
+          !e.altKey &&
+          !e.shiftKey &&
+          (e.key === 'c' || e.key === 'C' || e.keyCode === 67);
+        if (!isCopy) return;
+        if (s.items.length === 0) return;
+        if (s.$control_input.val()) return;
+        e.preventDefault();
+        copyText(s.items.map(itemLabel).join('\\n'));
+      });
+      s.$control_input[0].addEventListener('paste', function(e) {
         var cd = (e.originalEvent || e).clipboardData;
         if (!cd) return;
         var txt = cd.getData('text');
@@ -241,30 +323,30 @@ label.AssayFeatureSelectModule <- function(x, ...) {
         if (vals.length < 2) return;
         if (s.settings.maxItems === 1) return;
         e.preventDefault();
-        vals.forEach(function(v) {
-          var key = null;
-          if (s.options[v]) {
-            key = v;
-          } else {
-            Object.keys(s.options).some(function(k) {
-              var opt = s.options[k];
-              var label = opt && (opt.text || opt.label);
-              if (label === v) {
-                key = k;
-                return true;
-              }
-              return false;
-            });
-          }
-          if (key) s.addItem(key, true);
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        resolveKeys(vals, function(keys) {
+          var seen = {};
+          keys = keys.filter(function(key) {
+            if (!key) return false;
+            if (seen[key]) return false;
+            seen[key] = true;
+            return true;
+          });
+          if (keys.length === 0) return;
+          var next = s.items.slice();
+          keys.forEach(function(key) {
+            if (next.indexOf(key) === -1) next.push(key);
+          });
+          s.setValue(next, true);
+          s.setTextboxValue('');
         });
-        s.refreshItems();
-      });
+      }, true);
     }"
   )
   default_selectize_options <- list(
     plugins = list("remove_button"),
-    onInitialize = paste_handler
+    onInitialize = init_handler
   )
   utils::modifyList(default_selectize_options, selectizeOptions)
 }
