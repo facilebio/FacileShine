@@ -168,11 +168,18 @@ assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE,
     shiny::fluidRow(
       shiny::column(
         width = 9,
-        selectizeInput(ns("features"), label = label, choices = NULL,
-                       multiple = multiple,
-                       options = .assay_feature_selectize_options(
-                         selectizeOptions
-                       ))),
+        shiny::tagList(
+          selectizeInput(ns("features"), label = label, choices = NULL,
+                         multiple = multiple,
+                         options = .assay_feature_selectize_options(
+                           selectizeOptions
+                         )),
+          shiny::tags$div(
+            id = ns("features_feedback"),
+            class = "text-muted",
+            role = "status",
+            style = "display:none; margin-top: 0.35em; font-size: 0.9em;"
+          ))),
       shiny::column(
         width = 3,
         shiny::tags$div(
@@ -252,6 +259,39 @@ label.AssayFeatureSelectModule <- function(x, ...) {
           copyFallback();
         }
       };
+      var feedbackId = function() {
+        return s.$input.attr('id') + '_feedback';
+      };
+      var feedbackNode = function() {
+        return document.getElementById(feedbackId());
+      };
+      var clearFeedback = function() {
+        var node = feedbackNode();
+        if (!node) return;
+        node.textContent = '';
+        node.style.display = 'none';
+      };
+      var armFeedbackClear = function() {
+        s.$control_input.off('.assayFeatureSelectFeedback');
+        s.$control.off('.assayFeatureSelectFeedback');
+        s.$control_input.one('keydown.assayFeatureSelectFeedback',
+                             clearFeedback);
+        s.$control.one('mousedown.assayFeatureSelectFeedback', clearFeedback);
+      };
+      var invalidMessage = function(vals) {
+        if (vals.length === 1) {
+          return vals[0] + ' is invalid and was not appended to the pasted list';
+        }
+        return vals.join(', ') +
+          ' are invalid and were not appended to the pasted list';
+      };
+      var showFeedback = function(txt) {
+        var node = feedbackNode();
+        if (!node) return;
+        node.textContent = txt;
+        node.style.display = 'block';
+        armFeedbackClear();
+      };
       var lookupKey = function(v) {
         if (s.options[v]) return v;
         var key = null;
@@ -325,21 +365,33 @@ label.AssayFeatureSelectModule <- function(x, ...) {
         e.preventDefault();
         e.stopPropagation();
         if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        clearFeedback();
         resolveKeys(vals, function(keys) {
           var seen = {};
+          var invalidSeen = {};
+          var invalid = vals.filter(function(v) {
+            if (lookupKey(v)) return false;
+            if (invalidSeen[v]) return false;
+            invalidSeen[v] = true;
+            return true;
+          });
           keys = keys.filter(function(key) {
             if (!key) return false;
             if (seen[key]) return false;
             seen[key] = true;
             return true;
           });
-          if (keys.length === 0) return;
+          if (keys.length === 0) {
+            if (invalid.length) showFeedback(invalidMessage(invalid));
+            return;
+          }
           var next = s.items.slice();
           keys.forEach(function(key) {
             if (next.indexOf(key) === -1) next.push(key);
           });
           s.setValue(next, true);
           s.setTextboxValue('');
+          if (invalid.length) showFeedback(invalidMessage(invalid));
         });
       }, true);
     }"
