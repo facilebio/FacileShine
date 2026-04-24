@@ -389,7 +389,9 @@ label.AssayFeatureSelectModule <- function(x, ...) {
           keys.forEach(function(key) {
             if (next.indexOf(key) === -1) next.push(key);
           });
-          s.setValue(next, true);
+          // Keep the selectize widget and Shiny input binding in sync so
+          // downstream visualizations react after multi-value paste.
+          s.setValue(next, false);
           s.setTextboxValue('');
           if (invalid.length) showFeedback(invalidMessage(invalid));
         });
