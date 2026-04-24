@@ -1,0 +1,60 @@
+{
+  "name": "FacileShine",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "options": [
+      "--platform=linux/amd64",
+    ]
+  },
+  // "remoteUser": "rstudio",
+  // "containerUser": "rstudio",
+  "updateRemoteUserUID": true,
+  "overrideCommand": true,
+  "containerEnv": {
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "NOT_CRAN": "true",
+    // "SHINY_PORT": "3838"
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder}/../data/omx,target=/omx,type=bind,consistency=cached",
+    "source=${localWorkspaceFolder}/../data/omx-datasets,target=/data,type=bind,consistency=cached",
+    "source=${localWorkspaceFolder}/../data/omx-analysis,target=/analysis,type=bind,consistency=cached"
+  ],
+  "forwardPorts": [
+    3838
+  ],
+  "portsAttributes": {
+    "3838": {
+      "label": "Shiny app",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  // `customizations` and `postCreateCommand` were previously nested under
+  // `portsAttributes`; they are top-level properties in the Dev Container schema.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "REditorSupport.r",
+        "RDebugger.r-debugger",
+        "quarto.quarto",
+        "redhat.vscode-yaml",
+        "DavidAnson.vscode-markdownlint",
+        "REditorSupport.r-syntax",
+        "openai.chatgpt"
+      ],
+      "settings": {
+        "r.alwaysUseActiveTerminal": true,
+        "r.bracketedPaste": true,
+        "r.plot.useHttpgd": true,
+        "r.rterm.linux": "/usr/local/bin/radian",
+        "files.associations": {
+          "*.Rmd": "rmd",
+          "*.qmd": "quarto"
+        }
+      }
+    }
+  },
+  "postCreateCommand": "Rscript .devcontainer/postCreate.R"
+}

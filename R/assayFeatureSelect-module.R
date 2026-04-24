@@ -32,10 +32,32 @@ assayFeatureSelectServer <- function(id, rfds, gdb = reactive(NULL), ...,
       shiny::bindEvent(assay$selected())
 
     observeEvent(features_all(), {
+      fall <- features_all()
+      choices <- setNames(fall$feature_id, fall$name)
+      selected <- input$features
+      if (unselected(selected) && nrow(state$selected) > 0L) {
+        selected <- state$selected$feature_id
+      }
+      overlap <- intersect(selected, fall$feature_id)
+      if (length(overlap) > 0L) {
+        keep <- tibble(assay = assay$selected(), feature_id = overlap)
+        out <- semi_join(fall, keep, by = c("assay", "feature_id"))
+      } else {
+        out <- .no_features()
+        overlap <- NULL
+      }
+      if (!setequal(
+        paste(out$assay, out$feature_id),
+        paste(state$selected$assay, state$selected$feature_id)
+      )) {
+        state$selected <- out
+      }
       shiny::updateSelectizeInput(
-        session, "features", 
-        choices = setNames(features_all()$feature_id, features_all()$name),
-        selected = NULL, server = TRUE)
+        session, "features",
+        choices = choices,
+        selected = overlap,
+        server = TRUE
+      )
     })
     
     observeEvent(input$features, {
@@ -128,8 +150,12 @@ from_fds.AssayFeatureSelectModule <- function(x, rfds, ...) {
 #' @noRd
 #' @importFrom shiny selectInput selectizeInput
 #' @rdname assayFeatureSelect
-#' @param multiple,... passed into the `"features"` `selectizeInput`
-assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE, ...) {
+#' @param multiple whether the `"features"` input accepts multiple values
+#' @param selectizeOptions a list of options passed to the `"features"`
+#'   `selectizeInput`; defaults enable remove buttons and multi-value paste by
+#'   feature id or label
+assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE,
+                                    selectizeOptions = list(), ...) {
   ns <- NS(id)
   
   if (is.null(label)) {
@@ -142,8 +168,18 @@ assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE, ...) {
     shiny::fluidRow(
       shiny::column(
         width = 9,
-        selectizeInput(ns("features"), label = label, choices = NULL,
-                       multiple = multiple)),
+        shiny::tagList(
+          selectizeInput(ns("features"), label = label, choices = NULL,
+                         multiple = multiple,
+                         options = .assay_feature_selectize_options(
+                           selectizeOptions
+                         )),
+          shiny::tags$div(
+            id = ns("features_feedback"),
+            class = "text-muted",
+            role = "status",
+            style = "display:none; margin-top: 0.35em; font-size: 0.9em;"
+          ))),
       shiny::column(
         width = 3,
         shiny::tags$div(
@@ -195,4 +231,176 @@ label.AssayFeatureSelectModule <- function(x, ...) {
     assay = character(),
     feature_id = character(),
     name = character())
+}
+
+.assay_feature_selectize_options <- function(selectizeOptions = list()) {
+  init_handler <- I(
+    "function() {
+      var s = this;
+      var copyText = function(txt) {
+        var copyFallback = function() {
+          var ta = document.createElement('textarea');
+          ta.value = txt;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'absolute';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+          } finally {
+            document.body.removeChild(ta);
+            s.focus();
+          }
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(txt).catch(copyFallback);
+        } else {
+          copyFallback();
+        }
+      };
+      var feedbackId = function() {
+        return s.$input.attr('id') + '_feedback';
+      };
+      var feedbackNode = function() {
+        return document.getElementById(feedbackId());
+      };
+      var clearFeedback = function() {
+        var node = feedbackNode();
+        if (!node) return;
+        node.textContent = '';
+        node.style.display = 'none';
+      };
+      var armFeedbackClear = function() {
+        s.$control_input.off('.assayFeatureSelectFeedback');
+        s.$control.off('.assayFeatureSelectFeedback');
+        s.$control_input.one('keydown.assayFeatureSelectFeedback',
+                             clearFeedback);
+        s.$control.one('mousedown.assayFeatureSelectFeedback', clearFeedback);
+      };
+      var invalidMessage = function(vals) {
+        if (vals.length === 1) {
+          return vals[0] + ' is invalid and was not appended to the pasted list';
+        }
+        return vals.join(', ') +
+          ' are invalid and were not appended to the pasted list';
+      };
+      var showFeedback = function(txt) {
+        var node = feedbackNode();
+        if (!node) return;
+        node.textContent = txt;
+        node.style.display = 'block';
+        armFeedbackClear();
+      };
+      var lookupKey = function(v) {
+        if (s.options[v]) return v;
+        var key = null;
+        Object.keys(s.options).some(function(k) {
+          var opt = s.options[k];
+          var label = opt && (opt.text || opt.label);
+          if (label === v) {
+            key = k;
+            return true;
+          }
+          return false;
+        });
+        return key;
+      };
+      var itemLabel = function(key) {
+        var opt = s.options[key];
+        if (!opt) return key;
+        return opt.text || opt.label || key;
+      };
+      var resolveKeys = function(vals, done) {
+        var out = [];
+        var i = 0;
+        var next = function() {
+          if (i >= vals.length) {
+            done(out);
+            return;
+          }
+          var v = vals[i++];
+          var key = lookupKey(v);
+          if (key) {
+            out.push(key);
+            next();
+            return;
+          }
+          if (!s.settings.load) {
+            next();
+            return;
+          }
+          s.load(function(callback) {
+            s.settings.load.call(s, v, function(results) {
+              callback(results);
+              key = lookupKey(v);
+              if (key) out.push(key);
+              next();
+            });
+          });
+        };
+        next();
+      };
+      s.$control_input.on('keydown.assayFeatureSelectCopy', function(e) {
+        var isCopy = (e.ctrlKey || e.metaKey) &&
+          !e.altKey &&
+          !e.shiftKey &&
+          (e.key === 'c' || e.key === 'C' || e.keyCode === 67);
+        if (!isCopy) return;
+        if (s.items.length === 0) return;
+        if (s.$control_input.val()) return;
+        e.preventDefault();
+        copyText(s.items.map(itemLabel).join('\\n'));
+      });
+      s.$control_input[0].addEventListener('paste', function(e) {
+        var cd = (e.originalEvent || e).clipboardData;
+        if (!cd) return;
+        var txt = cd.getData('text');
+        if (!txt) return;
+        var vals = txt.split(/\\r?\\n|,|\\t|;/)
+          .map(function(x) { return x.trim(); })
+          .filter(Boolean);
+        if (vals.length < 2) return;
+        if (s.settings.maxItems === 1) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        clearFeedback();
+        resolveKeys(vals, function(keys) {
+          var seen = {};
+          var invalidSeen = {};
+          var invalid = vals.filter(function(v) {
+            if (lookupKey(v)) return false;
+            if (invalidSeen[v]) return false;
+            invalidSeen[v] = true;
+            return true;
+          });
+          keys = keys.filter(function(key) {
+            if (!key) return false;
+            if (seen[key]) return false;
+            seen[key] = true;
+            return true;
+          });
+          if (keys.length === 0) {
+            if (invalid.length) showFeedback(invalidMessage(invalid));
+            return;
+          }
+          var next = s.items.slice();
+          keys.forEach(function(key) {
+            if (next.indexOf(key) === -1) next.push(key);
+          });
+          // Keep the selectize widget and Shiny input binding in sync so
+          // downstream visualizations react after multi-value paste.
+          s.setValue(next, false);
+          s.setTextboxValue('');
+          if (invalid.length) showFeedback(invalidMessage(invalid));
+        });
+      }, true);
+    }"
+  )
+  default_selectize_options <- list(
+    plugins = list("remove_button"),
+    onInitialize = init_handler
+  )
+  utils::modifyList(default_selectize_options, selectizeOptions)
 }
