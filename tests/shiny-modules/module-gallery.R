@@ -22,6 +22,8 @@ s3 <- dplyr::bind_rows(s1, s2)
 
 # reactlog::reactlog_enable()
 
+ggplot2::theme_set(ggplot2::theme_light())
+
 shiny::shinyApp(
   ui = shiny::fluidPage(
     shinyjs::useShinyjs(),
