@@ -129,8 +129,9 @@ fboxPlotServer <- function(id, rfds, ...,
       #                   event_source = event_source)
       # }
       # plt
+      indivgene <- nrow(yvals.) > 1L && indiv.
       gg <- ggplot2::ggplot(dat)
-      if (nrow(yvals.) > 1L && indiv.) {
+      if (indivgene) {
         gg <- gg + ggplot2::aes(
           x = .data[[xaxis.]],
           y = .data[["value"]],
@@ -143,7 +144,7 @@ fboxPlotServer <- function(id, rfds, ...,
         )
       }
       
-      if (nrow(yvals.) > 1L && indiv.) {
+      if (indivgene) {
         gg <- gg + 
           ggplot2::geom_boxplot(
             outliers = FALSE,
@@ -154,22 +155,36 @@ fboxPlotServer <- function(id, rfds, ...,
               jitter.width = 0.1,
               dodge.width = 0.75
             )
+          ) +
+          ggplot2::labs(
+            y = "log2(score)"
           )
       } else {
         gg <- gg + 
           ggplot2::geom_boxplot(outliers = FALSE) +
-          ggplot2::geom_jitter(width = 0.1)
+          ggplot2::geom_jitter(width = 0.1) +
+          ggplot2::labs(
+            y = "log2(abundance)"
+          )
+        
       }
       
       if (!is.null(aes.$facet)) {
         gg <- gg + ggplot2::facet_wrap(
           ggplot2::vars(!!rlang::sym(aes.$facet)))
       }
-      out <- plotly::ggplotly(gg)
       
-      if (nrow(yvals.) > 1L && indiv.) {
+      gg <- gg + ggplot2::scale_x_discrete(guide = ggplot2::guide_axis(n.dodge = 2))
+      
+      out <- plotly::ggplotly(gg)
+      if (indivgene) {
         out <- plotly::layout(out, boxmode = "group")
       }
+      
+      # out <- plotly::layout(
+      #   out,
+      #   xaxis = list(tickmode = "auto")
+      # )
       out
     }, label = "fbox")
     
