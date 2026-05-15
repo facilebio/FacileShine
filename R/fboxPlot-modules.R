@@ -99,10 +99,13 @@ fboxPlotServer <- function(id, rfds, ...,
     
     fbox <- eventReactive(rdat(), {
       dat <- req(rdat())
-      yvals. <- yaxis$selected()
+      yvals. <- yaxis$selected() |> dplyr::arrange(name)
       xaxis. <- xaxis$selected()
       aes. <- aes$map()
       indiv. <- input$individual
+      
+      multigene <- nrow(yvals.) > 1
+      sig.plot <- multigene && !indiv.
       
       hover. <- c(
         xaxis.,
@@ -113,25 +116,9 @@ fboxPlotServer <- function(id, rfds, ...,
       
       if (length(hover.) == 0) hover. <- NULL
       ftrace("drawing boxplot")
-
-      # if (nrow(yvals.) > 1 && indiv.) {
-      #   # We want to draw multiple boxplots per x-value. For now we leverage
-      #   # faceting for this
-      #   plt <- fboxplot(dat, "feature_name", "value", with_points = TRUE,
-      #                   facet_aes = xaxis., color_aes = aes.$color,
-      #                   hover = hover., na_x = "keep",
-      #                   event_source = event_source)
-      # } else {
-      #   plt <- fboxplot(dat, xaxis., "value", with_points = TRUE,
-      #                   facet_aes = aes.$facet, color_aes = aes.$color,
-      #                   hover = hover., na_x = "keep",
-      #                   ylabel = ylabel(),
-      #                   event_source = event_source)
-      # }
-      # plt
-      indivgene <- nrow(yvals.) > 1L && indiv.
+      
       gg <- ggplot2::ggplot(dat)
-      if (indivgene) {
+      if (!sig.plot) {
         gg <- gg + ggplot2::aes(
           x = .data[[xaxis.]],
           y = .data[["value"]],
@@ -144,7 +131,7 @@ fboxPlotServer <- function(id, rfds, ...,
         )
       }
       
-      if (indivgene) {
+      if (!sig.plot && multigene) {
         gg <- gg + 
           ggplot2::geom_boxplot(
             outliers = FALSE,
@@ -155,18 +142,11 @@ fboxPlotServer <- function(id, rfds, ...,
               jitter.width = 0.1,
               dodge.width = 0.75
             )
-          ) +
-          ggplot2::labs(
-            y = "log2(score)"
           )
       } else {
         gg <- gg + 
           ggplot2::geom_boxplot(outliers = FALSE) +
-          ggplot2::geom_jitter(width = 0.1) +
-          ggplot2::labs(
-            y = "log2(abundance)"
-          )
-        
+          ggplot2::geom_jitter(width = 0.1)
       }
       
       if (!is.null(aes.$facet)) {
@@ -174,17 +154,38 @@ fboxPlotServer <- function(id, rfds, ...,
           ggplot2::vars(!!rlang::sym(aes.$facet)))
       }
       
-      gg <- gg + ggplot2::scale_x_discrete(guide = ggplot2::guide_axis(n.dodge = 2))
+      gg <- gg + ggplot2::scale_x_discrete(
+        guide = ggplot2::guide_axis(n.dodge = 2),
+        labels = \(x) gsub("__", "\n", x)
+      )
+
+      units <- "abundance"
+      if (yvals.$assay_type[1] %in% c("pseudobulk", "rnaseq") && !sig.plot) {
+        units <- "CPM"
+      }
+
+      ylab <- sprintf("log2(%s)", units)
+      if (sig.plot) {
+        gtitle <- "Activity Score"
+      } else {
+        gtitle <- paste(head(yvals.$name, 8), collapse = ",")
+        if (nrow(yvals.) > 8) {
+          nmore <- nrow(yvals.) - 8
+          gtitle <- paste0(gtitle, ", +", nmore, " more")
+        }
+      }
+
+      gg <- gg + ggplot2::labs(
+        title = gtitle,
+        x = "",
+        y = ylab
+      )
       
       out <- plotly::ggplotly(gg)
-      if (indivgene) {
+      if (!sig.plot && multigene) {
         out <- plotly::layout(out, boxmode = "group")
       }
       
-      # out <- plotly::layout(
-      #   out,
-      #   xaxis = list(tickmode = "auto")
-      # )
       out
     }, label = "fbox")
     
