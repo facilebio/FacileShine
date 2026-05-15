@@ -40,7 +40,7 @@ Imports:
     V8,
     viridis,
     shinycssloaders,
-    yaml,
+    yaml
 Suggests:
     FacileBiocData,
     knitr,
@@ -51,7 +51,7 @@ Remotes:
     facilebio/FacileViz,
     glin/reactable,
     daattali/shinycssloaders,
-    lianos/sparrow.shiny,
+    lianos/sparrow.shiny
 License: Apache License (>= 2.0)
 Encoding: UTF-8
 LazyData: true
