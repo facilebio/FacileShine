@@ -108,13 +108,23 @@ fboxPlotServer <- function(id, rfds, ...,
       sig.plot <- multigene && !indiv.
       
       hover. <- c(
-        xaxis.,
         "feature_name",
+        "value",
+        xaxis.,
         unlist(unname(aes.), recursive = TRUE)) |> 
         unique()
-      
-      
-      if (length(hover.) == 0) hover. <- NULL
+
+      if (length(hover.) == 0) {
+        hover. <- NULL
+      } else {
+        txt <- lapply(hover., \(vn) {
+          val <- dat[[vn]]
+          if (is.numeric(val)) val <- round(val, 3)
+          paste(vn, val, sep = ": ")
+        })
+        txt$sep <- "<br>"
+        hover. <- do.call(paste, txt)
+      }
       ftrace("drawing boxplot")
       
       gg <- ggplot2::ggplot(dat)
@@ -122,12 +132,14 @@ fboxPlotServer <- function(id, rfds, ...,
         gg <- gg + ggplot2::aes(
           x = .data[[xaxis.]],
           y = .data[["value"]],
-          fill = .data[["feature_name"]]
+          fill = .data[["feature_name"]],
+          text = hover.
         )
       } else {
         gg <- gg + ggplot2::aes(
           x = .data[[xaxis.]],
-          y = .data[["value"]]
+          y = .data[["value"]],
+          text = hover.
         )
       }
       
@@ -181,7 +193,7 @@ fboxPlotServer <- function(id, rfds, ...,
         y = ylab
       )
       
-      out <- plotly::ggplotly(gg)
+      out <- plotly::ggplotly(gg, tooltip = "text")
       if (!sig.plot && multigene) {
         out <- plotly::layout(out, boxmode = "group")
       }
