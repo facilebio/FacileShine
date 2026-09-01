@@ -171,7 +171,7 @@ assayFeatureSelectInput <- function(id, label = NULL, multiple = TRUE,
         shiny::tagList(
           selectizeInput(ns("features"), label = label, choices = NULL,
                          multiple = multiple,
-                         options = .assay_feature_selectize_options(
+                         options = multiValueSelectizeOptions(
                            selectizeOptions
                          )),
           shiny::tags$div(
@@ -233,7 +233,18 @@ label.AssayFeatureSelectModule <- function(x, ...) {
     name = character())
 }
 
-.assay_feature_selectize_options <- function(selectizeOptions = list()) {
+#' Selectize options for multi-value copy and paste
+#'
+#' Adds remove buttons and JavaScript handlers that let users paste multiple
+#' values separated by newlines, commas, tabs, or semicolons into a Shiny
+#' selectize input. Values are matched by option key first, then by option
+#' label. Copying with an empty search box copies selected labels, one per line.
+#'
+#' @param selectizeOptions Options to merge into the defaults.
+#'
+#' @return A list of selectize options.
+#' @export
+multiValueSelectizeOptions <- function(selectizeOptions = list()) {
   init_handler <- I(
     "function() {
       var s = this;
